@@ -1,0 +1,42 @@
+# Local environments and caches
+.pixi/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Downloaded third-party source trees
+third_party/*
+!third_party/README.md
+
+# Datasets and archives
+data/raw/*
+!data/raw/README.md
+data/processed/*
+!data/processed/README.md
+data/.cache/
+
+# Generated experiment outputs
+artifacts/runs/*
+!artifacts/runs/README.md
+artifacts/metrics/*
+!artifacts/metrics/README.md
+artifacts/renders/*
+!artifacts/renders/README.md
+artifacts/logs/*
+!artifacts/logs/README.md
+artifacts/exports/*
+!artifacts/exports/README.md
+artifacts/videos/*
+!artifacts/videos/README.md
+
+# Downloaded papers (the index remains versioned)
+docs/research/papers/*.pdf
+docs/research/papers/*.part
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
