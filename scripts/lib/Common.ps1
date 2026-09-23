@@ -71,7 +71,7 @@ function Invoke-Conda {
         [switch]$AllowFailure
     )
     $conda = Get-CondaCommand
-    & $conda @Arguments
+    & $conda @Arguments | Out-Host
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0 -and -not $AllowFailure) {
         throw "Conda command failed with exit code ${exitCode}: conda $($Arguments -join ' ')"

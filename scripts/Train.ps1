@@ -11,7 +11,7 @@ Assert-WindowsPowerShell
 $evalMode = 'interval'
 switch -Regex ($Dataset) {
     '^poster$' {
-        $dataDirectory = Join-Path $RawDataRoot 'nerfstudio\poster'
+        $dataDirectory = Join-Path $ProcessedDataRoot 'nerfstudio\poster'
         $parser = 'nerfstudio-data'
     }
     '^(garden|bonsai|room)$' {

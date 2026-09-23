@@ -14,6 +14,9 @@
     GsplatVersion = '1.4.0+pt21cu118'
     GsplatIndexUrl = 'https://docs.gsplat.studio/whl/pt21cu118'
     TinyCudaNnCommit = '2e757bbe781db59c4980d389d7dccbf5edc09669'
+    HfHubVersion = '0.34.4'
+    PosterRepository = 'nerfstudioteam/datasets'
+    PosterRevision = '461701c17e83c3f4d2481db32315aa7df703d2f8'
 
     NerfReferenceCommit = '14c55567a6d0fbd75d3fd12b0411f98160ba3237'
     MultinerfReferenceCommit = '5b4d4f64608ec8077222c52fdf814d40acc10bc1'

@@ -8,9 +8,8 @@
 > Working list: [`Modular_construct.md`](Modular_construct.md)
 
 Trạng thái setup được kiểm chứng trên laptop ngày 2026-09-23:
-[`docs/setup_status_2026-09-23.md`](docs/setup_status_2026-09-23.md). Runtime và
-dataset **chưa hoàn tất** trên máy này; xem điều kiện MSVC v142 và tốc độ tải trong
-báo cáo trước khi chạy training.
+[`docs/setup_status_2026-09-23.md`](docs/setup_status_2026-09-23.md). Kiểm tra
+`G-Core` trước khi chạy training hoặc production.
 
 Không chạy lệnh trong WSL, Git Bash hoặc CMD. Mọi block dưới đây chạy trong
 **Windows PowerShell** tại project root. Script dùng `conda run`, vì vậy không cần
@@ -27,16 +26,34 @@ Set-ExecutionPolicy -Scope Process Bypass
 # kiểm tra đúng 12,535,427,936 bytes và chỉ giải nén garden/bonsai/room.
 .\scripts\Download-Datasets.ps1 -Mode benchmark
 
-# Smoke data nhỏ: chạy sau khi runtime ở section 4 đã setup xong.
+# Poster từ repository chính thức của Nerfstudio trên Hugging Face.
+# Downloader tự tạo Python env tối thiểu; không cần CUDA để tải dữ liệu.
 .\scripts\Download-Datasets.ps1 -Mode smoke
 
-# Hoặc tải cả hai profiles sau khi runtime đã sẵn sàng.
+# Hoặc tải cả hai profiles bằng một lệnh.
 .\scripts\Download-Datasets.ps1 -Mode all
+
+# Xác nhận đúng folder project và dữ liệu dùng được.
+Test-Path .\data\processed\nerfstudio\poster\transforms.json
+@((Get-Content .\data\processed\nerfstudio\poster\transforms.json -Raw | ConvertFrom-Json).frames).Count
+foreach ($scene in 'garden','bonsai','room') {
+    Test-Path ".\data\raw\mipnerf360\$scene\images_2"
+    Test-Path ".\data\raw\mipnerf360\$scene\sparse\0\cameras.bin"
+}
 ```
 
 Benchmark download cần tối thiểu 20 GiB trống; nên giữ 30–40 GiB cho data, model và
 renders. Archive được cache tại `data\.cache\360_v2.zip`; không xóa nếu muốn rerun
 không tải lại. Không commit dataset/archive lên Git.
+
+Nguồn poster Google Drive của bản Nerfstudio pin có thể từ chối `gdown`.
+`Download-Datasets.ps1` dùng bản chính thức
+[`nerfstudioteam/datasets`](https://huggingface.co/datasets/nerfstudioteam/datasets/tree/main/poster)
+ở commit đã pin trong `configs\project.psd1`. Repo này có 100 ảnh nhưng
+`transforms.json` liệt kê 226 frames; script giữ nguyên nguồn tại `data\raw`, rồi
+tạo subset hợp lệ 100 frames tại `data\processed\nerfstudio\poster`. Training
+chỉ dùng folder processed. Script chỉ báo PASS sau khi kiểm tra từng ảnh gốc,
+`images_2`, sparse points và mọi đường dẫn frame trong subset.
 
 ## 2. Quy ước PowerShell-only
 
@@ -80,6 +97,22 @@ Set-ExecutionPolicy -Scope Process Bypass
 Sau khi winget cài mới, đóng PowerShell, mở lại, vào project và chạy preflight lại.
 Script runtime sẽ cài CUDA toolkit, COLMAP, FFmpeg và Ninja **trong Conda env**;
 không cần cài các bản global riêng.
+
+### 3.2 Một lệnh setup đầy đủ sau khi MSVC v142 đã cài
+
+```powershell
+Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\Setup-Project.ps1
+```
+
+Lệnh trên kiểm tra host, checkout Nerfstudio đúng commit, cài CUDA/COLMAP/PyTorch/
+Nerfstudio/gsplat/tiny-cuda-nn vào `topic16-ns115`, tải hai dataset profiles vào
+`data\raw`, kiểm tra GPU import và xuất danh sách dependency thực tế tại
+`artifacts\logs\runtime\requirements.txt`. Nerfstudio v1.1.5 khai báo dependency
+gốc trong `third_party\nerfstudio\pyproject.toml`; file `requirements.txt` sinh ra
+là snapshot để kiểm toán, không phải một bộ pin cạnh tranh với
+`configs\project.psd1`. Lệnh có thể chạy lại sau khi download bị ngắt.
 
 ## 4. Tạo native Windows runtime đã pin
 
@@ -129,8 +162,8 @@ Lệnh này xóa **chỉ Conda env có tên đã pin**, không xóa dataset/arti
 Set-Location $Topic16Root
 .\scripts\Download-Datasets.ps1 -Mode smoke
 
-Test-Path .\data\raw\nerfstudio\poster\transforms.json
-Get-ChildItem .\data\raw\nerfstudio\poster -Directory
+Test-Path .\data\processed\nerfstudio\poster\transforms.json
+Get-ChildItem .\data\processed\nerfstudio\poster -Directory
 ```
 
 Benchmark có thể tải trước hoặc sau smoke gate:
