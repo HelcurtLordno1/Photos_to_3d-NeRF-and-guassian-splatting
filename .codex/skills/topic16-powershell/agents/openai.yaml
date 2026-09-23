@@ -1,0 +1,4 @@
+interface:
+  display_name: "Topic 16 PowerShell"
+  short_description: "Operate the native Windows NeRF/3DGS pipeline"
+  default_prompt: "Use the Topic 16 PowerShell contracts to implement or operate this repository safely."

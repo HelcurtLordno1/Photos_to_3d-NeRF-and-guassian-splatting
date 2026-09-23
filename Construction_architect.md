@@ -1,12 +1,13 @@
 # Construction Architecture — Topic 16: NeRF vs 3D Gaussian Splatting
 
-> Trạng thái: **implementation blueprint v1.0**
-> Ngày chốt nghiên cứu nguồn: **2026-09-21**
+> Trạng thái: **implementation blueprint v2.0 — native Windows PowerShell**
+> Ngày chốt nghiên cứu nguồn: **2026-09-23**
 > Phần cứng mục tiêu: **ThinkPad P1 Gen 5, NVIDIA RTX A4500 Laptop GPU 16 GB**
 > Tài liệu đầu vào: [`README.md`](README.md)
 > Quy ước: nếu README ban đầu và tài liệu này khác nhau, dùng tài liệu này cho
 > triển khai. README vẫn giữ vai trò mô tả đề tài và nền tảng toán học.
 > Danh sách lệnh vận hành đầy đủ: [`setup_full_command.md`](setup_full_command.md).
+> Danh sách module/giao việc: [`Modular_construct.md`](Modular_construct.md).
 
 ## Mục lục
 
@@ -35,7 +36,7 @@
 | Câu hỏi chính | So sánh Nerfacto và 3DGS trên cùng ảnh/camera/split/phần cứng | Đúng trọng tâm README, đo được và demo được |
 | NeRF runtime | `nerfacto` trong Nerfstudio | Có hash encoding, proposal sampling, scene contraction; phù hợp ảnh thật |
 | 3DGS runtime | `splatfacto` trong Nerfstudio, rasterizer `gsplat` | Chung data/eval/output với Nerfacto; tiết kiệm VRAM hơn code gốc |
-| Framework chung | Nerfstudio `v1.1.5`, commit `6b60855...` | Bản release chính thức mới nhất đã kiểm tra; có Pixi lock stack Linux |
+| Framework chung | Nerfstudio `v1.1.5`, commit `6b60855...` | Một runtime chung; source snapshot và dependency pin được verify |
 | gsplat runtime | `v1.4.0`, do Nerfstudio v1.1.5 pin | Tránh tự nâng version làm sai reproducibility |
 | Pose | COLMAP qua `ns-process-data` | Một lần pose estimation, cả hai model dùng đúng cùng pose |
 | Smoke test | Nerfstudio `poster` | Nhỏ, có sẵn format và sparse points; test cả hai method nhanh |
@@ -46,7 +47,10 @@
 | Eval split benchmark | Mỗi ảnh thứ 8 làm eval (`interval=8`) | Khớp convention phổ biến của Mip-NeRF 360 và parser Nerfstudio |
 | Metric chính | PSNR ↑, SSIM ↑, LPIPS ↓ | Được `ns-eval` tính trên held-out views |
 | Metric hệ thống | wall time, peak VRAM, GPU utilization, model size, render throughput | Trả lời phần “in practice”, không chỉ chất lượng ảnh |
-| Hệ điều hành | Linux native hoặc WSL2; không ưu tiên native Windows | Chính tài liệu Nerfstudio ghi Windows ít được test và dễ vỡ hơn |
+| Hệ điều hành | Native Windows 10/11, PowerShell-only | Khớp workflow người dùng; chấp nhận Windows upstream ít được test và bù bằng exact pins + smoke gate |
+| Environment | Conda `topic16-ns115`; mọi wrapper dùng `conda run` | Pixi của Nerfstudio v1.1.5 chỉ khai báo `linux-64`; không dùng WSL trá hình |
+| CUDA stack | Python 3.10, Torch 2.1.2/cu118, CUDA toolkit 11.8 | Cặp Windows được Nerfstudio hướng dẫn; tương thích A4500 CC 8.6 |
+| Compiler | VS Build Tools, ưu tiên MSVC 14.29 cho CUDA 11.8 | tiny-cuda-nn cần native compiler; giảm lỗi do toolset quá mới |
 
 ### 1.2 Một runtime, nhiều nguồn tham chiếu
 
@@ -182,12 +186,12 @@ luận độc lập.
 ```mermaid
 flowchart TD
     RAW[data/raw\nimmutable inputs] -->|custom only| PROC[data/processed\nCOLMAP + transforms]
-    RAW --> TRAIN[scripts/train.sh]
+    RAW --> TRAIN[scripts/Train.ps1]
     PROC --> TRAIN
-    CFG[configs/project.env\npins + protocol defaults] --> TRAIN
+    CFG[configs/project.psd1\npins + protocol defaults] --> TRAIN
     TRAIN --> RUN[artifacts/runs\nconfig + checkpoints]
     TRAIN --> LOG[artifacts/logs\ncommand + GPU time-series]
-    RUN --> EVAL[scripts/evaluate.sh]
+    RUN --> EVAL[scripts/Evaluate-Run.ps1]
     EVAL --> MET[artifacts/metrics\nmetrics.json]
     EVAL --> REN[artifacts/renders\nGT + predictions]
     MET --> REP[reports]
@@ -243,23 +247,26 @@ Topic_16_CV/
 ├── README.md                       # Đề tài, toán nền và kế hoạch ban đầu
 ├── Construction_architect.md       # Source of truth triển khai (file này)
 ├── setup_full_command.md           # Runbook lệnh copy-paste từ setup đến eval
-├── Makefile                        # Shortcut có thể khám phá bằng `make help`
+├── Modular_construct.md            # Working list P0..P10 + core/production gate
+├── Invoke-Topic16.ps1              # Dispatcher PowerShell có help
 ├── .gitignore                      # Chặn data/checkpoint/upstream source
 ├── .gitattributes                  # Ép LF, đánh dấu binary artifacts
 ├── .editorconfig                   # Quy ước editor/indent/newline
 ├── configs/
-│   └── project.env                 # Version pins + dataset/protocol defaults
+│   └── project.psd1                # PowerShell data: version/dataset/protocol pins
 ├── scripts/
-│   ├── lib/common.sh               # Root paths, helpers, load config
-│   ├── check_environment.sh        # Host/GPU/disk preflight
-│   ├── setup_runtime.sh            # Build Pixi stack + CUDA import validation
-│   ├── download_repos.sh           # Runtime/research repos tại commit pin
-│   ├── download_papers.sh          # 7 PDF cốt lõi
-│   ├── download_datasets.sh        # smoke/benchmark/all, resume + validation
-│   ├── process_capture.sh           # Ảnh custom → COLMAP/Nerfstudio data
-│   ├── monitor_gpu.sh              # GPU/VRAM/temp/power CSV
-│   ├── train.sh                    # Một entrypoint cho cả hai methods
-│   └── evaluate.sh                 # ns-eval + held-out renders
+│   ├── lib/Common.ps1              # Root paths, helpers, config/Conda runner
+│   ├── Install-HostTools.ps1       # Git/Miniconda/MSVC bootstrap
+│   ├── Check-Environment.ps1       # Windows/GPU/disk/runtime preflight
+│   ├── Setup-Runtime.ps1           # Conda + CUDA imports validation
+│   ├── Download-Repositories.ps1   # Exact runtime/research snapshots
+│   ├── Download-Papers.ps1         # 7 PDF cốt lõi
+│   ├── Download-Datasets.ps1       # smoke/benchmark/all, resume + validation
+│   ├── Process-Capture.ps1         # Ảnh custom → COLMAP/Nerfstudio data
+│   ├── Monitor-Gpu.ps1             # GPU/VRAM/temp/power CSV
+│   ├── Train.ps1                   # Training entrypoint cho hai methods
+│   ├── Evaluate-Run.ps1            # Inference/eval held-out views
+│   └── Run-Benchmark.ps1           # Paired sequential experiment matrix
 ├── data/
 │   ├── .cache/                     # Archive download có thể resume, ignored
 │   ├── raw/                        # Input bất biến, ignored trừ README
@@ -301,10 +308,11 @@ Topic_16_CV/
 - Không sửa trực tiếp `third_party/*`; mọi khác biệt cần wrapper trong `src/` hoặc
   patch có mô tả rõ.
 - Không hard-code đường dẫn Windows. Script suy ra project root từ vị trí file.
+- Mọi entrypoint là PowerShell `.ps1`; không thêm Bash/Make/WSL command vào pipeline.
 - Mọi download lớn hỗ trợ resume hoặc idempotent skip; không xóa dữ liệu sẵn có.
 - Mỗi training run có UTC ID riêng; không overwrite run trước.
 - Notebook chỉ khám phá. Code tạo bảng/figure cuối phải chuyển sang `src/topic16`.
-- Secret/API key tuyệt đối không đặt vào `configs/project.env`.
+- Secret/API key tuyệt đối không đặt vào `configs/project.psd1`.
 
 ---
 
@@ -406,8 +414,10 @@ appearance embeddings; tùy chọn camera pose refinement; volume renderer.
 **Repo làm gì.** Cung cấp `ns-process-data`, `ns-train`, `ns-eval`, `ns-render`,
 viewer, exporters, data conventions và nhiều method. Nó là integration layer duy
 nhất của project. Pin `v1.1.5` vì release này có Pixi environment Linux gồm CUDA
-11.8, PyTorch 2.2.x, COLMAP 3.9.x, tiny-cuda-nn/hloc setup; `pyproject.toml` pin
-`gsplat==1.4.0`.
+11.8/PyTorch 2.2.x để tham chiếu và `pyproject.toml` pin `gsplat==1.4.0`. Vì Pixi
+manifest chỉ khai báo `linux-64`, Windows runtime dùng Conda với cặp theo official
+Windows guide: PyTorch 2.1.2/cu118, Python 3.10, COLMAP 3.9.1, gsplat wheel 1.4.0
+pt21/cu118 và tiny-cuda-nn commit đã pin.
 
 **Giới hạn.** Nerfacto là “defacto method”, không phải một paper architecture độc
 lập với ablation đầy đủ cho mọi thành phần. Splatfacto cũng có thể drift khỏi code
@@ -528,10 +538,11 @@ data/raw/custom/object_v1/
 
 Process:
 
-```bash
-bash scripts/process_capture.sh object_v1 \
-  data/raw/custom/object_v1/train \
-  data/raw/custom/object_v1/eval
+```powershell
+.\scripts\Process-Capture.ps1 `
+  -Scene object_v1 `
+  -TrainImages '.\data\raw\custom\object_v1\train' `
+  -EvalImages '.\data\raw\custom\object_v1\eval'
 ```
 
 `ns-process-data --eval-data` giữ split theo filename. Nếu không có eval folder,
@@ -599,7 +610,7 @@ Tổng tối thiểu: 10 runs, trong đó 8 runs đưa vào phân tích. Nếu c
 1. Xác nhận data quality gate và disk space.
 2. Đóng workload GPU khác; ghi driver/GPU/code status.
 3. Warm-up smoke run trước benchmark đầu tiên để compile CUDA kernels.
-4. Train bằng `scripts/train.sh`; script ghi command và GPU series.
+4. Train bằng `scripts/Train.ps1`; script ghi command và GPU series.
 5. Eval bằng exact `config.yml` sinh ra, không reconstruct command bằng trí nhớ.
 6. Kiểm tra GT/prediction count, JSON metrics và NaN.
 7. Đo checkpoint/export size; đánh dấu success/failure bằng manifest sau này.
@@ -628,26 +639,24 @@ change, density ambiguity hoặc Gaussian densification. Không chỉ ghi “ả
 2. Không mở viewer trong lúc đo; `--vis tensorboard` giảm UI/render interference.
 3. Không chạy hai training job cùng lúc; đóng ứng dụng dùng GPU.
 4. Đảm bảo CUDA extension compile trước timed runs bằng poster smoke test.
-5. Đặt WSL swap/RAM đủ; compile tiny-cuda-nn/gsplat có thể cần nhiều system RAM.
+5. Giữ đủ system RAM/pagefile; compile tiny-cuda-nn có thể cần nhiều RAM.
 6. Nếu Splatfacto OOM, trước tiên xác nhận scene/resolution và version; chỉ sau đó
    tạo một **low-memory protocol riêng**. Không đổi densification cho riêng một run
    rồi trộn vào baseline.
 7. Nếu data cache full GPU/RAM ở scene lớn, dùng option cache-to-disk của Splatfacto
    theo docs pinned release; ghi flag đầy đủ trong command log.
 
-### 8.2 WSL2 và đường dẫn hiện tại
+### 8.2 Native Windows và đường dẫn hiện tại
 
-Project hiện nằm dưới `/mnt/d/...`, tương ứng ổ Windows. Đây là đúng yêu cầu lưu local
-folder nhưng I/O nhiều file nhỏ và compilation thường chậm hơn filesystem Linux. Nếu
-thời gian setup hoặc data loading bất thường:
+Project chạy trực tiếp tại `D:\Desktop_informations\...\Topic_16_CV`. PowerShell
+scripts suy ra root bằng `$PSScriptRoot`, vì vậy khoảng trắng và Unicode trong path
+không được xử lý bằng string nối thủ công. Mọi native command nhận argument array;
+runbook luôn quote path copy-paste.
 
-- giữ source-of-truth project/config ở vị trí hiện tại;
-- có thể đặt Pixi cache/environment hoặc working copy runtime trong filesystem Linux;
-- không nhân đôi raw dataset mà không ghi mapping rõ ràng;
-- luôn báo path thực trong `run.env`/command log.
-
-Trong WSL2 dùng NVIDIA Windows driver hỗ trợ WSL. Không cài Linux display driver đè
-lên WSL. `nvidia-smi` phải thấy RTX A4500 trước khi setup Python.
+Conda environment độc lập với project data; wrapper dùng `conda run -n
+topic16-ns115` nên không dựa vào `conda activate`. Nerfstudio ghi rõ Windows ít được
+test hơn Linux; do đó exact pin, precompiled gsplat wheel, MSVC gate và poster smoke
+test là điều kiện bắt buộc, không phải bước tùy chọn.
 
 ### 8.3 Nhiệt và power
 
@@ -667,56 +676,36 @@ smoke test, chạy một pair `bonsai` để hiệu chỉnh schedule rồi mới
 
 ### 9.1 Prerequisites
 
-- Linux x86-64 hoặc WSL2 Ubuntu.
+- Windows 10/11 x64 và Windows PowerShell 5.1+ hoặc PowerShell 7.
 - NVIDIA driver nhìn thấy GPU qua `nvidia-smi`.
-- `git`, `curl`, `unzip`, `ffmpeg`; đủ disk.
-- Pixi. Nerfstudio official docs hiện khuyến nghị Pixi trên Linux và tag v1.1.5 đã
-  định nghĩa CUDA 11.8, PyTorch 2.2.x, COLMAP 3.9.x.
+- Git, Miniconda và Visual Studio Build Tools với C++ workload/MSVC v142.
+- Ít nhất 20 GiB trống trước dataset; 30–40 GiB thực tế cho data + artifacts.
 
 Kiểm tra host:
 
-```bash
-# Ubuntu/WSL, chạy một lần nếu thiếu host tools:
-sudo apt update && sudo apt install -y git curl unzip ffmpeg ripgrep
-
-# Cài Pixi theo installer chính thức nếu máy chưa có:
-curl -fsSL https://pixi.sh/install.sh | bash
-
-make check
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\Check-Environment.ps1
+.\scripts\Install-HostTools.ps1 -InstallBuildTools  # chỉ khi preflight báo thiếu
 ```
 
 ### 9.2 Fetch runtime đã pin
 
-```bash
-make repos
-make setup
-cd third_party/nerfstudio && pixi shell
-cd ../..
+```powershell
+.\scripts\Download-Repositories.ps1 -Mode runtime
+.\scripts\Setup-Runtime.ps1
+.\scripts\Check-Environment.ps1 -RequireRuntime
 ```
 
-`download_repos.sh` checkout detached exact commit và verify SHA. `post-install` do
-upstream cung cấp sẽ cài hloc và tiny-cuda-nn. Không chạy `pip install gsplat main`
-đè lên pin của Nerfstudio.
-
-Sau khi activate:
-
-```bash
-python - <<'PY'
-import torch
-import gsplat
-import nerfstudio
-print("torch", torch.__version__, "cuda", torch.version.cuda)
-print("gpu", torch.cuda.get_device_name(0))
-print("gsplat", getattr(gsplat, "__version__", "unknown"))
-print("nerfstudio", getattr(nerfstudio, "__version__", "unknown"))
-PY
-```
+Downloader checkout detached exact SHA. Setup tạo Conda env, cài CUDA toolkit,
+COLMAP/FFmpeg, PyTorch, exact source Nerfstudio, wheel gsplat và build tiny-cuda-nn
+cho CC 8.6. Không activate; wrapper luôn dùng `conda run`.
 
 ### 9.3 Paper/repo research library
 
-```bash
-make papers
-bash scripts/download_repos.sh research
+```powershell
+.\scripts\Download-Papers.ps1
+.\scripts\Download-Repositories.ps1 -Mode research
 ```
 
 Các repo research khá lớn, đặc biệt repo có submodules. Không cần tải để chạy
@@ -724,44 +713,42 @@ benchmark; chỉ chạy khi người phụ trách paper cần đọc implementat
 
 ### 9.4 Smoke gate
 
-```bash
-make data-smoke
-bash scripts/train.sh nerfacto poster
-bash scripts/train.sh splatfacto poster
+```powershell
+.\scripts\Download-Datasets.ps1 -Mode smoke
+.\scripts\Train.ps1 -Method nerfacto -Dataset poster
+.\scripts\Train.ps1 -Method splatfacto -Dataset poster
 ```
 
 Sau mỗi run, lấy path `config.yml` được in ra và chạy:
 
-```bash
-bash scripts/evaluate.sh artifacts/runs/poster/nerfacto/<UTC-ID>/config.yml
-bash scripts/evaluate.sh artifacts/runs/poster/splatfacto/<UTC-ID>/config.yml
+```powershell
+.\scripts\Evaluate-Run.ps1 -ConfigPath '.\artifacts\runs\poster\nerfacto\<UTC-ID>\config.yml'
+.\scripts\Evaluate-Run.ps1 -ConfigPath '.\artifacts\runs\poster\splatfacto\<UTC-ID>\config.yml'
 ```
 
 Gate pass khi cả hai train, save checkpoint, `ns-eval` sinh JSON và không OOM/NaN.
 
 ### 9.5 Benchmark data và runs
 
-```bash
-make data-benchmark
-
-for scene in garden bonsai room; do
-  bash scripts/train.sh nerfacto "$scene"
-  bash scripts/train.sh splatfacto "$scene"
-done
+```powershell
+.\scripts\Download-Datasets.ps1 -Mode benchmark
+.\scripts\Run-Benchmark.ps1 -Scenes bonsai  # calibration pair trước
+.\scripts\Run-Benchmark.ps1 -Scenes garden,room
 ```
 
-Download chính thức có dung lượng 12.5 GB; script không tự chạy trong quá trình
-scaffold để tránh tiêu tốn bandwidth/disk ngoài ý muốn.
+Download chính thức có dung lượng 12.5 GB, resume và exact-byte validation. Benchmark
+chạy tuần tự để không có hai workload tranh 16 GB VRAM.
 
 ### 9.6 Custom capture
 
-```bash
-bash scripts/process_capture.sh object_v1 \
-  data/raw/custom/object_v1/train \
-  data/raw/custom/object_v1/eval
+```powershell
+.\scripts\Process-Capture.ps1 `
+  -Scene object_v1 `
+  -TrainImages '.\data\raw\custom\object_v1\train' `
+  -EvalImages '.\data\raw\custom\object_v1\eval'
 
-bash scripts/train.sh nerfacto custom:object_v1
-bash scripts/train.sh splatfacto custom:object_v1
+.\scripts\Train.ps1 -Method nerfacto -Dataset 'custom:object_v1'
+.\scripts\Train.ps1 -Method splatfacto -Dataset 'custom:object_v1'
 ```
 
 ### 9.7 Truyền override có kiểm soát
@@ -769,8 +756,8 @@ bash scripts/train.sh splatfacto custom:object_v1
 Các argument sau dataset key được chuyển thẳng tới `ns-train`, ví dụ một diagnostic
 run ngắn:
 
-```bash
-bash scripts/train.sh nerfacto poster --max-num-iterations 1000
+```powershell
+.\scripts\Train.ps1 -Method nerfacto -Dataset poster --max-num-iterations 1000
 ```
 
 Lưu ý argument lặp sau sẽ override giá trị trước theo parser behavior; command đầy
@@ -826,7 +813,7 @@ Nếu thiếu một mục, đánh dấu incomplete và không aggregate tự đ�
 ```text
 dataset key: poster | garden | bonsai | room | custom:<slug>
 method:      nerfacto | splatfacto
-run id:      YYYYMMDDTHHMMSSZ (UTC)
+run id:      YYYYMMDDTHHMMSSfffZ (UTC, millisecond precision)
 ```
 
 Không dùng tên `final`, `final2`, `best_new`. Selection “best” phải diễn ra ở report
@@ -845,36 +832,18 @@ manifest, không rename artifact gốc.
 
 ## 11. Roadmap triển khai
 
-### Phase A — Infrastructure gate
+Roadmap executable và Definition of Done chi tiết nằm trong
+[`Modular_construct.md`](Modular_construct.md). Thứ tự bắt buộc:
 
-- [x] Chốt runtime và pin upstream commits.
-- [x] Scaffold folder/data/artifact contracts.
-- [x] Viết downloader dataset/repo/paper và train/eval wrappers.
-- [ ] Cài Pixi runtime thực tế trên máy A4500.
-- [ ] Cả Nerfacto/Splatfacto pass poster smoke gate.
+1. `P0–P1`: Windows runtime và contracts.
+2. `P2–P3`: official datasets, phone capture, pose và frozen split.
+3. `P4`: training core; `P5`: inference/evaluation core.
+4. `P6`: paired benchmark; `P7`: analysis và gate `G-Core`.
+5. Chỉ khi `G-Core` PASS mới làm `P8–P9` production/demo.
+6. `P10` QA chạy xuyên suốt nhưng GPU smoke nằm trên laptop mục tiêu.
 
-### Phase B — Primary benchmark
-
-- [ ] Tải/extract `garden`, `bonsai`, `room`.
-- [ ] Kiểm tra split và image count.
-- [ ] Chạy pair `bonsai`, xác nhận 16 GB guardrail.
-- [ ] Chạy đủ 6 benchmark runs.
-- [ ] Eval, kiểm tra metric JSON và failure frames.
-
-### Phase C — Phone capture
-
-- [ ] Chốt object/scene và capture checklist.
-- [ ] Chụp train/eval tách biệt.
-- [ ] COLMAP quality gate ≥90% registered train images.
-- [ ] Chạy hai methods, render cùng camera path.
-
-### Phase D — Analysis and delivery
-
-- [ ] Aggregate quality/system metrics.
-- [ ] Chọn cùng held-out frames/crops.
-- [ ] Tạo bảng, plots và failure taxonomy.
-- [ ] Viewer demo + video fallback.
-- [ ] Report có citations, limitations, exact versions và reproduction commands.
+Ranh giới này ngăn tình trạng dựng UI/production quanh model chưa train/evaluate
+đúng, hoặc dùng training views như inference evidence.
 
 ### Thứ tự đầu tư sâu
 
@@ -894,9 +863,9 @@ manifest, không rename artifact gốc.
 
 | Rủi ro | Dấu hiệu sớm | Guardrail/response |
 |---|---|---|
-| CUDA/PyTorch/compiler lệch | build gsplat/tcnn fail | Dùng Pixi upstream pinned; không pip-upgrade tùy tiện |
-| WSL GPU không thấy | `nvidia-smi` fail | Sửa driver/WSL trước Python setup |
-| I/O `/mnt/d` chậm | compile/load treo lâu, GPU starvation | Đưa env/cache sang Linux FS có ghi provenance |
+| CUDA/PyTorch/compiler lệch | build tcnn/import gsplat fail | Conda exact pins, gsplat Windows wheel, MSVC gate; không pip-upgrade tùy tiện |
+| Windows GPU không thấy | `nvidia-smi` fail | Sửa NVIDIA Windows driver trước Python setup |
+| MSVC quá mới cho CUDA 11.8 | nvcc rejects compiler | Cài/activate v142 14.29; không nâng stack giữa protocol |
 | 3DGS OOM | VRAM tăng theo densification | 1/2 resolution; no viewer; low-memory protocol riêng nếu cần |
 | COLMAP register thấp | camera cluster rời, sparse cloud sai | Capture lại/tăng overlap, không tune model để chữa pose |
 | Data leakage | metrics quá cao, eval frame trùng train | Frozen interval/filename split, inspect file lists |
@@ -910,7 +879,7 @@ manifest, không rename artifact gốc.
 
 Project v1 hoàn thành khi:
 
-- Tất cả script shell pass syntax check.
+- Tất cả PowerShell scripts pass parser/PSScriptAnalyzer checks.
 - Poster pass end-to-end cho hai methods.
 - Ba benchmark scenes có đủ paired runs và eval JSON.
 - Custom scene có explicit held-out views, COLMAP quality gate và paired runs.
@@ -921,14 +890,14 @@ Project v1 hoàn thành khi:
 
 ### 12.3 Các kiểm tra local hiện có
 
-```bash
-bash -n scripts/*.sh scripts/lib/*.sh
-make help
-bash scripts/check_environment.sh
+```powershell
+.\Invoke-Topic16.ps1 help
+.\scripts\Check-Environment.ps1
+.\scripts\Check-Environment.ps1 -RequireRuntime
 ```
 
-ShellCheck nên thêm vào CI khi tool có sẵn. Không cần CI GPU training; CI chỉ validate
-scripts/unit tests/config, còn GPU smoke test chạy trên máy mục tiêu.
+CI chỉ parse/lint PowerShell, unit test code nhóm và validate contracts; GPU poster
+smoke chạy trên RTX A4500 mục tiêu.
 
 ---
 
@@ -973,6 +942,6 @@ blueprint ngày 2026-09-21.
 
 ### Pin registry in this repo
 
-`configs/project.env` là registry executable cho exact commits, dataset size, selected
+`configs/project.psd1` là registry executable cho exact commits, dataset size, selected
 scenes và protocol defaults. Khi nâng version, tạo một change có review, rerun smoke
 gate, và không trộn kết quả trước/sau upgrade trong cùng bảng.

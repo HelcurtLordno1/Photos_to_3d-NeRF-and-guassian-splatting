@@ -157,35 +157,35 @@ flowchart TD
     C --> E["STAGE 3B: Splatfacto — Nerfstudio/gsplat<br/>• ns-train splatfacto<br/>• Initialize from COLMAP sparse points<br/>• Differentiable rasterization + densification<br/>• Output: config + checkpoint; Gaussian PLY export"]
     D --> F["STAGE 4: Evaluation & Comparison<br/>• PSNR, SSIM, LPIPS on held-out test views<br/>• Wall-clock training time by stage<br/>• Interactive-viewer rendering FPS<br/>• Peak VRAM via nvidia-smi<br/>• Model disk footprint<br/>• Visual artifacts and extrapolation"]
     E --> F
-    F --> G["STAGE 5: Demo & Presentation<br/>• Nerfstudio viewer<br/>• Video flythroughs<br/>• Side-by-side dashboard<br/>• Reproducible pinned Pixi repository"]
+    F --> G["STAGE 5: Demo & Presentation<br/>• Nerfstudio viewer<br/>• Video flythroughs<br/>• Side-by-side dashboard<br/>• Reproducible native-Windows repository"]
 ```
 
 ### 3.2 Repository Ecosystem & Dependency Matching
 
 This is the critical path — mismatched CUDA/PyTorch versions are the #1 cause of project abandonment. Here is a tested, coherent stack.
 
-#### Recommended Stack (Pinned Pixi Environment)
+#### Recommended Stack (Pinned Native Windows Conda Environment)
 
 | Component | Version | Rationale |
 |---|---|---|
 | CUDA | 11.8 | Tested with Nerfstudio; stable with A4500 (Ampere, CC 8.6) |
-| PyTorch | 2.2.x (cu118) | Pinned by the Nerfstudio v1.1.5 Pixi environment |
+| PyTorch | 2.1.2 (cu118) | Official Nerfstudio Windows-compatible pair |
 | Python | 3.10 | Best compatibility across all libraries |
 | Nerfstudio | v1.1.5 | Pinned release; modular framework and common evaluator |
 | gsplat | 1.4.0 | Exact version required by Nerfstudio v1.1.5 |
-| COLMAP | 3.9.x | Pinned by the upstream Pixi environment |
-| tiny-cuda-nn | Resolved by upstream Pixi lock | Required by Nerfstudio for fast MLP |
+| COLMAP | 3.9.1 | Pinned native Windows Conda package |
+| tiny-cuda-nn | Exact Git commit, CC 8.6 | Required by Nerfstudio for fast MLP |
 
 #### Installation Order (Critical)
 
-1. **Driver/WSL:** `nvidia-smi` must see the RTX A4500. Under WSL2, use the NVIDIA Windows driver; do not install a Linux display driver over it.
-2. **Host tools:** install Git, curl, unzip, FFmpeg, ripgrep, then install Pixi.
-3. **Pinned runtime:** run `make repos && make setup`; the upstream Pixi task installs CUDA 11.8, PyTorch 2.2.x, tiny-cuda-nn, Nerfstudio, gsplat and COLMAP as one coherent stack.
-4. **Activation:** run `cd third_party/nerfstudio && pixi shell`, then return to this project directory. Do not overlay newer packages on the benchmark environment.
+1. **Driver:** `nvidia-smi` in native Windows PowerShell must see the RTX A4500.
+2. **Host tools:** install Git, Miniconda and Visual Studio Build Tools C++/MSVC v142.
+3. **Pinned runtime:** run `.\scripts\Setup-Runtime.ps1`; it creates an isolated Conda environment and validates CUDA imports.
+4. **Execution:** wrappers use `conda run -n topic16-ns115`; no manual activation or WSL path translation.
 
 #### Alternative: Official Container
 
-The official Nerfstudio documentation also describes its GHCR container. Treat it as a separate protocol and pin an immutable image digest before collecting results; do not mix container and Pixi runs in one results table.
+The official Nerfstudio documentation also describes its GHCR container. Treat it as a separate protocol and do not mix container results with this native Windows protocol.
 
 ## 4. Dataset Strategy
 
@@ -201,7 +201,7 @@ The project must be executable without requiring you to capture hundreds of perf
 
 | Property | Value |
 |---|---|
-| Download | `make data-smoke` |
+| Download | `.\scripts\Download-Datasets.ps1 -Mode smoke` |
 | Scene | `poster` |
 | Camera poses | Included in Nerfstudio format, with sparse initialization data |
 | Why use it first | Small official capture that exercises the same Nerfstudio interfaces used by both methods |
@@ -212,7 +212,7 @@ The project must be executable without requiring you to capture hundreds of perf
 
 | Property | Value |
 |---|---|
-| Download | `make data-benchmark` (resume, size and ZIP validation included) |
+| Download | `.\scripts\Download-Datasets.ps1 -Mode benchmark` (resume and size validation included) |
 | Archive size | 12,535,427,936 bytes; only three selected scenes are extracted |
 | Selected scenes | `garden`, `bonsai`, `room` |
 | Camera poses | COLMAP output included for most scenes |
@@ -240,14 +240,14 @@ The project must be executable without requiring you to capture hundreds of perf
 | Rendering FPS | TBD at a fixed resolution/path | TBD at the same resolution/path |
 | Peak system RAM | TBD during setup/training | TBD during setup/training |
 
-> **System RAM note:** If your ThinkPad has 16 GB RAM, compile gsplat with all other applications closed. If you have 32 GB, you have headroom for parallel processes.
+> **System RAM note:** If your ThinkPad has 16 GB RAM, compile tiny-cuda-nn with all other applications closed. Even with 32 GB, do not run parallel GPU training jobs.
 
 ### 5.2 Performance Monitoring Protocol
 
 Track these metrics with `nvidia-smi` (run in a separate terminal every 10 seconds):
 
-```bash
-nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv -l 10
+```powershell
+.\scripts\Monitor-Gpu.ps1 -Output .\artifacts\logs\manual_gpu.csv -IntervalSeconds 10
 ```
 
 Log: GPU utilization %, VRAM used (GB), GPU temperature (°C). This data goes directly into your report's resource-consumption section.
@@ -271,7 +271,7 @@ Log: GPU utilization %, VRAM used (GB), GPU temperature (°C). This data goes di
 
 **Goal:** Prove the hardware and software stack works.
 
-1. Install the pinned Nerfstudio v1.1.5 Pixi stack (CUDA 11.8, PyTorch 2.2.x, gsplat 1.4.0).
+1. Install the pinned native Windows stack (Nerfstudio 1.1.5, CUDA 11.8, PyTorch 2.1.2, gsplat 1.4.0).
 2. Download the Nerfstudio `poster` smoke scene.
 3. Train Nerfacto and require a saved checkpoint plus finite held-out metrics.
 4. Train Splatfacto and require a saved checkpoint plus finite held-out metrics.
@@ -354,7 +354,7 @@ Log: GPU utilization %, VRAM used (GB), GPU temperature (°C). This data goes di
 
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| tiny-cuda-nn fails to compile | High | High | Rebuild the exact Pixi environment; use a pinned official container only as a separate fallback protocol. |
+| tiny-cuda-nn fails to compile | High | High | Use the pinned MSVC v142/CUDA 11.8 stack and rerun exact PowerShell setup; do not upgrade packages ad hoc. |
 | COLMAP fails on phone photos | Medium | Medium | Use `ns-process-data`, which handles common failures. Fall back to Mip-NeRF 360. |
 | VRAM OOM during training | Medium | Medium | Keep the shared half-resolution baseline; if needed, define a separately named low-memory protocol rather than silently changing one method. |
 | GPU overheating | Low | Low | Monitor temperature/power. If the team applies a power cap, use the same cap for every run and record it. |
@@ -366,7 +366,7 @@ Log: GPU utilization %, VRAM used (GB), GPU temperature (°C). This data goes di
 ```text
 Topic_16_CV/
 ├── setup_full_command.md        # Complete copy-paste command runbook
-├── configs/project.env          # Version pins + protocol defaults
+├── configs/project.psd1         # Version pins + protocol defaults
 ├── scripts/                     # Setup/download/process/train/evaluate/monitor
 ├── data/{raw,processed}/        # Immutable inputs and derived camera data
 ├── third_party/                 # Pinned upstream snapshots, Git-ignored

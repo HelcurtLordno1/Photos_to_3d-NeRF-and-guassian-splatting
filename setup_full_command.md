@@ -1,628 +1,445 @@
-# Full Setup & Command Runbook
+# Full PowerShell Setup & Command Runbook
 
 > Dự án: **Photos to 3D — Nerfacto vs Splatfacto/3D Gaussian Splatting**
-> Runtime chuẩn: **WSL2/Linux + Nerfstudio v1.1.5 + gsplat 1.4.0**
-> Protocol chuẩn: **30k iterations, seed 42, downscale 2, eval interval 8**
-> Kiến trúc và lý do chọn từng thành phần: [`Construction_architect.md`](Construction_architect.md)
+> Runtime: **native Windows PowerShell only**
+> Máy đích: **RTX A4500 Laptop 16 GB, compute capability 8.6**
+> Protocol: **30k iterations, seed 42, downscale 2, eval interval 8**
+> Kiến trúc: [`Construction_architect.md`](Construction_architect.md)
+> Working list: [`Modular_construct.md`](Modular_construct.md)
 
-Tài liệu này là danh sách lệnh vận hành đầy đủ. Chạy theo thứ tự; không cần tự clone
-hoặc `pip install` phiên bản khác ngoài các script đã cung cấp.
+Trạng thái setup được kiểm chứng trên laptop ngày 2026-09-23:
+[`docs/setup_status_2026-09-23.md`](docs/setup_status_2026-09-23.md). Runtime và
+dataset **chưa hoàn tất** trên máy này; xem điều kiện MSVC v142 và tốc độ tải trong
+báo cáo trước khi chạy training.
 
-## 0. Quy ước quan trọng
+Không chạy lệnh trong WSL, Git Bash hoặc CMD. Mọi block dưới đây chạy trong
+**Windows PowerShell** tại project root. Script dùng `conda run`, vì vậy không cần
+`conda activate` và không phụ thuộc trạng thái terminal.
 
-- Các command bên dưới chạy trong **Ubuntu/WSL2 Bash**, không chạy trực tiếp trong
-  Windows CMD.
-- Đường dẫn Windows `D:\Desktop_informations\...\Topic_16_CV` tương ứng với:
-
-  ```bash
-  /mnt/d/Desktop_informations/SGK năm 4/SGK kì 1 năm 4/ComputerVision - MToan/CVCourse/Project/Topic_16_CV
-  ```
-
-- Luôn đặt đường dẫn có khoảng trắng trong dấu nháy kép.
-- Không cài `gsplat main`, Nerfstudio `main` hoặc PyTorch khác đè lên runtime pin.
-- Dataset, paper PDF, third-party repos và checkpoints đã được `.gitignore`.
-- Không chạy đồng thời hai training job trên RTX A4500 16 GB.
-
-## 1. Mở WSL và vào project
-
-### 1.1 Project đã có sẵn trên ổ D
-
-Từ PowerShell:
+## 1. Dataset commands — đặt ở đầu để dễ tìm
 
 ```powershell
-wsl --update
-wsl
+# Vào đúng project (giữ dấu nháy vì path có khoảng trắng)
+Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-ExecutionPolicy -Scope Process Bypass
+
+# Benchmark chính: tải archive Mip-NeRF 360 chính thức, resume được,
+# kiểm tra đúng 12,535,427,936 bytes và chỉ giải nén garden/bonsai/room.
+.\scripts\Download-Datasets.ps1 -Mode benchmark
+
+# Smoke data nhỏ: chạy sau khi runtime ở section 4 đã setup xong.
+.\scripts\Download-Datasets.ps1 -Mode smoke
+
+# Hoặc tải cả hai profiles sau khi runtime đã sẵn sàng.
+.\scripts\Download-Datasets.ps1 -Mode all
 ```
 
-Trong WSL Bash:
+Benchmark download cần tối thiểu 20 GiB trống; nên giữ 30–40 GiB cho data, model và
+renders. Archive được cache tại `data\.cache\360_v2.zip`; không xóa nếu muốn rerun
+không tải lại. Không commit dataset/archive lên Git.
 
-```bash
-cd "/mnt/d/Desktop_informations/SGK năm 4/SGK kì 1 năm 4/ComputerVision - MToan/CVCourse/Project/Topic_16_CV"
-pwd
-```
+## 2. Quy ước PowerShell-only
 
-### 1.2 Hoặc clone mới từ GitHub
+- PowerShell 5.1 đi kèm Windows dùng được; PowerShell 7 cũng dùng được.
+- Không chạy `make`, `.sh`, `bash`, `wsl` hoặc đổi path thành `/mnt/d/...`.
+- Không `pip install --upgrade` thủ công trong base Conda.
+- Tất cả pin nằm trong `configs\project.psd1`.
+- Không chạy hai training jobs cùng lúc trên GPU 16 GB.
+- Không mở viewer trong timed training.
+- Production bị khóa cho đến khi `G-Core` trong `Modular_construct.md` PASS.
 
-```bash
-cd /path/to/your/workspace
-git clone https://github.com/HelcurtLordno1/Photos_to_3d-NeRF-and-guassian-splatting.git Topic_16_CV
-cd Topic_16_CV
-```
+## 3. Mở PowerShell và preflight host
 
-Từ đây về sau, lưu root để quay lại sau khi activate environment:
+```powershell
+Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-ExecutionPolicy -Scope Process Bypass
+$Topic16Root = (Get-Location).Path
 
-```bash
-export TOPIC16_ROOT="$(pwd -P)"
-```
-
-## 2. Cài host tools một lần
-
-```bash
-sudo apt update
-sudo apt install -y \
-  build-essential \
-  git \
-  curl \
-  unzip \
-  ffmpeg \
-  make \
-  ripgrep
-```
-
-Kiểm tra GPU. Lệnh này phải thấy `NVIDIA RTX A4500 Laptop GPU` và khoảng 16384 MiB:
-
-```bash
-nvidia-smi
+.\Invoke-Topic16.ps1 help
+.\scripts\Check-Environment.ps1
 nvidia-smi --query-gpu=name,driver_version,memory.total,compute_cap --format=csv
+Get-PSDrive -Name D | Select-Object Name,@{N='FreeGiB';E={[math]::Round($_.Free/1GB,1)}}
 ```
 
-Trong WSL2, không cài Linux NVIDIA display driver đè lên Windows NVIDIA driver. Pixi
-sẽ cung cấp CUDA toolkit/runtime phù hợp cho environment của project.
+Preflight phải thấy `NVIDIA RTX A4500 Laptop GPU`, khoảng `16384 MiB` và compute
+capability `8.6`. Dừng ở đây nếu `nvidia-smi`, Git hoặc Conda missing.
 
-## 3. Cài Pixi
+### 3.1 Cài host tools nếu thiếu
 
-```bash
-curl -fsSL https://pixi.sh/install.sh | bash
-source ~/.bashrc
-pixi --version
+```powershell
+# Kiểm tra/cài Git và Miniconda qua winget.
+.\scripts\Install-HostTools.ps1
+
+# Mở riêng Windows PowerShell bằng "Run as administrator" cho lệnh này.
+# Cài Visual Studio Build Tools + C++ + MSVC v142 để build tiny-cuda-nn.
+Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\Install-HostTools.ps1 -InstallBuildTools
 ```
 
-Nếu `pixi` vẫn chưa có trong `PATH`, đóng terminal WSL, mở lại và `cd` về project.
+Sau khi winget cài mới, đóng PowerShell, mở lại, vào project và chạy preflight lại.
+Script runtime sẽ cài CUDA toolkit, COLMAP, FFmpeg và Ninja **trong Conda env**;
+không cần cài các bản global riêng.
 
-## 4. Preflight host
+## 4. Tạo native Windows runtime đã pin
 
-```bash
-cd "$TOPIC16_ROOT"
-make help
-make check
+| Component | Pin |
+|---|---|
+| Conda environment | `topic16-ns115` |
+| Python | 3.10 |
+| PyTorch / torchvision | 2.1.2+cu118 / 0.16.2+cu118 |
+| CUDA toolkit | 11.8.0 |
+| Nerfstudio | v1.1.5, exact commit |
+| gsplat | 1.4.0 Windows wheel for pt21/cu118 |
+| tiny-cuda-nn | exact commit, build for CC 8.6 |
+| COLMAP | 3.9.1 |
+
+```powershell
+Set-Location $Topic16Root
+.\scripts\Download-Repositories.ps1 -Mode runtime
+.\scripts\Setup-Runtime.ps1
+.\scripts\Check-Environment.ps1 -RequireRuntime
 ```
 
-Trước khi environment được activate, dòng `ns-train pending` là bình thường. Các
-host tools hoặc `nvidia-smi` bị `missing` thì phải sửa trước bước tiếp theo.
+Không dùng Pixi: Nerfstudio v1.1.5 khai báo Pixi platform `linux-64`; native Windows
+đi theo official Conda/PyTorch/MSVC path. Setup ưu tiên precompiled gsplat wheel để
+giảm rủi ro compile, nhưng tiny-cuda-nn vẫn cần MSVC.
 
-Kiểm tra disk:
+### 4.1 Kiểm tra thủ công không activate
 
-```bash
-df -h "$TOPIC16_ROOT"
-du -sh "$TOPIC16_ROOT"
+```powershell
+conda run --no-capture-output -n topic16-ns115 python -c "import torch,gsplat,nerfstudio,tinycudann; print(torch.__version__, torch.version.cuda); print(torch.cuda.get_device_name(0)); print(gsplat.__version__)"
+conda run --no-capture-output -n topic16-ns115 ns-train --help
+conda run --no-capture-output -n topic16-ns115 ns-process-data --help
+conda run --no-capture-output -n topic16-ns115 ns-eval --help
+conda run --no-capture-output -n topic16-ns115 colmap -h
 ```
 
-Nên còn tối thiểu 20 GiB để downloader benchmark chạy; thực tế nên dự trù 30–40 GiB
-cho archive, ba scene, checkpoint và renders.
+### 4.2 Rebuild sạch environment khi thật sự cần
 
-## 5. Clone runtime repo và tạo environment
+Lệnh này xóa **chỉ Conda env có tên đã pin**, không xóa dataset/artifacts:
 
-Lệnh `make repos` clone đúng commit Nerfstudio đã pin vào `third_party/nerfstudio`:
-
-```bash
-cd "$TOPIC16_ROOT"
-make repos
-make setup
+```powershell
+.\scripts\Setup-Runtime.ps1 -RebuildEnvironment
 ```
 
-`make setup` chạy upstream Pixi `post-install`, cài COLMAP/hloc/tiny-cuda-nn và kiểm
-tra PyTorch có nhìn thấy CUDA hay không.
+## 5. Tải dữ liệu và kiểm tra layout
 
-### 5.1 Activate environment trong terminal hiện tại
+```powershell
+Set-Location $Topic16Root
+.\scripts\Download-Datasets.ps1 -Mode smoke
 
-```bash
-cd "$TOPIC16_ROOT/third_party/nerfstudio"
-pixi shell
+Test-Path .\data\raw\nerfstudio\poster\transforms.json
+Get-ChildItem .\data\raw\nerfstudio\poster -Directory
 ```
 
-Sau khi prompt Pixi xuất hiện, quay về project:
+Benchmark có thể tải trước hoặc sau smoke gate:
 
-```bash
-cd "$TOPIC16_ROOT"
+```powershell
+.\scripts\Download-Datasets.ps1 -Mode benchmark
+
+foreach ($scene in 'garden','bonsai','room') {
+    if (-not (Test-Path ".\data\raw\mipnerf360\$scene\images_2")) { throw "Missing images_2: $scene" }
+    if (-not (Test-Path ".\data\raw\mipnerf360\$scene\sparse\0")) { throw "Missing sparse/0: $scene" }
+    Write-Host "$scene OK"
+}
+Get-Item .\data\.cache\360_v2.zip | Select-Object FullName,Length
 ```
 
-Mỗi terminal mới cần lặp lại hai lệnh activate trên trước khi chạy `ns-*`, training
-hoặc evaluation.
+## 6. Smoke gate: training và inference tách riêng
 
-### 5.2 Kiểm tra runtime sau activate
+### 6.1 Training core
 
-```bash
-which python
-which ns-train
-ns-train --help
-ns-process-data --help
-ns-eval --help
-
-python - <<'PY'
-import torch
-import gsplat
-import nerfstudio
-
-print("torch:", torch.__version__)
-print("torch CUDA:", torch.version.cuda)
-print("CUDA available:", torch.cuda.is_available())
-print("GPU:", torch.cuda.get_device_name(0))
-print("gsplat:", getattr(gsplat, "__version__", "unknown"))
-print("nerfstudio:", getattr(nerfstudio, "__version__", "unknown"))
-PY
-
-make check
-```
-
-## 6. Download paper và source repo nghiên cứu
-
-### 6.1 Bảy PDF paper cốt lõi
-
-```bash
-cd "$TOPIC16_ROOT"
-make papers
-ls -lh docs/research/papers/
-```
-
-### 6.2 Reference repositories
-
-Không cần bước này để train. Chỉ tải khi cần đọc/tái lập code paper:
-
-```bash
-bash scripts/download_repos.sh research
-```
-
-Lệnh trên lấy exact commits của:
-
-- original NeRF,
-- MultiNeRF,
-- Instant-NGP và submodules,
-- original INRIA Gaussian Splatting và submodules,
-- gsplat,
-- COLMAP.
-
-Tải cả runtime lẫn reference repos trong một lệnh:
-
-```bash
-bash scripts/download_repos.sh all
-```
-
-Kiểm tra các snapshot:
-
-```bash
-for repo in third_party/*/.git; do
-  repo_dir="${repo%/.git}"
-  printf '%-45s ' "$repo_dir"
-  git -C "$repo_dir" rev-parse --short HEAD
-done
-```
-
-## 7. Download datasets đã chốt
-
-### 7.1 Smoke dataset: Nerfstudio poster
-
-Phải chạy trong Pixi environment đã activate:
-
-```bash
-cd "$TOPIC16_ROOT"
-make data-smoke
-```
-
-Kiểm tra:
-
-```bash
-test -f data/raw/nerfstudio/poster/transforms.json
-find data/raw/nerfstudio/poster -maxdepth 2 -type d | sort
-```
-
-### 7.2 Benchmark: Mip-NeRF 360
-
-Lệnh này tải archive chính thức 12,535,427,936 bytes, hỗ trợ resume, kiểm tra size và
-ZIP, sau đó chỉ extract `garden`, `bonsai`, `room`:
-
-```bash
-cd "$TOPIC16_ROOT"
-make data-benchmark
-```
-
-Hoặc gọi trực tiếp:
-
-```bash
-bash scripts/download_datasets.sh benchmark
-```
-
-Download cả smoke và benchmark:
-
-```bash
-bash scripts/download_datasets.sh all
-```
-
-Kiểm tra layout:
-
-```bash
-for scene in garden bonsai room; do
-  test -d "data/raw/mipnerf360/$scene/images_2"
-  test -d "data/raw/mipnerf360/$scene/sparse/0"
-  echo "$scene: OK"
-done
-
-du -sh data/.cache/360_v2.zip data/raw/mipnerf360/*
-```
-
-Giữ `data/.cache/360_v2.zip`: lần chạy sau downloader sẽ kiểm tra và bỏ qua network
-download. Không commit hoặc upload archive vào GitHub.
-
-## 8. Smoke gate bắt buộc
-
-Đảm bảo Pixi environment đang active và không có workload GPU khác:
-
-```bash
+```powershell
+Set-Location $Topic16Root
 nvidia-smi
-cd "$TOPIC16_ROOT"
+.\scripts\Train.ps1 -Method nerfacto -Dataset poster
+.\scripts\Train.ps1 -Method splatfacto -Dataset poster
 ```
 
-Train cả hai methods:
+Hai lệnh phải tạo checkpoint/config và provenance dưới:
 
-```bash
-bash scripts/train.sh nerfacto poster
-bash scripts/train.sh splatfacto poster
+```text
+artifacts\runs\poster\<method>\<UTC-ID>\
+artifacts\logs\poster\<method>\<UTC-ID>\
 ```
 
-Lấy config mới nhất:
+### 6.2 Chọn exact config vừa train
 
-```bash
-NERF_POSTER_CONFIG="$(find artifacts/runs/poster/nerfacto -mindepth 2 -maxdepth 2 -type f -name config.yml | sort | tail -n 1)"
-SPLAT_POSTER_CONFIG="$(find artifacts/runs/poster/splatfacto -mindepth 2 -maxdepth 2 -type f -name config.yml | sort | tail -n 1)"
+```powershell
+$NerfPosterConfig = Get-ChildItem .\artifacts\runs\poster\nerfacto -Filter config.yml -File -Recurse |
+    Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+$SplatPosterConfig = Get-ChildItem .\artifacts\runs\poster\splatfacto -Filter config.yml -File -Recurse |
+    Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
 
-printf 'Nerfacto:  %s\n' "$NERF_POSTER_CONFIG"
-printf 'Splatfacto: %s\n' "$SPLAT_POSTER_CONFIG"
-test -n "$NERF_POSTER_CONFIG"
-test -n "$SPLAT_POSTER_CONFIG"
+$NerfPosterConfig
+$SplatPosterConfig
 ```
 
-Evaluate đúng held-out split của từng config:
+### 6.3 Inference/evaluation trên held-out views
 
-```bash
-bash scripts/evaluate.sh "$NERF_POSTER_CONFIG"
-bash scripts/evaluate.sh "$SPLAT_POSTER_CONFIG"
+```powershell
+.\scripts\Evaluate-Run.ps1 -ConfigPath $NerfPosterConfig
+.\scripts\Evaluate-Run.ps1 -ConfigPath $SplatPosterConfig
+
+Get-ChildItem .\artifacts\metrics\poster -Filter metrics.json -File -Recurse
+Get-ChildItem .\artifacts\renders\poster -File -Recurse | Select-Object -First 20
 ```
 
-Kiểm tra outputs:
+Smoke PASS khi cả hai có checkpoint, finite metrics và held-out renders, không
+OOM/NaN. Poster chỉ kiểm tra pipeline, không đưa vào benchmark table.
 
-```bash
-find artifacts/metrics/poster -type f | sort
-find artifacts/logs/poster -type f | sort
-find artifacts/renders/poster -type f | head -n 20
+### 6.4 Diagnostic run ngắn
+
+Chỉ dùng debug, không trộn vào primary results:
+
+```powershell
+.\scripts\Train.ps1 -Method nerfacto -Dataset poster --max-num-iterations 1000
+.\scripts\Train.ps1 -Method splatfacto -Dataset poster --max-num-iterations 1000
 ```
 
-Smoke gate chỉ pass khi cả hai có checkpoint, finite metrics JSON, renders và không
-OOM/NaN. Không đưa metrics `poster` vào bảng benchmark cuối.
+## 7. Benchmark chính: calibration trước matrix
 
-### 8.1 Diagnostic run ngắn khi cần debug
+Không chạy cả sáu job ngay. Đầu tiên chạy một paired scene để xác nhận 16 GB:
 
-Command sau chỉ dùng debug, không đưa vào primary results:
-
-```bash
-bash scripts/train.sh nerfacto poster --max-num-iterations 1000
-bash scripts/train.sh splatfacto poster --max-num-iterations 1000
+```powershell
+.\scripts\Run-Benchmark.ps1 -Scenes bonsai
 ```
 
-## 9. Chạy benchmark chính
+Khi pair này PASS:
 
-Protocol mặc định đã nằm trong `configs/project.env`:
-
-```bash
-sed -n '1,200p' configs/project.env
+```powershell
+.\scripts\Run-Benchmark.ps1 -Scenes garden,room
 ```
 
-Chạy 3 scenes × 2 methods rồi evaluate ngay run vừa tạo:
+Hoặc chạy full matrix từ đầu nếu chưa có run:
 
-```bash
-for scene in garden bonsai room; do
-  for method in nerfacto splatfacto; do
-    echo "===== TRAIN $scene / $method ====="
-    bash scripts/train.sh "$method" "$scene"
-
-    config="$(find "artifacts/runs/$scene/$method" -mindepth 2 -maxdepth 2 -type f -name config.yml | sort | tail -n 1)"
-    test -n "$config"
-
-    echo "===== EVAL $scene / $method ====="
-    bash scripts/evaluate.sh "$config"
-  done
-done
+```powershell
+.\scripts\Run-Benchmark.ps1
 ```
 
-Xem toàn bộ metrics:
+Orchestrator chạy tuần tự mỗi `scene × method`, rồi inference/eval ngay exact config.
+Không mở terminal thứ hai để train song song.
 
-```bash
-find artifacts/metrics -type f -name metrics.json -print | sort
+```powershell
+Get-ChildItem .\artifacts\metrics -Filter metrics.json -File -Recurse |
+    Sort-Object FullName |
+    ForEach-Object { Write-Host "=== $($_.FullName)"; Get-Content $_.FullName -Raw }
+
+Get-ChildItem .\artifacts\logs -Filter timing.env -File -Recurse |
+    Sort-Object FullName |
+    ForEach-Object { Write-Host "=== $($_.FullName)"; Get-Content $_.FullName }
 ```
 
-Xem nhanh JSON nếu có `jq`:
+## 8. Phone dataset: raw → COLMAP → shared input
 
-```bash
-sudo apt install -y jq
-find artifacts/metrics -type f -name metrics.json -print0 \
-  | xargs -0 -n1 sh -c 'echo "===== $0"; jq . "$0"'
+### 8.1 Tạo layout và copy ảnh
+
+```powershell
+$Scene = 'object_v1'
+New-Item -ItemType Directory -Force ".\data\raw\custom\$Scene\train" | Out-Null
+New-Item -ItemType Directory -Force ".\data\raw\custom\$Scene\eval" | Out-Null
+
+(Get-ChildItem ".\data\raw\custom\$Scene\train" -File).Count
+(Get-ChildItem ".\data\raw\custom\$Scene\eval" -File).Count
 ```
 
-Kiểm tra logs/timing/GPU:
+### 8.2 Process một lần, dùng chung cho cả hai methods
 
-```bash
-find artifacts/logs -type f -name timing.env -print -exec sed -n '1,20p' {} \;
-find artifacts/logs -type f -name gpu.csv -print
+```powershell
+.\scripts\Process-Capture.ps1 `
+    -Scene $Scene `
+    -TrainImages ".\data\raw\custom\$Scene\train" `
+    -EvalImages ".\data\raw\custom\$Scene\eval"
+
+Test-Path ".\data\processed\custom\$Scene\transforms.json"
 ```
 
-## 10. Phone capture và COLMAP processing
+Chỉ train khi ít nhất khoảng 90% ảnh train register, frustums hợp lý và sparse cloud
+không tách cụm sai. Capture lại nếu pose hỏng; không tune model để che lỗi COLMAP.
 
-### 10.1 Tạo layout ảnh raw
+### 8.3 Paired training và inference custom scene
 
-Thay `object_v1` bằng slug lowercase của scene:
-
-```bash
-mkdir -p data/raw/custom/object_v1/train
-mkdir -p data/raw/custom/object_v1/eval
+```powershell
+foreach ($method in 'nerfacto','splatfacto') {
+    .\scripts\Train.ps1 -Method $method -Dataset "custom:$Scene"
+    $config = Get-ChildItem ".\artifacts\runs\custom-$Scene\$method" -Filter config.yml -File -Recurse |
+        Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+    .\scripts\Evaluate-Run.ps1 -ConfigPath $config
+}
 ```
 
-Copy ảnh train/eval vào hai folder. Không để một ảnh xuất hiện trong cả hai split.
-Sau đó kiểm tra count:
+## 9. Viewer, render và export
 
-```bash
-find data/raw/custom/object_v1/train -maxdepth 1 -type f | wc -l
-find data/raw/custom/object_v1/eval -maxdepth 1 -type f | wc -l
+```powershell
+conda run --no-capture-output -n topic16-ns115 ns-viewer --load-config $NerfPosterConfig
 ```
 
-### 10.2 Process bằng ns-process-data/COLMAP
+Viewer mặc định mở port 7007. Không dùng viewer FPS làm metric chính nếu UI,
+resolution hoặc camera path khác nhau.
 
-```bash
-bash scripts/process_capture.sh object_v1 \
-  data/raw/custom/object_v1/train \
-  data/raw/custom/object_v1/eval
+Export Splatfacto Gaussian PLY:
+
+```powershell
+$SplatExport = Join-Path $Topic16Root 'artifacts\exports\poster\splatfacto'
+New-Item -ItemType Directory -Force $SplatExport | Out-Null
+conda run --no-capture-output -n topic16-ns115 ns-export gaussian-splat `
+    --load-config $SplatPosterConfig `
+    --output-dir $SplatExport
 ```
 
-Kiểm tra output:
+Export Nerfacto point cloud:
 
-```bash
-test -f data/processed/custom/object_v1/transforms.json
-find data/processed/custom/object_v1 -maxdepth 2 -type d | sort
+```powershell
+$NerfExport = Join-Path $Topic16Root 'artifacts\exports\poster\nerfacto'
+New-Item -ItemType Directory -Force $NerfExport | Out-Null
+conda run --no-capture-output -n topic16-ns115 ns-export pointcloud `
+    --load-config $NerfPosterConfig `
+    --output-dir $NerfExport
 ```
 
-Xem log/visualization COLMAP và chỉ train khi ít nhất khoảng 90% ảnh train register,
-camera frustums hợp lý và sparse cloud không tách thành cluster sai.
+Render camera path JSON đã lưu từ viewer:
 
-### 10.3 Train và evaluate custom scene
-
-```bash
-for method in nerfacto splatfacto; do
-  bash scripts/train.sh "$method" custom:object_v1
-
-  config="$(find "artifacts/runs/custom-object_v1/$method" -mindepth 2 -maxdepth 2 -type f -name config.yml | sort | tail -n 1)"
-  test -n "$config"
-  bash scripts/evaluate.sh "$config"
-done
+```powershell
+New-Item -ItemType Directory -Force .\artifacts\videos | Out-Null
+conda run --no-capture-output -n topic16-ns115 ns-render camera-path `
+    --load-config $NerfPosterConfig `
+    --camera-path-filename 'D:\path\to\camera_path.json' `
+    --output-path .\artifacts\videos\poster_nerfacto.mp4
 ```
 
-## 11. Viewer, render và export
+Dùng cùng camera path/resolution cho Splatfacto.
 
-### 11.1 Mở model đã train
+## 10. Paper và reference source library
 
-```bash
-ns-viewer --load-config "$NERF_POSTER_CONFIG"
+Không cần phần này để train:
+
+```powershell
+.\scripts\Download-Papers.ps1
+.\scripts\Download-Repositories.ps1 -Mode research
+
+Get-ChildItem .\docs\research\papers -Filter *.pdf
+Get-ChildItem .\third_party -Directory | ForEach-Object {
+    if (Test-Path (Join-Path $_.FullName '.git')) {
+        $sha = git -C $_.FullName rev-parse --short HEAD
+        "{0,-30} {1}" -f $_.Name,$sha
+    }
+}
 ```
 
-Hoặc Splatfacto:
+Reference repos chỉ để đọc/đối chiếu paper; không pip-install chúng vào benchmark env.
 
-```bash
-ns-viewer --load-config "$SPLAT_POSTER_CONFIG"
-```
+## 11. PowerShell syntax và repository checks
 
-Mở URL viewer do terminal in ra, mặc định dùng port `7007`. Nếu chạy remote WSL/SSH,
-forward port 7007 trước.
+```powershell
+Set-Location $Topic16Root
+$parseErrors = @()
+Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+    $tokens = $null
+    $errors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors)
+    if ($errors) { $parseErrors += $errors }
+}
+if ($parseErrors.Count) { $parseErrors; throw 'PowerShell syntax validation failed.' }
 
-### 11.2 Export Gaussian PLY
-
-```bash
-mkdir -p artifacts/exports/poster/splatfacto
-ns-export gaussian-splat \
-  --load-config "$SPLAT_POSTER_CONFIG" \
-  --output-dir artifacts/exports/poster/splatfacto
-```
-
-### 11.3 Export point cloud từ Nerfacto
-
-```bash
-mkdir -p artifacts/exports/poster/nerfacto
-ns-export pointcloud \
-  --load-config "$NERF_POSTER_CONFIG" \
-  --output-dir artifacts/exports/poster/nerfacto
-```
-
-`artifacts/exports/` có thể rất lớn và đã được `.gitignore`; không dùng `git add -f`
-để commit model binary lên GitHub.
-
-### 11.4 Render camera path
-
-Trong viewer, tạo và lưu camera path JSON, sau đó:
-
-```bash
-mkdir -p artifacts/videos
-ns-render camera-path \
-  --load-config "$NERF_POSTER_CONFIG" \
-  --camera-path-filename /path/to/camera_path.json \
-  --output-path artifacts/videos/poster_nerfacto.mp4
-```
-
-Lặp lại cùng camera path/resolution cho Splatfacto để so sánh công bằng.
-
-## 12. GPU monitoring thủ công
-
-`scripts/train.sh` đã tự tạo GPU CSV. Khi cần monitor một process khác:
-
-```bash
-bash scripts/monitor_gpu.sh artifacts/logs/manual_gpu.csv 10
-```
-
-Hoặc xem trực tiếp:
-
-```bash
-watch -n 2 nvidia-smi
-```
-
-Dừng monitor foreground bằng `Ctrl+C`.
-
-## 13. Kiểm tra code trước commit
-
-```bash
-cd "$TOPIC16_ROOT"
-bash -n scripts/*.sh scripts/lib/*.sh
-make help
-make check
+.\scripts\Check-Environment.ps1 -RequireRuntime
 git status --short
 ```
 
-Nếu đã cài ShellCheck:
+## 12. Git workflow
 
-```bash
-sudo apt install -y shellcheck
-shellcheck scripts/*.sh
-```
-
-Không chạy GPU training trong CI thông thường. CI/local lint chỉ kiểm tra scripts và
-code nhóm; smoke training chạy trên máy RTX A4500.
-
-## 14. Git workflow và push GitHub
-
-Remote chính:
-
-```text
-https://github.com/HelcurtLordno1/Photos_to_3d-NeRF-and-guassian-splatting.git
-```
-
-Kiểm tra trước commit:
-
-```bash
+```powershell
 git remote -v
 git branch --show-current
 git status --short
-git check-ignore -v data/.cache/360_v2.zip 2>/dev/null || true
-```
+git check-ignore -v .\data\.cache\360_v2.zip
 
-Commit/push thay đổi source và tài liệu:
-
-```bash
 git add .
 git status --short
-git commit -m "Update project architecture and reproducible pipeline"
+git commit -m 'Add modular native Windows PowerShell pipeline'
 git push origin main
 ```
 
-Không dùng `git add -f` cho dataset, PDF, `third_party/`, checkpoint hoặc renders.
-Không dùng force push trừ khi nhóm đã thống nhất và hiểu lịch sử sẽ bị thay đổi.
+Không `git add -f` dataset, PDF, third-party source, checkpoint, renders hoặc video.
 
-Pull thay đổi mới trước khi bắt đầu làm việc:
+## 13. Troubleshooting có thứ tự
 
-```bash
-git pull --ff-only origin main
+### GPU không thấy
+
+```powershell
+nvidia-smi
+Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion
 ```
 
-## 15. Troubleshooting nhanh
+### Conda không tìm thấy
 
-### `nvidia-smi` không chạy
-
-```bash
-wsl.exe --shutdown
+```powershell
+Get-Command conda -ErrorAction SilentlyContinue
+Get-ChildItem "$env:USERPROFILE\miniconda3\Scripts\conda.exe" -ErrorAction SilentlyContinue
 ```
 
-Sau đó cập nhật NVIDIA Windows driver hỗ trợ WSL, mở lại WSL và kiểm tra. Không tiếp
-tục setup Python cho đến khi GPU xuất hiện.
+### `cl.exe`/tiny-cuda-nn build fail
 
-### `pixi` không tìm thấy
-
-```bash
-source ~/.bashrc
-command -v pixi
+```powershell
+.\scripts\Install-HostTools.ps1 -InstallBuildTools
+$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+.\scripts\Setup-Runtime.ps1
 ```
 
-### `ns-train` không tìm thấy
+Script thử MSVC 14.29 trước vì CUDA 11.8 nhạy với toolset mới. Không tự nâng CUDA,
+Torch hoặc tiny-cuda-nn trong cùng protocol.
 
-```bash
-cd "$TOPIC16_ROOT/third_party/nerfstudio"
-pixi shell
-cd "$TOPIC16_ROOT"
-command -v ns-train
+### CUDA/torch/gsplat lệch version
+
+```powershell
+Get-Content .\configs\project.psd1
+conda run --no-capture-output -n topic16-ns115 python -c "import torch,gsplat; print(torch.__version__,torch.version.cuda,gsplat.__version__)"
 ```
 
-### CUDA extension compile lỗi
+Nếu environment bị sửa ngoài pipeline:
 
-```bash
-cd "$TOPIC16_ROOT"
-git -C third_party/nerfstudio rev-parse HEAD
-rg 'NERFSTUDIO_COMMIT|GSPLAT_COMMIT' configs/project.env
-make setup
+```powershell
+.\scripts\Setup-Runtime.ps1 -RebuildEnvironment
 ```
-
-Không chữa lỗi bằng cách nâng ngẫu nhiên PyTorch/gsplat.
 
 ### Splatfacto OOM
 
-```bash
+```powershell
 nvidia-smi
-rg 'DOWNSCALE_FACTOR|TRAIN_ITERATIONS' configs/project.env
+Get-Content .\configs\project.psd1 | Select-String 'DownscaleFactor|TrainIterations'
 ```
 
-Đóng workload GPU khác và xác nhận đang dùng `DOWNSCALE_FACTOR=2`. Nếu vẫn OOM,
-định nghĩa một low-memory protocol riêng trong config/tài liệu; không thay duy nhất
-một run rồi trộn với baseline.
+Đóng workload GPU khác. Nếu vẫn OOM, tạo protocol low-memory mới và chạy lại **cả
+Nerfacto lẫn Splatfacto**; không sửa riêng một run.
 
-### Dataset download bị ngắt
+### Dataset download ngắt
 
-Chạy lại cùng command; `curl --continue-at -` sẽ resume:
-
-```bash
-make data-benchmark
+```powershell
+.\scripts\Download-Datasets.ps1 -Mode benchmark
 ```
 
-### Xem lỗi run gần nhất
+### Xem run lỗi mới nhất
 
-```bash
-find artifacts/logs -type f -name train.log | sort | tail -n 1
-latest_log="$(find artifacts/logs -type f -name train.log | sort | tail -n 1)"
-tail -n 100 "$latest_log"
+```powershell
+$latestLog = Get-ChildItem .\artifacts\logs -Filter train.log -File -Recurse |
+    Sort-Object LastWriteTime | Select-Object -Last 1
+Get-Content $latestLog.FullName -Tail 120
 ```
 
-## 16. Thứ tự tối thiểu cần nhớ
+## 14. Chuỗi lệnh tối thiểu
 
-```bash
-cd "$TOPIC16_ROOT"
+```powershell
+Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-ExecutionPolicy -Scope Process Bypass
 
-# Một lần cho máy/repo
-make check
-make repos
-make setup
-
-# Mỗi terminal mới: activate Pixi rồi trở về project
-cd "$TOPIC16_ROOT/third_party/nerfstudio"
-pixi shell
-cd "$TOPIC16_ROOT"
-
-# Data và smoke gate
-make data-smoke
-bash scripts/train.sh nerfacto poster
-bash scripts/train.sh splatfacto poster
-
-# Sau khi smoke pass
-make data-benchmark
+.\scripts\Check-Environment.ps1
+.\scripts\Download-Repositories.ps1 -Mode runtime
+.\scripts\Setup-Runtime.ps1
+.\scripts\Download-Datasets.ps1 -Mode smoke
+.\scripts\Train.ps1 -Method nerfacto -Dataset poster
+.\scripts\Train.ps1 -Method splatfacto -Dataset poster
 ```
 
-Sau đó chạy experiment matrix ở section 9; mọi kết quả phải được evaluate bằng đúng
-`config.yml` do run đó sinh ra.
+Sau đó evaluate exact hai `config.yml`; khi smoke PASS mới chạy benchmark và chỉ mở
+production sau khi `G-Core` trong working list PASS.
