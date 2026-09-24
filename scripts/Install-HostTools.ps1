@@ -26,7 +26,7 @@ if ($InstallBuildTools) {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
     $requiredComponents = @(
         'Microsoft.VisualStudio.Component.VC.Tools.x86.x64',
-        'Microsoft.VisualStudio.Component.VC.v142.x86.x64',
+        'Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64',
         'Microsoft.VisualStudio.Component.Windows10SDK.19041'
     )
     $hasTools = $false
@@ -45,7 +45,7 @@ if ($InstallBuildTools) {
         # Roslyn, test, debugger and ASAN packages that this project never invokes.
         $componentArguments = @(
             '--add', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64',
-            '--add', 'Microsoft.VisualStudio.Component.VC.v142.x86.x64',
+            '--add', 'Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64',
             '--add', 'Microsoft.VisualStudio.Component.Windows10SDK.19041'
         )
         $existingPath = if (Test-Path -LiteralPath $vswhere) {
@@ -53,10 +53,11 @@ if ($InstallBuildTools) {
         }
         if ($existingPath) {
             $installer = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\setup.exe'
-            & $installer modify --installPath $existingPath @componentArguments --quiet --norestart
-            if ($LASTEXITCODE -ne 0) { throw 'Visual Studio Build Tools modification failed.' }
+            $installerArguments = @('modify', '--installPath', "`"$existingPath`"") + $componentArguments + @('--passive', '--norestart')
+            $process = Start-Process -FilePath $installer -ArgumentList $installerArguments -Wait -PassThru
+            if ($process.ExitCode -ne 0) { throw "Visual Studio Build Tools modification failed with exit code $($process.ExitCode)." }
         } else {
-            $override = '--wait --quiet --norestart ' + (($componentArguments | ForEach-Object {
+            $override = '--wait --passive --norestart ' + (($componentArguments | ForEach-Object {
                 if ($_ -match '\s') { '"' + $_ + '"' } else { $_ }
             }) -join ' ')
             & winget install --id Microsoft.VisualStudio.2022.BuildTools --exact --accept-package-agreements --accept-source-agreements --override $override

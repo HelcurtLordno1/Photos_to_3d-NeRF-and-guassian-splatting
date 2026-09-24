@@ -7,20 +7,55 @@
 > Kiến trúc: [`Construction_architect.md`](Construction_architect.md)
 > Working list: [`Modular_construct.md`](Modular_construct.md)
 
-Trạng thái setup được kiểm chứng trên laptop ngày 2026-09-23:
+Trạng thái setup được kiểm chứng trên laptop (cập nhật 2026-09-24):
 [`docs/setup_status_2026-09-23.md`](docs/setup_status_2026-09-23.md). Kiểm tra
 `G-Core` trước khi chạy training hoặc production.
 
 Không chạy lệnh trong WSL, Git Bash hoặc CMD. Mọi block dưới đây chạy trong
 **Windows PowerShell** tại project root. Script dùng `conda run`, vì vậy không cần
-`conda activate` và không phụ thuộc trạng thái terminal.
+`conda activate` và không phụ thuộc trạng thái terminal. Không cần Codex hay
+file cấu hình Codex để chạy: chỉ dùng các file/script đã track trong repo.
+
+**Lần đầu trên máy thành viên:** mở Windows PowerShell, clone vào Documents
+(hoặc chọn một ổ có đủ chỗ), sau đó dùng cùng `$Topic16Root` ở mọi mục. Nếu đã
+clone, chỉ cần `Set-Location` tới thư mục repo rồi gán biến ở dòng cuối. Các
+lệnh dưới đây không giả định ổ D: hoặc tên tài khoản của lead.
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    winget install --id Git.Git --exact --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -ne 0) { throw 'Git installation failed.' }
+    throw 'Reopen Windows PowerShell so Git is on PATH, then rerun this block.'
+}
+$Topic16Root = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Topic_16_CV'
+if (-not (Test-Path -LiteralPath $Topic16Root)) {
+    git clone https://github.com/HelcurtLordno1/Photos_to_3d-NeRF-and-guassian-splatting.git $Topic16Root
+    if ($LASTEXITCODE -ne 0) { throw 'Git clone failed.' }
+}
+Set-Location -LiteralPath $Topic16Root
+if (-not (Test-Path .\configs\project.psd1)) { throw 'This is not the Topic 16 repository.' }
+$Topic16Root = (Get-Location).Path
+git status --short
+```
+
+Mỗi máy cần tải dataset riêng nếu không được chuyển dữ liệu đã kiểm tra từ lead;
+`data/`, `third_party/`, Conda env và `artifacts/` không nằm trong Git. Máy CPU
+chỉ chạy lệnh download/kiểm tra dữ liệu và test CPU; **không chạy**
+`Setup-Project.ps1`/`Check-Environment.ps1 -RequireRuntime`. Máy GPU 6 GB chỉ
+chạy runtime diagnostic sau khi xác nhận driver, compute capability và memory
+tương thích; benchmark chính chỉ chạy trên A4500 16 GB của lead.
 
 ## 1. Dataset commands — đặt ở đầu để dễ tìm
 
+Cần Git/Miniconda trước khi tải `poster`; nếu chưa có, chạy mục 3.1 rồi mở
+PowerShell mới. Lệnh tải dataset không cần CUDA/GPU, phù hợp cả máy CPU nếu đủ
+dung lượng. `-Mode benchmark` tải archive khoảng 12.5 GB, không bắt buộc trên
+máy chỉ làm code/test P0–P4; có thể chỉ tải `smoke` hoặc nhận dữ liệu đã kiểm tra
+từ lead qua kênh riêng.
+
 ```powershell
-# Vào đúng project (giữ dấu nháy vì path có khoảng trắng)
-Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
-Set-ExecutionPolicy -Scope Process Bypass
+Set-Location -LiteralPath $Topic16Root
 
 # Benchmark chính: tải archive Mip-NeRF 360 chính thức, resume được,
 # kiểm tra đúng 12,535,427,936 bytes và chỉ giải nén garden/bonsai/room.
@@ -65,21 +100,21 @@ chỉ dùng folder processed. Script chỉ báo PASS sau khi kiểm tra từng �
 - Không mở viewer trong timed training.
 - Production bị khóa cho đến khi `G-Core` trong `Modular_construct.md` PASS.
 
-## 3. Mở PowerShell và preflight host
+## 3. Mở PowerShell và preflight host trên máy A4500
 
 ```powershell
-Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
-Set-ExecutionPolicy -Scope Process Bypass
-$Topic16Root = (Get-Location).Path
+Set-Location -LiteralPath $Topic16Root
 
 .\Invoke-Topic16.ps1 help
 .\scripts\Check-Environment.ps1
 nvidia-smi --query-gpu=name,driver_version,memory.total,compute_cap --format=csv
-Get-PSDrive -Name D | Select-Object Name,@{N='FreeGiB';E={[math]::Round($_.Free/1GB,1)}}
+$ProjectDrive = (Get-Item $Topic16Root).PSDrive.Name
+Get-PSDrive -Name $ProjectDrive | Select-Object Name,@{N='FreeGiB';E={[math]::Round($_.Free/1GB,1)}}
 ```
 
-Preflight phải thấy `NVIDIA RTX A4500 Laptop GPU`, khoảng `16384 MiB` và compute
-capability `8.6`. Dừng ở đây nếu `nvidia-smi`, Git hoặc Conda missing.
+Trên máy nghiệm thu của lead, preflight phải thấy `NVIDIA RTX A4500 Laptop GPU`,
+khoảng `16384 MiB` và compute capability `8.6`. Nếu `nvidia-smi`, Git hoặc Conda
+thiếu, khắc phục rồi chạy lại; CPU members **không** chạy block preflight này.
 
 ### 3.1 Cài host tools nếu thiếu
 
@@ -89,19 +124,27 @@ capability `8.6`. Dừng ở đây nếu `nvidia-smi`, Git hoặc Conda missing.
 
 # Mở riêng Windows PowerShell bằng "Run as administrator" cho lệnh này.
 # Cài Visual Studio Build Tools + C++ + MSVC v142 để build tiny-cuda-nn.
-Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-Location -LiteralPath $Topic16Root
 Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\Install-HostTools.ps1 -InstallBuildTools
 ```
 
+CPU members chỉ chạy dòng `Install-HostTools.ps1` **không có**
+`-InstallBuildTools`, mở PowerShell mới, sau đó chạy dataset commands ở mục 1
+và CPU parser test ở mục 11. Không chạy CUDA runtime hay các lệnh train/eval.
+
 Sau khi winget cài mới, đóng PowerShell, mở lại, vào project và chạy preflight lại.
+Script dùng component ID chính thức `Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64`
+cho MSVC 14.29 và chế độ `--passive`, nên có thể thấy tiến trình cài nhưng không
+cần bấm trong Installer. Đợi lệnh kết thúc rồi kiểm tra lại; không mở một installer
+khác song song. Nếu channel feed/network lỗi, xem mục 13 trước khi thử lại.
 Script runtime sẽ cài CUDA toolkit, COLMAP, FFmpeg và Ninja **trong Conda env**;
 không cần cài các bản global riêng.
 
 ### 3.2 Một lệnh setup đầy đủ sau khi MSVC v142 đã cài
 
 ```powershell
-Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-Location -LiteralPath $Topic16Root
 Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\Setup-Project.ps1
 ```
@@ -112,7 +155,31 @@ Nerfstudio/gsplat/tiny-cuda-nn vào `topic16-ns115`, tải hai dataset profiles 
 `artifacts\logs\runtime\requirements.txt`. Nerfstudio v1.1.5 khai báo dependency
 gốc trong `third_party\nerfstudio\pyproject.toml`; file `requirements.txt` sinh ra
 là snapshot để kiểm toán, không phải một bộ pin cạnh tranh với
-`configs\project.psd1`. Lệnh có thể chạy lại sau khi download bị ngắt.
+`configs\project.psd1`. File này bị Git ignore, chỉ xuất hiện **sau khi setup
+thành công trên từng máy**; không có `requirements.txt` ở repo root và không
+chạy `pip install -r` file snapshot vì nó không thay thế CUDA/Conda/MSVC.
+Kiểm tra bằng `Test-Path .\artifacts\logs\runtime\requirements.txt` và
+`Get-Item .\artifacts\logs\runtime\requirements.txt`. Lệnh setup có thể chạy
+lại sau khi download bị ngắt, nhưng mạng, driver, compiler, disk và GPU trên máy
+khác vẫn phải qua preflight; không cam kết kết quả y hệt nếu phần cứng khác.
+
+Nếu lần setup trước đã cài xong `tinycudann` nhưng dừng tại bước kiểm tra Python
+do lỗi Conda `arguments contain newlines`, không cần cài lại hay rebuild. Sau khi
+cập nhật script, chạy trong PowerShell (bước repair cũng sửa các DLL COLMAP/FFmpeg
+cho môi trường đã tạo bằng script cũ):
+
+```powershell
+.\scripts\Setup-Runtime.ps1 -RepairNativeTools
+.\scripts\Test-Runtime.ps1
+.\scripts\Setup-Project.ps1 -FinalizeOnly
+```
+
+`-FinalizeOnly` kiểm tra host/runtime, hoàn tất dataset còn thiếu và xuất
+`artifacts\logs\runtime\requirements.txt`; nó không cài lại CUDA/PyTorch hay
+biên dịch lại `tinycudann`. `-RepairNativeTools` chỉ sửa gói Conda native và
+kiểm tra runtime, không cài lại PyTorch/Nerfstudio/tiny-cuda-nn. Nếu kiểm tra
+runtime thất bại vì package Python thiếu thật,
+chạy lại `.\scripts\Setup-Project.ps1` không kèm switch.
 
 ## 4. Tạo native Windows runtime đã pin
 
@@ -126,6 +193,8 @@ là snapshot để kiểm toán, không phải một bộ pin cạnh tranh với
 | gsplat | 1.4.0 Windows wheel for pt21/cu118 |
 | tiny-cuda-nn | exact commit, build for CC 8.6 |
 | COLMAP | 3.9.1 |
+| FFmpeg | 6.1.1 (không lấy bản mới nhất không pin) |
+| Windows DLL compatibility | MPIR 3.0.0, conda-forge libglib 2.88.3, libintl 0.22.5; exact builds trong `configs\project.psd1` |
 
 ```powershell
 Set-Location $Topic16Root
@@ -199,14 +268,16 @@ artifacts\logs\poster\<method>\<UTC-ID>\
 
 ### 6.2 Chọn exact config vừa train
 
-```powershell
-$NerfPosterConfig = Get-ChildItem .\artifacts\runs\poster\nerfacto -Filter config.yml -File -Recurse |
-    Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
-$SplatPosterConfig = Get-ChildItem .\artifacts\runs\poster\splatfacto -Filter config.yml -File -Recurse |
-    Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+`Train.ps1` in đường dẫn `Training complete. Evaluate ...\config.yml`. Copy đúng
+đường dẫn in ra cho **từng run thành công**, không chọn file đứng cuối theo tên
+hay thời gian vì có thể trỏ sang run debug/failed.
 
-$NerfPosterConfig
-$SplatPosterConfig
+```powershell
+$NerfPosterConfig = Read-Host 'Paste exact Nerfacto poster config.yml path from successful Train output'
+$SplatPosterConfig = Read-Host 'Paste exact Splatfacto poster config.yml path from successful Train output'
+foreach ($path in @($NerfPosterConfig, $SplatPosterConfig)) {
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing config: $path" }
+}
 ```
 
 ### 6.3 Inference/evaluation trên held-out views
@@ -296,8 +367,8 @@ không tách cụm sai. Capture lại nếu pose hỏng; không tune model để
 ```powershell
 foreach ($method in 'nerfacto','splatfacto') {
     .\scripts\Train.ps1 -Method $method -Dataset "custom:$Scene"
-    $config = Get-ChildItem ".\artifacts\runs\custom-$Scene\$method" -Filter config.yml -File -Recurse |
-        Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+    $config = Read-Host "Paste exact $method config.yml path from successful Train output"
+    if (-not (Test-Path -LiteralPath $config -PathType Leaf)) { throw "Missing config: $config" }
     .\scripts\Evaluate-Run.ps1 -ConfigPath $config
 }
 ```
@@ -374,9 +445,13 @@ Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
     if ($errors) { $parseErrors += $errors }
 }
 if ($parseErrors.Count) { $parseErrors; throw 'PowerShell syntax validation failed.' }
-
-.\scripts\Check-Environment.ps1 -RequireRuntime
 git status --short
+```
+
+Block trên chạy được trên máy CPU. Chỉ máy A4500 đã setup runtime chạy thêm:
+
+```powershell
+.\scripts\Check-Environment.ps1 -RequireRuntime
 ```
 
 ## 12. Git workflow
@@ -386,14 +461,11 @@ git remote -v
 git branch --show-current
 git status --short
 git check-ignore -v .\data\.cache\360_v2.zip
-
-git add .
-git status --short
-git commit -m 'Add modular native Windows PowerShell pipeline'
-git push origin main
 ```
 
-Không `git add -f` dataset, PDF, third-party source, checkpoint, renders hoặc video.
+Trước khi commit, từng member tạo branch riêng và mở PR cho lead review; không
+copy lệnh `git push origin main` từ tài liệu setup. Không `git add -f` dataset,
+PDF, third-party source, checkpoint, renders hoặc video.
 
 ## 13. Troubleshooting có thứ tự
 
@@ -414,14 +486,37 @@ Get-ChildItem "$env:USERPROFILE\miniconda3\Scripts\conda.exe" -ErrorAction Silen
 ### `cl.exe`/tiny-cuda-nn build fail
 
 ```powershell
+# Chạy lệnh cài bên dưới trong Windows PowerShell "Run as administrator".
 .\scripts\Install-HostTools.ps1 -InstallBuildTools
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-& $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64 -property installationPath
+Get-ChildItem 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC' -Directory | Select-Object Name
 .\scripts\Setup-Runtime.ps1
 ```
 
 Script thử MSVC 14.29 trước vì CUDA 11.8 nhạy với toolset mới. Không tự nâng CUDA,
 Torch hoặc tiny-cuda-nn trong cùng protocol.
+
+Nếu `vswhere` không in path và không có thư mục `14.29.*`, v142 vẫn chưa cài.
+Installer log ghi `Cannot find package` cho ID
+`Microsoft.VisualStudio.Component.VC.v142.x86.x64` là lỗi của **script cũ**; lấy
+script mới từ repo rồi chạy lại. ID đúng là
+`Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64` theo
+[catalog Build Tools 2022 của Microsoft](https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022).
+`--quiet` ở script cũ cố ý ẩn UI; script mới dùng `--passive` và chờ installer
+kết thúc trước khi báo kết quả.
+
+Nếu vẫn thấy `Could not update channel`, kiểm tra kết nối **từ Windows PowerShell**:
+
+```powershell
+curl.exe --head --location --max-time 15 'https://aka.ms/vs/17/release/channel'
+```
+
+Phải nhận HTTP `200` ở URL cuối. Nếu DNS/TLS/proxy/firewall làm lệnh này thất bại,
+hãy sửa kết nối hoặc nhờ mạng khác rồi chạy lại; không xóa Visual Studio hiện có
+hoặc thay compiler bằng bản mới ngẫu nhiên. Nếu `curl.exe` thành công nhưng
+Installer vẫn báo channel feed lỗi, giữ `%TEMP%\dd_*` logs và chụp **dòng lỗi đầu
+tiên** để phân tích; đừng kết luận chỉ từ các warning về package không áp dụng.
 
 ### CUDA/torch/gsplat lệch version
 
@@ -463,13 +558,11 @@ Get-Content $latestLog.FullName -Tail 120
 ## 14. Chuỗi lệnh tối thiểu
 
 ```powershell
-Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
-Set-ExecutionPolicy -Scope Process Bypass
+Set-Location -LiteralPath $Topic16Root
 
 .\scripts\Check-Environment.ps1
-.\scripts\Download-Repositories.ps1 -Mode runtime
-.\scripts\Setup-Runtime.ps1
-.\scripts\Download-Datasets.ps1 -Mode smoke
+.\scripts\Setup-Project.ps1
+.\scripts\Test-Runtime.ps1
 .\scripts\Train.ps1 -Method nerfacto -Dataset poster
 .\scripts\Train.ps1 -Method splatfacto -Dataset poster
 ```

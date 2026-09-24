@@ -26,7 +26,7 @@ if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (Test-Path -LiteralPath $vswhere) {
     $vsPath = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-    $v142Path = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.v142.x86.x64 -property installationPath
+    $v142Path = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64 -property installationPath
     if ($vsPath) { Write-Host "[ok]      MSVC build tools   $vsPath" } else { Write-Host '[missing] MSVC C++ workload' -ForegroundColor Yellow }
     if ($v142Path) { Write-Host "[ok]      MSVC v142         $v142Path" } else { Write-Host '[missing] MSVC v142 (14.29) for CUDA 11.8' -ForegroundColor Yellow }
     if ($RequireRuntime -and -not $v142Path) { $failures++ }
@@ -41,7 +41,7 @@ try {
     $conda = Get-CondaCommand
     & $conda env list
     if ($RequireRuntime) {
-        Invoke-InEnvironment -Command 'python' -Arguments @('-c', 'import torch, gsplat, nerfstudio; assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda, torch.cuda.get_device_name(0)); print("gsplat", gsplat.__version__)') | Out-Null
+        & (Join-Path $PSScriptRoot 'Test-Runtime.ps1')
     }
 } catch {
     if ($RequireRuntime) { throw }

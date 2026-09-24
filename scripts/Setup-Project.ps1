@@ -1,12 +1,14 @@
 [CmdletBinding()]
-param()
+param([switch]$FinalizeOnly)
 
 . (Join-Path $PSScriptRoot 'lib\Common.ps1')
 Assert-WindowsPowerShell
 
-& (Join-Path $PSScriptRoot 'Check-Environment.ps1')
-& (Join-Path $PSScriptRoot 'Download-Repositories.ps1') -Mode runtime
-& (Join-Path $PSScriptRoot 'Setup-Runtime.ps1')
+if (-not $FinalizeOnly) {
+    & (Join-Path $PSScriptRoot 'Check-Environment.ps1')
+    & (Join-Path $PSScriptRoot 'Download-Repositories.ps1') -Mode runtime
+    & (Join-Path $PSScriptRoot 'Setup-Runtime.ps1')
+}
 & (Join-Path $PSScriptRoot 'Check-Environment.ps1') -RequireRuntime
 & (Join-Path $PSScriptRoot 'Download-Datasets.ps1') -Mode all
 

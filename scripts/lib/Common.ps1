@@ -68,10 +68,12 @@ function Get-CondaEnvironmentPath {
 function Invoke-Conda {
     param(
         [Parameter(Mandatory)][string[]]$Arguments,
-        [switch]$AllowFailure
+        [switch]$AllowFailure,
+        [switch]$Quiet
     )
     $conda = Get-CondaCommand
-    & $conda @Arguments | Out-Host
+    if ($Quiet) { & $conda @Arguments | Out-Null }
+    else { & $conda @Arguments | Out-Host }
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0 -and -not $AllowFailure) {
         throw "Conda command failed with exit code ${exitCode}: conda $($Arguments -join ' ')"
@@ -83,10 +85,11 @@ function Invoke-InEnvironment {
     param(
         [Parameter(Mandatory)][string]$Command,
         [Parameter()][string[]]$Arguments = @(),
-        [switch]$AllowFailure
+        [switch]$AllowFailure,
+        [switch]$Quiet
     )
     $allArguments = @('run', '--no-capture-output', '-n', $script:Config.EnvironmentName, $Command) + $Arguments
-    $exitCode = Invoke-Conda -Arguments $allArguments -AllowFailure:$AllowFailure
+    $exitCode = Invoke-Conda -Arguments $allArguments -AllowFailure:$AllowFailure -Quiet:$Quiet
     return $exitCode
 }
 

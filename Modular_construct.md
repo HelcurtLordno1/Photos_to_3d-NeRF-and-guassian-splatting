@@ -58,6 +58,8 @@ CUDA/PyTorch/MSVC vốn là failure mode lớn nhất của project.
 - `scripts/Install-HostTools.ps1`
 - `scripts/Check-Environment.ps1`
 - `scripts/Setup-Runtime.ps1`
+- `scripts/Test-Runtime.ps1`
+- `scripts/Setup-Project.ps1`
 - `scripts/lib/Common.ps1`
 - `configs/project.psd1`
 
@@ -68,8 +70,9 @@ CUDA/PyTorch/MSVC vốn là failure mode lớn nhất của project.
 - [x] P0.3 Dùng wheel gsplat Windows đúng cặp `pt21cu118`; không JIT gsplat ngẫu nhiên.
 - [x] P0.4 Pin tiny-cuda-nn commit và compile duy nhất cho compute capability 8.6.
 - [x] P0.5 Cài COLMAP/FFmpeg/CUDA toolkit bên trong Conda env, không ô nhiễm base.
-- [ ] P0.6 Chạy setup thật trên laptop và lưu output validation. Lần thử
-  2026-09-23 còn thiếu MSVC v142 và chưa tải xong CUDA/data; xem
+- [x] P0.6 Chạy setup thật trên laptop và lưu kết quả validation ngày
+  2026-09-24: CUDA tensor, imports, `ns-train`, `ns-eval`, `ns-process-data`,
+  COLMAP và FFmpeg đều PASS; xem
   [`docs/setup_status_2026-09-23.md`](docs/setup_status_2026-09-23.md).
 
 **Lệnh kiểm chứng:**
@@ -374,14 +377,21 @@ git status --short
 
 ## 3. Trình tự giao việc thực tế
 
-1. Một người nhận P0+P1 và không đổi version ngoài registry.
-2. Một người chuẩn bị P2+P3 nhưng chỉ ghi vào đúng data contract.
-3. Một người sở hữu P4; một người độc lập sở hữu P5 để tránh evaluator bị gắn với
-   giả định trainer.
-4. P6 chỉ orchestration, không chứa model-specific hyperparameter bí mật.
-5. P7 do nhóm cùng review; mọi số không có artifact ID bị loại.
-6. Chỉ khi G-Core ký PASS mới phân công P8/P9.
-7. P10 chạy xuyên suốt, nhưng GPU tests theo gate để không đốt thời gian laptop.
+1. Member 1 (CPU) sở hữu liên tục P0–P2: runtime scripts, contracts, dataset;
+   lead ký nghiệm thu GPU P0 trên A4500.
+2. Member 2 (CPU) sở hữu liên tục P3–P4: capture/split và training wrapper;
+   lead chạy poster pair và benchmark train thật trên A4500.
+3. Member 3 (GPU 6 GB) sở hữu liên tục P5–P7: inference/eval, paired
+   orchestration, analysis; GPU 6 GB chỉ diagnostic nếu tương thích. Lead chạy
+   acceptance chính trên A4500, nhóm cùng review G-Core.
+4. Lead sở hữu liên tục P8–P10; P10 QA xuyên suốt, nhưng **chỉ** bắt đầu
+   code P8/P9 khi G-Core PASS. Xem trách nhiệm, test và handoff tại
+   [`Members_jobs.md`](Members_jobs.md).
+
+Setup host/runtime/dataset trên laptop lead đã PASS ngày 2026-09-24; P4/P5
+training/inference thật chưa PASS. `requirements.txt` chỉ là snapshot được sinh
+dưới `artifacts/logs/runtime/` sau `Setup-Project.ps1`, bị Git ignore;
+`configs/project.psd1` mới là nguồn pin chung cho cả nhóm.
 
 ## 4. Definition of project done
 

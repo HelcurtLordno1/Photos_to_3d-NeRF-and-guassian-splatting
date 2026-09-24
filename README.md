@@ -2,14 +2,26 @@
 
 > A Complete, Reproducible Project for ThinkPad P1 Gen 5 (RTX A4500 16GB)
 
-> **Implementation note:** README này mô tả đề tài ban đầu. Blueprint đã kiểm
-> chứng nguồn, quyết định kiến trúc, dataset chốt, protocol công bằng và lệnh chạy
-> hiện hành nằm tại [`Construction_architect.md`](Construction_architect.md). Khi
-> hai tài liệu khác nhau, dùng `Construction_architect.md` làm source of truth cho
-> triển khai.
+> **Implementation note:** Kiến trúc và protocol hiện hành ở
+> [`Construction_architect.md`](Construction_architect.md); thứ tự P0–P10 ở
+> [`Modular_construct.md`](Modular_construct.md); phân công **4 thành viên** ở
+> [`Members_jobs.md`](Members_jobs.md). README giới thiệu đề tài, không thay
+> thế các gate nghiệm thu trong những tài liệu đó.
 
 > Toàn bộ lệnh copy-paste từ cài host tools đến tải dữ liệu, train, evaluate và
 > vận hành Git nằm tại [`setup_full_command.md`](setup_full_command.md).
+
+Setup trên laptop lead đã PASS ở mức host/runtime/dataset ngày 2026-09-24;
+**training và inference thực tế chưa PASS**. Xem
+[`setup_status_2026-09-23.md`](docs/setup_status_2026-09-23.md). Thành viên clone
+repo không nhận dataset, Conda env hay `requirements.txt` snapshot vì chúng bị
+Git ignore. Trên Windows PowerShell, từ thư mục repo, chạy
+`Set-ExecutionPolicy -Scope Process Bypass` rồi dùng lệnh đúng vai trò ở runbook.
+Các pin cài đặt duy nhất nằm trong [`project.psd1`](configs/project.psd1);
+`artifacts\logs\runtime\requirements.txt` chỉ được sinh sau
+`Setup-Project.ps1` để kiểm toán, **không dùng `pip install -r`** trên máy khác.
+Máy CPU làm P0–P4 phần code/data/test nhưng không chạy setup CUDA; GPU 6 GB chỉ
+diagnostic tương thích, không phải máy baseline A4500 16 GB.
 
 ## Table of Contents
 
@@ -20,7 +32,7 @@
 - [5. Hardware & Performance Plan](#5-hardware--performance-plan)
 - [6. Professional Workflow](#6-professional-workflow)
 - [7. Measurement & Comparison Framework](#7-measurement--comparison-framework)
-- [8. Team Division (6 Members)](#8-team-division-6-members)
+- [8. Team Division (4 Members)](#8-team-division-4-members)
 - [9. Milestones & Deliverables](#9-milestones--deliverables)
 - [10. Risk Mitigation](#10-risk-mitigation)
 - [11. Repository Structure (Deliverable)](#11-repository-structure-deliverable)
@@ -131,7 +143,9 @@ $$
 C = \sum_{i \in \mathcal{N}} c_i\alpha_i \prod_{j=1}^{i-1}(1-\alpha_j)
 $$
 
-**Why 3DGS is faster:** No neural network inference. The entire scene is rendered via a differentiable rasterization kernel implemented in CUDA. This is why it achieves real-time (≥30 fps) rendering at 1080p.
+**Why 3DGS can render quickly:** Its explicit Gaussians are rasterized rather than
+evaluating a NeRF along many ray samples. The original paper reports real-time
+rendering in its own setting; FPS on this laptop remains to be measured.
 
 ### 2.3 Key Mathematical Differences to Highlight in Your Report
 
@@ -139,8 +153,8 @@ $$
 |---|---|---|
 | Representation | Implicit (MLP weights) | Explicit (point cloud of Gaussians) |
 | Rendering | Ray marching + volume rendering | Differentiable rasterization (splatting) |
-| Training speed | Hours to days (original); 10–30 min (Nerfacto) | 20–40 min on consumer GPU |
-| Rendering speed | Seconds per frame (original); real-time with Instant-NGP | ≥30 fps at 1080p |
+| Training speed | TBD for pinned Nerfacto/A4500 | TBD for pinned Splatfacto/A4500 |
+| Rendering speed | TBD at fixed resolution/path | TBD at the same resolution/path |
 | Memory | Model weights (~10–100 MB) | Millions of Gaussians (~100 MB–1 GB) |
 | Extractability | Checkpoint is implicit; point cloud/mesh is a derived export | Gaussians are explicit and can be exported directly |
 | View extrapolation | Must be measured on the chosen scenes | Must be measured on the chosen scenes |
@@ -222,10 +236,13 @@ The project must be executable without requiring you to capture hundreds of perf
 
 ### 4.4 Tier 2: Your Own Phone Capture (Demo WOW Factor)
 
-- **Capture protocol:** Two orbital passes around the object — one at low angle (~30° elevation), one at high angle (~60° elevation). 60–80 photos per pass, overlapping by ~70%.
+- **Capture protocol:** Two orbital passes, low and high, about 80–150 sharp
+  photos total with 70–80% overlap; reserve 10–15% of viewpoints as separate
+  evaluation frames. See the frozen split rules in `Construction_architect.md`.
 - **Lighting:** Diffuse, consistent. Avoid harsh shadows and reflective surfaces if possible.
 - **Processing:** Run `ns-process-data`, which invokes COLMAP and converts its result into the shared Nerfstudio format. If registration quality is low, improve the capture rather than tuning the models around bad poses.
-- **Budget:** 2–3 hours for capture + processing + training per object.
+- **Budget:** Capture/processing/training time is an estimate until the first
+  complete custom run; record actual wall time per phase.
 
 ## 5. Hardware & Performance Plan
 
@@ -256,14 +273,15 @@ Log: GPU utilization %, VRAM used (GB), GPU temperature (°C). This data goes di
 
 | Phase | Duration | Notes |
 |---|---|---|
-| Environment setup | 2–5 days | The bottleneck is tiny-cuda-nn compilation |
+| Environment setup | Already validated on lead; varies per new PC | Network, MSVC and tiny-cuda-nn compilation can dominate |
 | Poster smoke pair | Measure on first setup | First successful runs; includes CUDA JIT warm-up |
 | Mip-NeRF 360 (3 scenes) | Calibrate after paired `bonsai` runs | Per method, per scene |
 | Phone capture (1 scene) | 2–4 hours planning allowance | Including capture and COLMAP |
 | Full evaluation | 1–2 days | Metrics + visualization |
 | Writing & demo prep | 3–5 days | Report + presentation |
 
-**Total realistic effort:** 3–4 weeks of part-time work (consistent with a 6-person team over 5–6 weeks).
+**Planning allowance:** 3–4 weeks part-time là ước lượng ban đầu, không phải
+cam kết tiến độ cho nhóm 4 người; điều chỉnh theo kết quả smoke và thời gian GPU.
 
 ## 6. Professional Workflow
 
@@ -323,18 +341,17 @@ Log: GPU utilization %, VRAM used (GB), GPU temperature (°C). This data goes di
 - **View extrapolation:** 3DGS degrades rapidly when the camera moves far from training viewpoints — "fog" appears in the render.
 - **Thin structures:** Both methods may miss thin branches or wires. 3DGS can produce needle-like artifacts.
 
-## 8. Team Division (6 Members)
+## 8. Team Division (4 Members)
 
-| Role | Person | Responsibility |
-|---|---|---|
-| NeRF Lead | Member 1 | Nerfstudio setup, nerfacto training, Viser viewer, NeRF metrics |
-| 3DGS Lead | Member 2 | Splatfacto/gsplat setup, training, Nerfstudio viewer, 3DGS metrics |
-| Data & Capture | Member 3 | Dataset downloads, COLMAP processing, phone capture protocol, data quality |
-| Evaluation Harness | Member 4 | Metric computation (PSNR/SSIM/LPIPS), GPU monitoring scripts, comparison tables |
-| Analysis & Math | Member 5 | Mathematical derivations, failure mode analysis, connecting math to observations |
-| Integration & Writing | Member 6 | Repository management, report writing, presentation design, demo video |
+| Person | Hardware | Contiguous ownership | Acceptance |
+|---|---|---|---|
+| Member 1 | CPU | P0–P2: setup/contracts/datasets | CPU checks locally; lead signs GPU runtime |
+| Member 2 | CPU | P3–P4: capture/pose/split/training wrapper | CPU fixtures locally; lead runs training |
+| Member 3 | GPU 6 GB | P5–P7: inference, paired benchmark, analysis | Diagnostic locally if compatible; lead runs official A4500 pair |
+| Member 4 (lead) | A4500 16 GB laptop | P8–P10: production after G-Core, QA throughout | Owns hardware acceptance and final gate |
 
-**Cross-training:** Members 1 and 2 pair-program the first successful training runs. Member 4 works with both to ensure metric consistency. Members 5 and 6 collaborate on the final report.
+Read [`Members_jobs.md`](Members_jobs.md) for exact outputs/tests per Px. P8/P9
+must not start until P7's G-Core is PASS; P10 runs throughout.
 
 ## 9. Milestones & Deliverables
 

@@ -1,8 +1,11 @@
 [CmdletBinding()]
-param([switch]$RebuildEnvironment)
+param([switch]$RebuildEnvironment, [switch]$RepairNativeTools)
 
 . (Join-Path $PSScriptRoot 'lib\Common.ps1')
 Assert-WindowsPowerShell
+if ($RebuildEnvironment -and $RepairNativeTools) {
+    throw 'Choose either -RebuildEnvironment or -RepairNativeTools, not both.'
+}
 Assert-Command -Name 'git' | Out-Null
 Assert-Command -Name 'nvidia-smi' | Out-Null
 Import-VisualStudioEnvironment
@@ -17,6 +20,9 @@ if ($actualCommit -ne $Config.NerfstudioCommit) {
 }
 
 $environmentExists = Get-CondaEnvironmentPath -Name $Config.EnvironmentName
+if ($RepairNativeTools -and -not $environmentExists) {
+    throw "Cannot repair missing Conda environment $($Config.EnvironmentName). Run scripts\Setup-Runtime.ps1 without -RepairNativeTools."
+}
 if ($RebuildEnvironment -and $environmentExists) {
     Write-TopicInfo "Removing Conda environment $($Config.EnvironmentName)."
     Invoke-Conda -Arguments @('env', 'remove', '-n', $Config.EnvironmentName, '-y') | Out-Null
@@ -32,8 +38,43 @@ Write-TopicInfo 'Installing the CUDA compiler toolkit, COLMAP, FFmpeg and Ninja 
 Invoke-Conda -Arguments @(
     'install', '-n', $Config.EnvironmentName, '-y',
     '-c', $Config.CudaToolkitChannel, '-c', 'conda-forge',
-    "cuda-toolkit=$($Config.CudaToolkitVersion)", "colmap=$($Config.ColmapVersion)", 'ffmpeg', 'ninja'
+    "cuda-toolkit=$($Config.CudaToolkitVersion)", "colmap=$($Config.ColmapVersion)",
+    "ffmpeg=$($Config.FfmpegVersion)", 'ninja',
+    "conda-forge::libglib=$($Config.LibglibVersion)", "libintl=$($Config.LibintlVersion)"
 ) | Out-Null
+
+# Some mixed-channel Windows transactions unlink an overlapping intl-8.dll
+# while replacing defaults' libglib. Restore the pinned conda-forge DLL if the
+# package metadata exists but the file disappeared.
+$intlDll = Join-Path $environmentExists 'Library\bin\intl-8.dll'
+if (-not (Test-Path -LiteralPath $intlDll)) {
+    Write-TopicInfo 'Restoring the missing libintl DLL after Conda package replacement.'
+    Invoke-Conda -Arguments @(
+        'install', '-n', $Config.EnvironmentName, '-y', '--force-reinstall', '--no-deps',
+        '-c', 'conda-forge', "libintl=$($Config.LibintlVersion)"
+    ) | Out-Null
+}
+
+# The conda-forge Windows COLMAP 3.9.1 GPU build imports mpir.dll but omits
+# mpir from its dependency metadata. Installing it with normal resolution would
+# downgrade NumPy and replace unrelated CUDA/runtime packages; only this DLL
+# package is needed alongside the existing GMP package.
+$mpirDll = Join-Path $environmentExists 'Library\bin\mpir.dll'
+if (-not (Test-Path -LiteralPath $mpirDll)) {
+    Write-TopicInfo 'Installing the missing Windows COLMAP mpir.dll runtime without changing other packages.'
+    Invoke-Conda -Arguments @(
+        'install', '-n', $Config.EnvironmentName, '-y', '--no-deps',
+        '-c', 'conda-forge', "mpir=$($Config.ColmapMpirVersion)"
+    ) | Out-Null
+}
+
+Write-TopicInfo 'Checking the pinned FFmpeg executable.'
+Invoke-InEnvironment -Command 'ffmpeg' -Arguments @('-version') -Quiet | Out-Null
+
+if ($RepairNativeTools) {
+    & (Join-Path $PSScriptRoot 'Test-Runtime.ps1')
+    return
+}
 
 Write-TopicInfo 'Installing pinned PyTorch CUDA wheels.'
 Invoke-InEnvironment -Command 'python' -Arguments @(
@@ -62,17 +103,5 @@ Write-TopicInfo 'Building the pinned tiny-cuda-nn torch bindings for compute cap
 $tcnnUrl = "git+https://github.com/NVlabs/tiny-cuda-nn.git@$($Config.TinyCudaNnCommit)#subdirectory=bindings/torch"
 Invoke-InEnvironment -Command 'python' -Arguments @('-m', 'pip', 'install', '--no-build-isolation', $tcnnUrl) | Out-Null
 
-Write-TopicInfo 'Validating imports, exact versions and GPU execution.'
-$validation = @'
-import torch, gsplat, nerfstudio, tinycudann
-assert torch.cuda.is_available(), "PyTorch cannot see CUDA"
-assert torch.__version__.startswith("2.1.2+cu118"), torch.__version__
-assert gsplat.__version__.startswith("1.4.0"), gsplat.__version__
-x = torch.ones(1, device="cuda")
-print("torch", torch.__version__, "cuda", torch.version.cuda)
-print("gpu", torch.cuda.get_device_name(0), "value", x.item())
-print("gsplat", gsplat.__version__)
-print("nerfstudio", getattr(nerfstudio, "__version__", "1.1.5-source"))
-'@
-Invoke-InEnvironment -Command 'python' -Arguments @('-c', $validation) | Out-Null
+& (Join-Path $PSScriptRoot 'Test-Runtime.ps1')
 Write-TopicInfo "Runtime is ready. Use conda run -n $($Config.EnvironmentName) <command>, or the project .ps1 wrappers."

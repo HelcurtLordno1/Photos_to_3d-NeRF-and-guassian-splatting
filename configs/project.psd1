@@ -8,6 +8,10 @@
     CudaToolkitChannel = 'nvidia/label/cuda-11.8.0'
     CudaToolkitVersion = '11.8.0'
     ColmapVersion = '3.9.1'
+    ColmapMpirVersion = '3.0.0=he025d50_1002'
+    FfmpegVersion = '6.1.1'
+    LibglibVersion = '2.88.3=ha564072_4'
+    LibintlVersion = '0.22.5=h5728263_3'
 
     NerfstudioRef = 'v1.1.5'
     NerfstudioCommit = '6b60855003011b2ca23c2fe3f8e2ca6314c69924'

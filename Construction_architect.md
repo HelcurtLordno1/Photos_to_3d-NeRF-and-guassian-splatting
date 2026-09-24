@@ -258,7 +258,9 @@ Topic_16_CV/
 │   ├── lib/Common.ps1              # Root paths, helpers, config/Conda runner
 │   ├── Install-HostTools.ps1       # Git/Miniconda/MSVC bootstrap
 │   ├── Check-Environment.ps1       # Windows/GPU/disk/runtime preflight
+│   ├── Setup-Project.ps1           # Setup hoàn chỉnh + requirements snapshot
 │   ├── Setup-Runtime.ps1           # Conda + CUDA imports validation
+│   ├── Test-Runtime.ps1            # CUDA/native CLI validation không cài lại
 │   ├── Download-Repositories.ps1   # Exact runtime/research snapshots
 │   ├── Download-Papers.ps1         # 7 PDF cốt lõi
 │   ├── Download-Datasets.ps1       # smoke/benchmark/all, resume + validation
@@ -648,7 +650,8 @@ change, density ambiguity hoặc Gaussian densification. Không chỉ ghi “ả
 
 ### 8.2 Native Windows và đường dẫn hiện tại
 
-Project chạy trực tiếp tại `D:\Desktop_informations\...\Topic_16_CV`. PowerShell
+Laptop lead hiện chạy tại `D:\Desktop_informations\...\Topic_16_CV`; máy khác
+clone vào thư mục tùy chọn theo runbook. PowerShell
 scripts suy ra root bằng `$PSScriptRoot`, vì vậy khoảng trắng và Unicode trong path
 không được xử lý bằng string nối thủ công. Mọi native command nhận argument array;
 runbook luôn quote path copy-paste.
@@ -692,14 +695,19 @@ Set-ExecutionPolicy -Scope Process Bypass
 ### 9.2 Fetch runtime đã pin
 
 ```powershell
-.\scripts\Download-Repositories.ps1 -Mode runtime
-.\scripts\Setup-Runtime.ps1
+.\scripts\Setup-Project.ps1
 .\scripts\Check-Environment.ps1 -RequireRuntime
 ```
 
-Downloader checkout detached exact SHA. Setup tạo Conda env, cài CUDA toolkit,
-COLMAP/FFmpeg, PyTorch, exact source Nerfstudio, wheel gsplat và build tiny-cuda-nn
-cho CC 8.6. Không activate; wrapper luôn dùng `conda run`.
+Setup checkout detached exact SHA, tạo Conda env, cài CUDA toolkit,
+COLMAP/FFmpeg, PyTorch, exact source Nerfstudio, wheel gsplat, build tiny-cuda-nn
+cho CC 8.6, tải/kiểm tra cả hai dataset profiles và xuất snapshot
+`artifacts/logs/runtime/requirements.txt`. Snapshot bị Git ignore, không phải
+installer/lockfile; nguồn pin là `configs/project.psd1`. Không activate; wrapper
+luôn dùng `conda run`. Trên laptop lead runtime và dữ liệu PASS 2026-09-24;
+training/inference và G-Core chưa PASS. CPU members không chạy setup CUDA;
+GPU 6 GB chỉ diagnostic, không thay phép đo A4500. Runbook bắt đầu bằng clone
+portable cho máy khác, không cần Codex hoặc ổ D:.
 
 ### 9.3 Paper/repo research library
 

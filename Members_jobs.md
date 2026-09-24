@@ -5,10 +5,10 @@
 > [runbook PowerShell](setup_full_command.md). Các tài liệu đó là source of truth
 > về protocol; file này xác định **ai sở hữu việc gì, giao gì, kiểm chứng ra sao**.
 >
-> Trạng thái khi giao việc: dữ liệu `poster`, `garden`, `bonsai`, `room` đã tải và
-> kiểm tra trên laptop lead. Runtime CUDA **chưa PASS** do thiếu MSVC v142; chưa có
-> training/inference thật. Không coi ô `[x]` về *code đã viết* trong working list là
-> bằng chứng module đã chạy end-to-end. Xem
+> Trạng thái cập nhật 2026-09-24: dữ liệu `poster`, `garden`, `bonsai`, `room`,
+> MSVC v142 và runtime CUDA đã PASS trên laptop lead. **Training/inference thật
+> chưa PASS**; G-Core chưa mở. Không coi ô `[x]` về *code đã viết* trong working
+> list là bằng chứng module đã chạy end-to-end. Xem
 > [setup audit](docs/setup_status_2026-09-23.md).
 
 ## 1. Nguyên tắc phân công và giới hạn phần cứng
@@ -51,8 +51,9 @@ Lead:     GPU nghiệm thu P0/P4/P5/P6/P7; P10 QA toàn tuyến ────┘
 ```
 
 - **H0 — P0→P1/P2:** Member 1 bàn giao registry pins, runtime validation log,
-  folder contracts và dữ liệu hợp lệ. Lead cài MSVC v142 bằng PowerShell elevated
-  trên laptop riêng, chạy `Setup-Project.ps1` và ký runtime PASS. Member 1 không
+  folder contracts và dữ liệu hợp lệ. Lead đã cài MSVC v142 và chạy
+  `Setup-Project.ps1 -FinalizeOnly` trên laptop; runtime PASS ngày 2026-09-24.
+  Member 1 không
   phải có GPU hoặc quyền admin trên laptop của lead.
 - **H1 — P2/P3→P4:** Member 1 bàn giao `poster` processed 100 frame và 3 benchmark
   scenes; Member 2 bàn giao custom `transforms.json`, danh sách train/eval bất biến,
@@ -169,7 +170,7 @@ hai methods dùng chính xác cùng input.
 
 **Việc cần làm:**
 
-1. Lên kế hoạch chụp 80–150 ảnh train sắc, static, ánh sáng ổn định, hai vòng góc
+1. Lên kế hoạch chụp khoảng 80–150 ảnh sắc tổng cộng, static, ánh sáng ổn định, hai vòng góc
    thấp/cao, overlap khoảng 70–80%; thêm eval views riêng khoảng 10–15%, xen
    giữa quỹ đạo train nhưng **không trùng** frame. Cố định lens/zoom/exposure khi
    khả thi; ghi số ảnh bị loại vì blur và lý do. Có thể dùng điện thoại của bất kỳ
@@ -319,10 +320,10 @@ Lead là người duy nhất có máy nghiệm thu baseline. Điều này là tr
 hành/review xuyên dải, **không** chuyển code ownership P0/P4/P5/P6 từ thành viên
 khác sang lead.
 
-1. Cài MSVC v142 trên Windows PowerShell elevated; chạy theo
-   `setup_full_command.md`: `Setup-Project.ps1`, `Check-Environment.ps1
-   -RequireRuntime`, lưu GPU imports/dependency snapshot. Nếu runtime FAIL,
-   gửi log chính xác cho Member 1; không đánh dấu P0 PASS.
+1. MSVC v142 và runtime A4500 đã PASS ngày 2026-09-24. Khi một thay đổi P0
+   chạm setup, chạy lại `Check-Environment.ps1 -RequireRuntime` và lưu GPU
+   imports/dependency snapshot. Nếu runtime FAIL, gửi log chính xác cho Member 1;
+   không giữ trạng thái P0 PASS trên revision lỗi.
 2. Cấp máy A4500 theo lịch: poster Nerfacto → poster Splatfacto → eval cả hai →
    `bonsai` pair → `garden`/`room` pair → custom pair. Mỗi job tuần tự; cắm nguồn,
    performance mode, thông gió; ghi GPU name/driver, 80 W thermal/power behavior,
@@ -406,11 +407,11 @@ rõ phần training replay chưa được kiểm chứng, không nói “reprodu
 
 ## 8. Lịch thực hiện theo dependency, không theo cảm tính
 
-1. **Ngay:** Member 1 xử lý P0/P1/P2 còn thiếu và doc drift; Member 2 chuẩn bị
+1. **Ngay:** Member 1 duy trì P0/P1/P2 và xử lý doc drift; Member 2 chuẩn bị
    capture/fixture P3, thiết kế test P4; Member 3 thiết kế fixture/schema consumer
-   P5–P7; lead chạy P10 và xin quyền cài v142. Đây là chuẩn bị song song, không
+   P5–P7; lead chạy P10 và bảo quản runtime A4500 đã PASS. Đây là chuẩn bị song song, không
    đánh dấu downstream PASS trước upstream.
-2. **Khi P0 runtime PASS:** lead cấp GPU slot cho P4 poster pair; Member 2 sửa
+2. **P0 runtime đã PASS:** lead cấp GPU slot cho P4 poster pair; Member 2 sửa
    wrapper theo log, Member 3 nối P5 evaluator. CPU members tiếp tục P2 manifest
    và P3 quality gate mà không chiếm GPU.
 3. **Khi poster train/eval PASS:** Member 3 hoàn thiện P6; lead chạy `bonsai`
@@ -424,7 +425,7 @@ rõ phần training replay chưa được kiểm chứng, không nói “reprodu
 ## 9. Cách chạy kiểm tra cơ bản (Windows PowerShell)
 
 ```powershell
-Set-Location 'D:\Desktop_informations\SGK năm 4\SGK kì 1 năm 4\ComputerVision - MToan\CVCourse\Project\Topic_16_CV'
+Set-Location -LiteralPath $Topic16Root  # khai báo $Topic16Root theo mục đầu setup_full_command.md
 Set-ExecutionPolicy -Scope Process Bypass
 
 # CPU-safe: parser và source control; không cần CUDA.
@@ -438,16 +439,24 @@ Get-ChildItem .\scripts -Recurse -Filter *.ps1 | ForEach-Object {
 }
 if ($parseErrors.Count) { $parseErrors; throw 'PowerShell parse failed.' }
 git status --short
-
-# Chỉ lead chạy trên A4500 sau khi cài MSVC v142 bằng PowerShell Administrator.
-.\scripts\Setup-Project.ps1
-.\scripts\Check-Environment.ps1 -RequireRuntime
-.\scripts\Download-Datasets.ps1 -Mode all
 ```
 
-Lệnh cụ thể để train/eval/export và xử lý custom nằm trong
-[`setup_full_command.md`](setup_full_command.md). Các lệnh GPU bên trên **chưa được
-coi là PASS** cho đến khi lead thực sự chạy, lưu log và ký gate.
+Chỉ lead chạy block này trên A4500; **CPU members dừng ở block trước**:
+
+```powershell
+Set-Location -LiteralPath $Topic16Root
+.\scripts\Setup-Project.ps1
+.\scripts\Check-Environment.ps1 -RequireRuntime
+Test-Path .\artifacts\logs\runtime\requirements.txt
+```
+
+Lệnh clone và setup theo từng loại máy, train/eval/export và xử lý custom nằm
+trong [`setup_full_command.md`](setup_full_command.md). Setup runtime A4500 đã
+PASS; lệnh **training/eval** chưa được coi là PASS cho đến khi lead thực sự chạy,
+lưu log và ký gate. `requirements.txt` được sinh ở
+`artifacts\logs\runtime\requirements.txt` trên từng máy sau setup và bị Git
+ignore; dùng `configs\project.psd1` làm nguồn pin, không copy snapshot của lead
+thành lệnh cài đặt trên máy CPU/6 GB.
 
 ## 10. Reference pack bắt buộc theo Px — đọc paper, đọc code, rồi mới code
 
