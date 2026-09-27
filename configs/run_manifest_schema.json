@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Topic 16 Run Manifest",
+  "description": "Strict contract for training run metadata, provenance, protocol, execution metrics, and artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "default": "1.0" },
+    "run_key": {
+      "type": "string",
+      "description": "Format: <scene>/<method>/<UTC-ID>",
+      "pattern": "^(poster|garden|bonsai|room|custom:[a-zA-Z0-9_-]+)/(nerfacto|splatfacto)/\\d{8}T\\d{9}Z$"
+    },
+    "scene": {
+      "type": "string",
+      "pattern": "^(poster|garden|bonsai|room|custom:[a-zA-Z0-9_-]+)$"
+    },
+    "method": { "type": "string", "enum": ["nerfacto", "splatfacto"] },
+    "status": { "type": "string", "enum": ["running", "succeeded", "failed"] },
+    "failure_reason": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "git_commit_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" },
+        "dataset_split_hash": { "type": "string", "minLength": 1 }
+      },
+      "required": ["git_commit_sha", "dataset_split_hash"]
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpu_name": { "type": "string" },
+        "gpu_name": { "type": "string" },
+        "ram_gb": { "type": "number", "minimum": 0 },
+        "driver_version": { "type": "string" }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "iterations": { "type": "integer", "minimum": 1, "default": 30000 },
+        "downscale_factor": { "type": "integer", "minimum": 1, "default": 2 },
+        "seed": { "type": "integer", "default": 42 },
+        "eval_interval": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["iterations", "downscale_factor", "seed"]
+    },
+    "execution_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wall_time_seconds": { "type": "number", "minimum": 0 },
+        "peak_vram_mb": { "type": "number", "minimum": 0 }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "config_path": { "type": "string", "minLength": 1 },
+        "checkpoint_dir": { "type": "string", "minLength": 1 },
+        "metrics_path": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "required": ["schema_version", "run_key", "scene", "method", "status", "started_at", "provenance", "protocol"],
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "failed" } }, "required": ["status"] },
+      "then": { "required": ["failure_reason", "finished_at"] }
+    },
+    {
+      "if": { "properties": { "status": { "const": "succeeded" } }, "required": ["status"] },
+      "then": { "required": ["finished_at"] }
+    }
+  ]
+}
