@@ -1,88 +1,79 @@
-﻿# tests\Test-ManifestContract.ps1
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[CmdletBinding()]
+param()
 
-Write-Host "=== BẮT ĐẦU TEST JSON SCHEMA V2 (STRICT MODE) ===" -ForegroundColor Cyan
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$validator = Join-Path $PSScriptRoot '..\scripts\Test-RunManifest.ps1'
+$writer = Join-Path $PSScriptRoot '..\scripts\Write-RunManifest.ps1'
+$fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('topic16 space ' + [char]0x00E1 + '-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
 
-# 1. Run thành công chuẩn chỉ
-$validSucceeded = @"
-{
-  "schema_version": "1.0",
-  "run_key": "garden/nerfacto/20260927T145759000Z",
-  "scene": "garden",
-  "method": "nerfacto",
-  "status": "succeeded",
-  "started_at": "2026-09-27T14:00:00Z",
-  "finished_at": "2026-09-27T15:00:00Z",
-  "provenance": { "git_commit_sha": "a1b2c3d", "dataset_split_hash": "hash123" },
-  "protocol": { "iterations": 30000, "downscale_factor": 2, "seed": 42 }
-}
-"@
-
-# 2. Run thất bại nhưng khai báo đàng hoàng (chuẩn if/then)
-$validFailed = @"
-{
-  "schema_version": "1.0",
-  "run_key": "bonsai/splatfacto/20260927T145759000Z",
-  "scene": "bonsai",
-  "method": "splatfacto",
-  "status": "failed",
-  "failure_reason": "CUDA Out of Memory",
-  "started_at": "2026-09-27T14:00:00Z",
-  "finished_at": "2026-09-27T14:15:00Z",
-  "provenance": { "git_commit_sha": "a1b2c3d", "dataset_split_hash": "hash123" },
-  "protocol": { "iterations": 30000, "downscale_factor": 2, "seed": 42 }
-}
-"@
-
-# 3. Kẻ lách luật: Thất bại nhưng giấu lỗi, nhét thêm key rác
-$invalidRun = @"
-{
-  "schema_version": "1.0",
-  "run_key": "room/nerfacto/20260927T145759000Z",
-  "scene": "room",
-  "method": "nerfacto",
-  "status": "failed",
-  "started_at": "2026-09-27T14:00:00Z",
-  "rac_thai_cong_nghiep": "hack_he_thong",
-  "provenance": { "git_commit_sha": "a1b2c3d", "dataset_split_hash": "hash123" },
-  "protocol": { "iterations": 30000, "downscale_factor": 2, "seed": 42 }
-}
-"@
-
-# Danh sách các trường được phép (để test additionalProperties: false)
-$allowedKeys = @("schema_version", "run_key", "scene", "method", "status", "failure_reason", "started_at", "finished_at", "provenance", "hardware", "protocol", "execution_metrics", "artifacts")
-
-function Validate-ManifestV2 ($jsonString, $testName) {
-    Write-Host "`nĐang test: $testName" -ForegroundColor Yellow
-    $obj = $jsonString | ConvertFrom-Json
-    $errors = @()
-
-    # 1. Test cấm thuộc tính lạ (additionalProperties: false)
-    $obj.psobject.properties.name | ForEach-Object {
-        if ($_ -notin $allowedKeys) { $errors += "LỖI: Phát hiện trường dữ liệu lạ không có trong hợp đồng ('$_')" }
-    }
-
-    # 2. Test điều kiện chéo if/then (allOf)
-    if ($obj.status -eq 'failed') {
-        if ([string]::IsNullOrWhiteSpace($obj.failure_reason)) { $errors += "LỖI CHÉO: Status là 'failed' nhưng giấu 'failure_reason'." }
-        if ([string]::IsNullOrWhiteSpace($obj.finished_at)) { $errors += "LỖI CHÉO: Status là 'failed' nhưng không ghi nhận giờ kết thúc 'finished_at'." }
-    }
-    if ($obj.status -eq 'succeeded') {
-        if ([string]::IsNullOrWhiteSpace($obj.finished_at)) { $errors += "LỖI CHÉO: Status là 'succeeded' nhưng không ghi nhận giờ hoàn thành 'finished_at'." }
-    }
-
-    # 3. Test Provenance bọc thép
-    if ($null -eq $obj.provenance.dataset_split_hash) { $errors += "LỖI BẮT BUỘC: Không tìm thấy dataset_split_hash. Nghi ngờ rò rỉ dữ liệu (Data Leakage)!" }
-
-    if ($errors.Count -eq 0) {
-        Write-Host " => PASS: Hồ sơ hợp lệ, qua ải!" -ForegroundColor Green
-    } else {
-        Write-Host " => FAIL: Hồ sơ bị bác bỏ vì vi phạm:" -ForegroundColor Red
-        $errors | ForEach-Object { Write-Host "    - $_" -ForegroundColor Red }
-    }
+function Assert-Case {
+    param([string]$Name, $Data, [bool]$ExpectedValid)
+    $path = Join-Path $fixtureRoot "$Name.json"
+    $Data | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $path -Encoding utf8
+    $passed = $true
+    try { & $validator -Path $path | Out-Null } catch { $passed = $false }
+    if ($passed -ne $ExpectedValid) { throw "Case $Name expected valid=$ExpectedValid, got valid=$passed" }
+    Write-Host "[ok] $Name"
 }
 
-# Chạy Test Fixtures
-Validate-ManifestV2 $validSucceeded "Case 1: Run Succeeded (Hoàn hảo)"
-Validate-ManifestV2 $validFailed "Case 2: Run Failed (Khai báo lỗi đàng hoàng)"
-Validate-ManifestV2 $invalidRun "Case 3: Kẻ lách luật (Giấu lỗi + Nhét rác)"
+try {
+    $base = @{
+        schema_version = '1.0'
+        run_key = 'garden/nerfacto/20260927T145759000Z'
+        scene = 'garden'
+        method = 'nerfacto'
+        status = 'succeeded'
+        started_at = '2026-09-27T14:00:00Z'
+        finished_at = '2026-09-27T15:00:00Z'
+        provenance = @{ git_commit_sha = 'a1b2c3d'; dataset_split_hash = ('a' * 64) }
+        protocol = @{ iterations = 30000; downscale_factor = 2; seed = 42 }
+        execution_metrics = @{ wall_time_seconds = 3600 }
+        artifacts = @{ config_path = 'artifacts/runs/garden/nerfacto/20260927T145759000Z/config.yml'; checkpoint_dir = 'artifacts/runs/garden/nerfacto/20260927T145759000Z/nerfstudio_models' }
+    }
+    Assert-Case 'valid-success' $base $true
+    $failed = $base.Clone(); $failed.status = 'failed'; $failed.failure_reason = 'CUDA OOM'
+    Assert-Case 'valid-failure' $failed $true
+    $custom = $base.Clone(); $custom.scene = 'custom:object_v1'; $custom.run_key = 'custom-object_v1/nerfacto/20260927T145759000Z'
+    $custom.artifacts = @{ config_path = 'artifacts/runs/custom-object_v1/nerfacto/20260927T145759000Z/config.yml'; checkpoint_dir = 'artifacts/runs/custom-object_v1/nerfacto/20260927T145759000Z/nerfstudio_models' }
+    Assert-Case 'valid-custom' $custom $true
+    $extra = $base.Clone(); $extra.extra = 'unrecognized'
+    Assert-Case 'unknown-key' $extra $false
+    $badStatus = $base.Clone(); $badStatus.status = 'failed'; $badStatus.Remove('finished_at')
+    Assert-Case 'missing-finish' $badStatus $false
+    $mismatch = $base.Clone(); $mismatch.method = 'splatfacto'
+    Assert-Case 'wrong-run-key' $mismatch $false
+    $badHash = $base.Clone(); $badHash.provenance = @{ git_commit_sha = 'a1b2c3d'; dataset_split_hash = 'not-a-hash' }
+    Assert-Case 'bad-split-hash' $badHash $false
+    $badTime = $base.Clone(); $badTime.finished_at = '2026-09-27T13:00:00Z'
+    Assert-Case 'time-reversed' $badTime $false
+    $wrongVersion = $base.Clone(); $wrongVersion.schema_version = '2.0'
+    Assert-Case 'wrong-schema-version' $wrongVersion $false
+    $missingArtifacts = $base.Clone(); $missingArtifacts.Remove('artifacts')
+    Assert-Case 'missing-success-artifacts' $missingArtifacts $false
+    $artifactRoot = Join-Path $fixtureRoot 'artifacts'
+    & $writer -InputPath (Join-Path $fixtureRoot 'valid-success.json') -ArtifactsDirectory $artifactRoot | Out-Null
+    $saved = Join-Path $artifactRoot 'logs\garden\nerfacto\20260927T145759000Z\manifest.json'
+    if (-not (Test-Path -LiteralPath $saved)) { throw 'Writer mapped run key to the wrong artifact path.' }
+    $duplicateRejected = $false
+    try { & $writer -InputPath (Join-Path $fixtureRoot 'valid-success.json') -ArtifactsDirectory $artifactRoot | Out-Null }
+    catch { $duplicateRejected = $true }
+    if (-not $duplicateRejected) { throw 'Writer overwrote a completed manifest.' }
+    Write-Host '[ok] Path mapping with spaces/Unicode and immutable completed run.'
+    $running = $base.Clone(); $running.run_key = 'room/nerfacto/20260927T145759000Z'; $running.scene = 'room'
+    $running.Remove('finished_at'); $running.Remove('artifacts'); $running.Remove('execution_metrics'); $running.status = 'running'
+    Assert-Case 'valid-running' $running $true
+    & $writer -InputPath (Join-Path $fixtureRoot 'valid-running.json') -ArtifactsDirectory $artifactRoot | Out-Null
+    $terminal = $running.Clone(); $terminal.status = 'failed'; $terminal.failure_reason = 'fixture error'; $terminal.finished_at = '2026-09-27T15:00:00Z'
+    Assert-Case 'valid-transition' $terminal $true
+    & $writer -InputPath (Join-Path $fixtureRoot 'valid-transition.json') -ArtifactsDirectory $artifactRoot | Out-Null
+    $terminalPath = Join-Path $artifactRoot 'logs\room\nerfacto\20260927T145759000Z\manifest.json'
+    if ((Get-Content -LiteralPath $terminalPath -Raw | ConvertFrom-Json).status -ne 'failed') {
+        throw 'Writer did not atomically replace running with terminal status.'
+    }
+    Write-Host '[ok] Running-to-failed transition saved.'
+    Write-Host '[topic16] Manifest contract tests passed.'
+} finally {
+    Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
+}

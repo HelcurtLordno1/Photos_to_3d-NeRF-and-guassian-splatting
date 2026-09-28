@@ -5,15 +5,15 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "type": "string", "default": "1.0" },
+    "schema_version": { "type": "string", "const": "1.0" },
     "run_key": {
       "type": "string",
-      "description": "Format: <scene>/<method>/<UTC-ID>",
-      "pattern": "^(poster|garden|bonsai|room|custom:[a-zA-Z0-9_-]+)/(nerfacto|splatfacto)/\\d{8}T\\d{9}Z$"
+      "description": "Artifact key: <scene-folder>/<method>/<UTC-ID>; custom:<slug> maps to custom-<slug>",
+      "pattern": "^(poster|garden|bonsai|room|custom-[a-z0-9][a-z0-9_-]*)/(nerfacto|splatfacto)/\\d{8}T\\d{9}Z$"
     },
     "scene": {
       "type": "string",
-      "pattern": "^(poster|garden|bonsai|room|custom:[a-zA-Z0-9_-]+)$"
+      "pattern": "^(poster|garden|bonsai|room|custom:[a-z0-9][a-z0-9_-]*)$"
     },
     "method": { "type": "string", "enum": ["nerfacto", "splatfacto"] },
     "status": { "type": "string", "enum": ["running", "succeeded", "failed"] },
@@ -25,7 +25,7 @@
       "additionalProperties": false,
       "properties": {
         "git_commit_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" },
-        "dataset_split_hash": { "type": "string", "minLength": 1 }
+        "dataset_split_hash": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
       },
       "required": ["git_commit_sha", "dataset_split_hash"]
     },
@@ -43,9 +43,9 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "iterations": { "type": "integer", "minimum": 1, "default": 30000 },
-        "downscale_factor": { "type": "integer", "minimum": 1, "default": 2 },
-        "seed": { "type": "integer", "default": 42 },
+        "iterations": { "type": "integer", "minimum": 1 },
+        "downscale_factor": { "type": "integer", "minimum": 1 },
+        "seed": { "type": "integer" },
         "eval_interval": { "type": "integer", "minimum": 1 }
       },
       "required": ["iterations", "downscale_factor", "seed"]
@@ -56,7 +56,8 @@
       "properties": {
         "wall_time_seconds": { "type": "number", "minimum": 0 },
         "peak_vram_mb": { "type": "number", "minimum": 0 }
-      }
+      },
+      "required": ["wall_time_seconds"]
     },
     "artifacts": {
       "type": "object",
@@ -65,7 +66,8 @@
         "config_path": { "type": "string", "minLength": 1 },
         "checkpoint_dir": { "type": "string", "minLength": 1 },
         "metrics_path": { "type": "string", "minLength": 1 }
-      }
+      },
+      "required": ["config_path", "checkpoint_dir"]
     }
   },
   "required": ["schema_version", "run_key", "scene", "method", "status", "started_at", "provenance", "protocol"],
@@ -76,7 +78,7 @@
     },
     {
       "if": { "properties": { "status": { "const": "succeeded" } }, "required": ["status"] },
-      "then": { "required": ["finished_at"] }
+      "then": { "required": ["finished_at", "execution_metrics", "artifacts"] }
     }
   ]
 }

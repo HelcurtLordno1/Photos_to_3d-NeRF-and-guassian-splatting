@@ -147,7 +147,8 @@ phải hỏi lại cách đặt tên/path. Lead review thay đổi contract trư
    `images_2` và COLMAP `sparse/0`. Không yêu cầu cả nhóm tải archive 12,5 GB;
    dữ liệu lớn chỉ cần trên máy lead hoặc máy GPU nào thực sự chạy diagnostic.
 3. Làm P2.5: manifest từng scene gồm nguồn URL/revision, archive size/checksum
-   **nếu đã tính**, image count, resolution đọc từ ảnh, sparse files, thời điểm
+   **đã đo và pin SHA-256 trong `configs/project.psd1`**, image count, resolution
+   đọc từ ảnh, sparse files, thời điểm
    validate, raw/processed path, protocol downscale. Không ghi checksum tưởng tượng
    hoặc ghi dữ liệu nguồn vào Git. Nếu cần checksum toàn archive, đo thật rồi lưu
    kết quả cùng cách tái tính.
@@ -404,6 +405,11 @@ nghiệm thu GPU nếu chỉ chạy mock. GPU 6 GB là
 máy phát triển/diagnostic phụ; **A4500 80 W là máy đo chính duy nhất**. Nếu máy
 mới trong G-Core không có GPU tương đương, chỉ xác minh phần setup/data/CLI; ghi
 rõ phần training replay chưa được kiểm chứng, không nói “reproduce complete”.
+
+Nghiệm thu P0–P2 trên laptop lead ngày 2026-09-28 được ghi tại
+[`docs/member1_acceptance_2026-09-28.md`](docs/member1_acceptance_2026-09-28.md).
+Member 2 cần đọc [`docs/protocols/run_manifest.md`](docs/protocols/run_manifest.md)
+trước khi nối P4 với manifest writer; P1 PASS không thay P4/P5 GPU acceptance.
 
 ## 8. Lịch thực hiện theo dependency, không theo cảm tính
 

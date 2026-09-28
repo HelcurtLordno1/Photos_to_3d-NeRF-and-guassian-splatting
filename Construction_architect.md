@@ -253,7 +253,8 @@ Topic_16_CV/
 ├── .gitattributes                  # Ép LF, đánh dấu binary artifacts
 ├── .editorconfig                   # Quy ước editor/indent/newline
 ├── configs/
-│   └── project.psd1                # PowerShell data: version/dataset/protocol pins
+│   ├── project.psd1                # PowerShell data: version/dataset/protocol pins
+│   └── run_manifest_schema.json   # P1 status/provenance/artifact contract
 ├── scripts/
 │   ├── lib/Common.ps1              # Root paths, helpers, config/Conda runner
 │   ├── Install-HostTools.ps1       # Git/Miniconda/MSVC bootstrap
@@ -264,6 +265,9 @@ Topic_16_CV/
 │   ├── Download-Repositories.ps1   # Exact runtime/research snapshots
 │   ├── Download-Papers.ps1         # 7 PDF cốt lõi
 │   ├── Download-Datasets.ps1       # smoke/benchmark/all, resume + validation
+│   ├── Test-Datasets.ps1           # P2 dataset check + scene manifests
+│   ├── Test-RunManifest.ps1        # P1 schema and cross-field validation
+│   ├── Write-RunManifest.ps1       # P1 atomic run-manifest writer
 │   ├── Process-Capture.ps1         # Ảnh custom → COLMAP/Nerfstudio data
 │   ├── Monitor-Gpu.ps1             # GPU/VRAM/temp/power CSV
 │   ├── Train.ps1                   # Training entrypoint cho hai methods
@@ -276,7 +280,7 @@ Topic_16_CV/
 ├── third_party/                    # Upstream source snapshots, ignored
 ├── docs/
 │   ├── research/papers/            # PDF library; analysis nằm trong file này
-│   └── protocols/                  # Checklist vận hành ngắn sau này
+│   └── protocols/run_manifest.md  # P1 handoff to P4–P7
 ├── src/topic16/                    # Code nhóm tự sở hữu, importable package
 ├── tests/                          # Test cho code trong src, không test upstream
 ├── notebooks/                      # EDA/plot thử; không là pipeline chính
@@ -815,6 +819,10 @@ Một run hợp lệ phải có:
 - sau eval: `metrics.json` và held-out renders.
 
 Nếu thiếu một mục, đánh dấu incomplete và không aggregate tự động.
+Schema 1.0, validator và atomic writer của P1 nằm ở
+[`docs/protocols/run_manifest.md`](docs/protocols/run_manifest.md). P4 phải tích
+hợp writer vào lifecycle `running→succeeded/failed`; sự tồn tại của schema
+không chứng minh training đã chạy.
 
 ### 10.3 Naming
 

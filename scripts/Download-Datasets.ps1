@@ -128,10 +128,6 @@ function Expand-SelectedZipDirectories {
 }
 
 function Get-BenchmarkDataset {
-    $freeGiB = Get-FreeSpaceGiB
-    if ($freeGiB -lt $Config.MinimumDatasetFreeGiB) {
-        throw "Benchmark setup requires at least $($Config.MinimumDatasetFreeGiB) GiB free; only $freeGiB GiB is available."
-    }
     $cacheDirectory = Join-Path $DataRoot '.cache'
     $archive = Join-Path $cacheDirectory '360_v2.zip'
     $target = Join-Path $RawDataRoot 'mipnerf360'
@@ -139,6 +135,15 @@ function Get-BenchmarkDataset {
     New-TopicDirectory -Path $target
 
     $validArchive = (Test-Path -LiteralPath $archive) -and ((Get-Item -LiteralPath $archive).Length -eq $Config.MipNerf360ArchiveBytes)
+    $missingScenes = @($Config.MipNerf360Scenes | Where-Object {
+        -not (Test-Path -LiteralPath (Join-Path $target "$_\.topic16-extracted"))
+    })
+    if (-not $validArchive -or $missingScenes.Count -gt 0) {
+        $freeGiB = Get-FreeSpaceGiB
+        if ($freeGiB -lt $Config.MinimumDatasetFreeGiB) {
+            throw "Benchmark download/extraction requires at least $($Config.MinimumDatasetFreeGiB) GiB free; only $freeGiB GiB is available."
+        }
+    }
     if (-not $validArchive) {
         Write-TopicInfo 'Downloading the official 12.5 GB Mip-NeRF 360 archive (resume enabled).'
         & curl.exe --fail --location --retry 5 --retry-delay 3 --continue-at - --output $archive $Config.MipNerf360Url
@@ -149,9 +154,6 @@ function Get-BenchmarkDataset {
         throw "Archive size mismatch: expected $($Config.MipNerf360ArchiveBytes), got $actualBytes."
     }
 
-    $missingScenes = @($Config.MipNerf360Scenes | Where-Object {
-        -not (Test-Path -LiteralPath (Join-Path $target "$_\.topic16-extracted"))
-    })
     foreach ($scene in $missingScenes) {
         Write-TopicInfo "Extracting $scene from the verified archive."
         Expand-SelectedZipDirectories -Archive $archive -Destination $target -Directories @($scene)
@@ -172,4 +174,5 @@ function Get-BenchmarkDataset {
 
 if ($Mode -in @('smoke', 'all')) { Get-SmokeDataset }
 if ($Mode -in @('benchmark', 'all')) { Get-BenchmarkDataset }
+& (Join-Path $PSScriptRoot 'Test-Datasets.ps1') -Mode $Mode -WriteManifest
 Write-TopicInfo "Dataset profile '$Mode' is ready."

@@ -21,6 +21,8 @@
     HfHubVersion = '0.34.4'
     PosterRepository = 'nerfstudioteam/datasets'
     PosterRevision = '461701c17e83c3f4d2481db32315aa7df703d2f8'
+    PosterImageCount = 100
+    PosterRawFrameCount = 226
 
     NerfReferenceCommit = '14c55567a6d0fbd75d3fd12b0411f98160ba3237'
     MultinerfReferenceCommit = '5b4d4f64608ec8077222c52fdf814d40acc10bc1'
@@ -31,7 +33,9 @@
 
     MipNerf360Url = 'https://storage.googleapis.com/gresearch/refraw360/360_v2.zip'
     MipNerf360ArchiveBytes = 12535427936L
+    MipNerf360ArchiveSha256 = '77332bf4eba3b8ca0c7f70130849b1e394efdd60d8f20efa6f217081d08a8b2a'
     MipNerf360Scenes = @('garden', 'bonsai', 'room')
+    MipNerf360ImageCounts = @{ garden = 185; bonsai = 292; room = 311 }
 
     TrainIterations = 30000
     DownscaleFactor = 2

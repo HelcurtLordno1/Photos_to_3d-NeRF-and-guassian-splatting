@@ -62,6 +62,7 @@ CUDA/PyTorch/MSVC vốn là failure mode lớn nhất của project.
 - `scripts/Setup-Project.ps1`
 - `scripts/lib/Common.ps1`
 - `configs/project.psd1`
+- `tests/Test-HostContract.ps1`
 
 **Công việc:**
 
@@ -95,7 +96,9 @@ inference và report không tự tạo layout khác nhau.
 
 **Input:** P0; protocol trong `Construction_architect.md`.
 
-**Code/file sở hữu:** `configs/project.psd1`, `scripts/lib/Common.ps1`, `.gitignore`,
+**Code/file sở hữu:** `configs/project.psd1`, `configs/run_manifest_schema.json`,
+`scripts/Test-RunManifest.ps1`, `scripts/Write-RunManifest.ps1`,
+`tests/Test-ManifestContract.ps1`, `docs/protocols/run_manifest.md`, `.gitignore`,
 `data/*/README.md`, `artifacts/*/README.md`.
 
 **Công việc:**
@@ -104,7 +107,8 @@ inference và report không tự tạo layout khác nhau.
 - [x] P1.2 Dataset keys chuẩn: `poster`, `garden`, `bonsai`, `room`, `custom:<slug>`.
 - [x] P1.3 Run key chuẩn: `<scene>/<method>/<UTC-ID>`.
 - [x] P1.4 Raw/processed/generated boundaries và Git ignore.
-- [ ] P1.5 Viết JSON schema cho run manifest khi bắt đầu aggregator.
+- [x] P1.5 JSON schema 1.0, validator/writer PowerShell, fixture hợp lệ và
+  bất hợp lệ; P4 vẫn phải tích hợp writer vào training lifecycle.
 
 **Contract output:**
 
@@ -127,7 +131,8 @@ trước khi tốn GPU.
 
 **Input:** P0–P1.
 
-**Code/file sở hữu:** `scripts/Download-Datasets.ps1`, `data/raw/`, `data/.cache/`.
+**Code/file sở hữu:** `scripts/Download-Datasets.ps1`, `scripts/Test-Datasets.ps1`,
+`tests/Test-DatasetContract.ps1`, `data/raw/`, `data/.cache/`.
 
 **Profiles:**
 
@@ -143,17 +148,20 @@ trước khi tốn GPU.
 - [x] P2.2 Mip-NeRF 360 resume/retry và exact-byte validation.
 - [x] P2.3 Chỉ extract ba scene để hạn chế disk trên laptop.
 - [x] P2.4 Idempotent skip, không overwrite dữ liệu hợp lệ.
-- [ ] P2.5 Ghi scene manifest: số ảnh, resolution, sparse files, source URL.
+- [x] P2.5 Ghi scene manifest tại `artifacts/logs/datasets/`: nguồn/revision,
+  archive bytes (nếu có), số ảnh, resolution, sparse files, UTC validation.
 
 **Lệnh kiểm chứng:**
 
 ```powershell
 .\scripts\Download-Datasets.ps1 -Mode smoke
 .\scripts\Download-Datasets.ps1 -Mode benchmark
+.\tests\Test-DatasetContract.ps1
 ```
 
 **DoD:** poster có `transforms.json`; mỗi benchmark scene có `images_2` và
-`sparse\0`; archive đúng `12,535,427,936` bytes; rerun không tải lại.
+`sparse\0`; archive đúng `12,535,427,936` bytes và SHA-256 trong registry;
+rerun không tải lại.
 
 ## P3 — Phone capture, pose estimation và frozen split
 

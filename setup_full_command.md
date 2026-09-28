@@ -79,7 +79,9 @@ foreach ($scene in 'garden','bonsai','room') {
 
 Benchmark download cần tối thiểu 20 GiB trống; nên giữ 30–40 GiB cho data, model và
 renders. Archive được cache tại `data\.cache\360_v2.zip`; không xóa nếu muốn rerun
-không tải lại. Không commit dataset/archive lên Git.
+không tải lại. Validator đối chiếu cả kích thước lẫn SHA-256 đã đo/pin trong
+`configs\project.psd1`; dữ liệu lệch hash sẽ bị từ chối thay vì train.
+Không commit dataset/archive lên Git.
 
 Nguồn poster Google Drive của bản Nerfstudio pin có thể từ chối `gdown`.
 `Download-Datasets.ps1` dùng bản chính thức
@@ -89,6 +91,20 @@ Nguồn poster Google Drive của bản Nerfstudio pin có thể từ chối `gd
 tạo subset hợp lệ 100 frames tại `data\processed\nerfstudio\poster`. Training
 chỉ dùng folder processed. Script chỉ báo PASS sau khi kiểm tra từng ảnh gốc,
 `images_2`, sparse points và mọi đường dẫn frame trong subset.
+
+`Test-Datasets.ps1` còn giải mã từng ảnh `images_2`, kiểm tra sparse files và
+ghi scene manifests dưới `artifacts\logs\datasets\` (Git ignored). Có thể chạy
+kiểm tra độc lập, không tải lại:
+
+```powershell
+.\scripts\Test-Datasets.ps1 -Mode all -WriteManifest
+.\tests\Test-DatasetContract.ps1
+.\tests\Test-ManifestContract.ps1
+```
+
+Run-manifest P1 được mô tả tại
+[`docs/protocols/run_manifest.md`](docs/protocols/run_manifest.md); P4 chưa tích
+hợp writer vào training, nên test contract PASS không đồng nghĩa train PASS.
 
 ## 2. Quy ước PowerShell-only
 
