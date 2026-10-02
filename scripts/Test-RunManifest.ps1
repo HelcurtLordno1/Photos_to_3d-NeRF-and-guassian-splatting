@@ -6,8 +6,8 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$manifest = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
-$schema = Get-Content -LiteralPath $SchemaPath -Raw | ConvertFrom-Json
+$manifest = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+$schema = Get-Content -LiteralPath $SchemaPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $issues = New-Object 'System.Collections.Generic.List[string]'
 
 function Test-Node {

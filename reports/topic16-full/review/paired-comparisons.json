@@ -1,0 +1,42 @@
+[
+  {
+    "scene": "bonsai",
+    "psnr_delta_db": 10.91224479675293,
+    "ssim_delta": 0.31978464126586914,
+    "lpips_delta": -0.07794240117073059,
+    "fps_ratio_splat_over_nerf": 263.16399196632256,
+    "time_ratio_splat_over_nerf": 1.1479314990731209,
+    "vram_ratio_splat_over_nerf": 0.9252739953503819,
+    "checkpoint_ratio_splat_over_nerf": 1.8258521181300547
+  },
+  {
+    "scene": "custom:tea_sets_2",
+    "psnr_delta_db": 8.700193405151367,
+    "ssim_delta": 0.27574992179870605,
+    "lpips_delta": -0.053168416023254395,
+    "fps_ratio_splat_over_nerf": 74.76180725100704,
+    "time_ratio_splat_over_nerf": 0.47182614717215443,
+    "vram_ratio_splat_over_nerf": 0.5775745257452575,
+    "checkpoint_ratio_splat_over_nerf": 1.0671514525457952
+  },
+  {
+    "scene": "garden",
+    "psnr_delta_db": 4.7979736328125,
+    "ssim_delta": 0.29427096247673035,
+    "lpips_delta": -0.24072930216789246,
+    "fps_ratio_splat_over_nerf": 308.4635034337524,
+    "time_ratio_splat_over_nerf": 1.9355674965881815,
+    "vram_ratio_splat_over_nerf": 1.5082437275985663,
+    "checkpoint_ratio_splat_over_nerf": 6.849043479825783
+  },
+  {
+    "scene": "room",
+    "psnr_delta_db": 8.758466720581055,
+    "ssim_delta": 0.18396532535552979,
+    "lpips_delta": -0.119384765625,
+    "fps_ratio_splat_over_nerf": 234.17640905699233,
+    "time_ratio_splat_over_nerf": 1.0626460883590685,
+    "vram_ratio_splat_over_nerf": 0.782392026578073,
+    "checkpoint_ratio_splat_over_nerf": 2.2652209877408813
+  }
+]

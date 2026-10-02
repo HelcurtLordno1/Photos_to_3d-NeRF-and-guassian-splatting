@@ -1,0 +1,550 @@
+[
+  {
+    "scene": "bonsai",
+    "eval_index": 0,
+    "source": "data/processed/canonical/bonsai/images_2/frame_eval_00000.png",
+    "selection_reasons": [
+      "first",
+      "worst-splatfacto-png-mse"
+    ],
+    "original_size": [
+      1559,
+      1039
+    ],
+    "crop_xyxy": [
+      459,
+      260,
+      1099,
+      779
+    ],
+    "run_keys": [
+      "bonsai/nerfacto/20261001T014957052Z",
+      "bonsai/splatfacto/20261001T022329468Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/bonsai/nerfacto/20261001T014957052Z/gt_0000.png",
+        "sha256": "2131a914f7179f41229f36d11a182e8de192046b9a8dc6fab57658f63c745b30"
+      },
+      {
+        "path": "artifacts/renders/bonsai/nerfacto/20261001T014957052Z/pred_0000.png",
+        "sha256": "5e7f36ef1acf46d396f96f33824c26819c32bc07ab7b0e8b95b54789e05a44ee"
+      },
+      {
+        "path": "artifacts/renders/bonsai/splatfacto/20261001T022329468Z/pred_0000.png",
+        "sha256": "948fad34182503566c1fecd4a328f7186188b5ce2cd0bfc71d3e8cdbec97d02f"
+      }
+    ],
+    "full_figure": "figures/bonsai-view-000-full.png",
+    "crop_figure": "figures/bonsai-view-000-crop.png",
+    "error_figure": "figures/bonsai-view-000-error.png"
+  },
+  {
+    "scene": "bonsai",
+    "eval_index": 9,
+    "source": "data/processed/canonical/bonsai/images_2/frame_eval_00009.png",
+    "selection_reasons": [
+      "worst-nerfacto-png-mse"
+    ],
+    "original_size": [
+      1559,
+      1039
+    ],
+    "crop_xyxy": [
+      459,
+      260,
+      1099,
+      779
+    ],
+    "run_keys": [
+      "bonsai/nerfacto/20261001T014957052Z",
+      "bonsai/splatfacto/20261001T022329468Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/bonsai/nerfacto/20261001T014957052Z/gt_0009.png",
+        "sha256": "a73b3e9c0cb1a8c94f052d2be241f382c63e0d88531a5e09551f113d393e32d4"
+      },
+      {
+        "path": "artifacts/renders/bonsai/nerfacto/20261001T014957052Z/pred_0009.png",
+        "sha256": "32aa13febf0b66c208cda3d6366b6dd11e46fc628fd5aeeff9e26629e42935dd"
+      },
+      {
+        "path": "artifacts/renders/bonsai/splatfacto/20261001T022329468Z/pred_0009.png",
+        "sha256": "0d280ab307ae277d5d730d917286231b45d6f984d972a4fcec1cb209f080fc7c"
+      }
+    ],
+    "full_figure": "figures/bonsai-view-009-full.png",
+    "crop_figure": "figures/bonsai-view-009-crop.png",
+    "error_figure": "figures/bonsai-view-009-error.png"
+  },
+  {
+    "scene": "bonsai",
+    "eval_index": 16,
+    "source": "data/processed/canonical/bonsai/images_2/frame_eval_00016.png",
+    "selection_reasons": [
+      "median-nerfacto-png-mse"
+    ],
+    "original_size": [
+      1559,
+      1039
+    ],
+    "crop_xyxy": [
+      459,
+      260,
+      1099,
+      779
+    ],
+    "run_keys": [
+      "bonsai/nerfacto/20261001T014957052Z",
+      "bonsai/splatfacto/20261001T022329468Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/bonsai/nerfacto/20261001T014957052Z/gt_0016.png",
+        "sha256": "4883a48fb0260db07e551f317f0f8738166cb4fe4b4aa6e0987f1c227809317d"
+      },
+      {
+        "path": "artifacts/renders/bonsai/nerfacto/20261001T014957052Z/pred_0016.png",
+        "sha256": "531fbb9265c00c295f06986d49b90811b47f6aa0279e488fed4294f506d98380"
+      },
+      {
+        "path": "artifacts/renders/bonsai/splatfacto/20261001T022329468Z/pred_0016.png",
+        "sha256": "2098b0f0504ebaebcd66356a7bbb8c4f77bb2f775af057b8355e86376963073c"
+      }
+    ],
+    "full_figure": "figures/bonsai-view-016-full.png",
+    "crop_figure": "figures/bonsai-view-016-crop.png",
+    "error_figure": "figures/bonsai-view-016-error.png"
+  },
+  {
+    "scene": "custom:tea_sets_2",
+    "eval_index": 0,
+    "source": "data/processed/canonical/custom-tea_sets_2/images_2/frame_eval_00000.png",
+    "selection_reasons": [
+      "first"
+    ],
+    "original_size": [
+      359,
+      639
+    ],
+    "crop_xyxy": [
+      90,
+      160,
+      269,
+      479
+    ],
+    "run_keys": [
+      "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+      "custom-tea_sets_2/splatfacto/20261001T153020900Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/gt_0000.png",
+        "sha256": "4a169490a8d172301b3b7a245b6bb659fdb8d41c6422b08b37a43250923ed793"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/pred_0000.png",
+        "sha256": "8a07b539a815f72730618f5b4bda0ea2ca125bfd97e753c4e4fd986071542e28"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/splatfacto/20261001T153020900Z/pred_0000.png",
+        "sha256": "ce3fcd29d20c94972fb377851a258c776028b960b56745125017169f82bb1c39"
+      }
+    ],
+    "full_figure": "figures/custom-tea_sets_2-view-000-full.png",
+    "crop_figure": "figures/custom-tea_sets_2-view-000-crop.png",
+    "error_figure": "figures/custom-tea_sets_2-view-000-error.png"
+  },
+  {
+    "scene": "custom:tea_sets_2",
+    "eval_index": 10,
+    "source": "data/processed/canonical/custom-tea_sets_2/images_2/frame_eval_00010.png",
+    "selection_reasons": [
+      "worst-nerfacto-png-mse"
+    ],
+    "original_size": [
+      359,
+      639
+    ],
+    "crop_xyxy": [
+      90,
+      160,
+      269,
+      479
+    ],
+    "run_keys": [
+      "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+      "custom-tea_sets_2/splatfacto/20261001T153020900Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/gt_0010.png",
+        "sha256": "bb9d826ba28ea61e31a307c6ee393ba98db52c09f0658a8013b7a42163193332"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/pred_0010.png",
+        "sha256": "4fe81f5c9e560f076a3746a263945ad6445fca52e8fb500081d2d744d1991fd7"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/splatfacto/20261001T153020900Z/pred_0010.png",
+        "sha256": "980689f4e49eb0f71c69e0705fefc7f29987f7259146e425a44de810f31bcdec"
+      }
+    ],
+    "full_figure": "figures/custom-tea_sets_2-view-010-full.png",
+    "crop_figure": "figures/custom-tea_sets_2-view-010-crop.png",
+    "error_figure": "figures/custom-tea_sets_2-view-010-error.png"
+  },
+  {
+    "scene": "custom:tea_sets_2",
+    "eval_index": 13,
+    "source": "data/processed/canonical/custom-tea_sets_2/images_2/frame_eval_00013.png",
+    "selection_reasons": [
+      "worst-splatfacto-png-mse"
+    ],
+    "original_size": [
+      359,
+      639
+    ],
+    "crop_xyxy": [
+      90,
+      160,
+      269,
+      479
+    ],
+    "run_keys": [
+      "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+      "custom-tea_sets_2/splatfacto/20261001T153020900Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/gt_0013.png",
+        "sha256": "70a4abcd0c8b70bd39d31683bb12e1c30126f176a13bf6a6fc5c437d3f06088d"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/pred_0013.png",
+        "sha256": "8ea6eeeedab14e18d13ea9f969710e7530989142194f016d5684dd075a2d0f7e"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/splatfacto/20261001T153020900Z/pred_0013.png",
+        "sha256": "766863275abc3a4e9a5be982b3cbabfc797fa871464a32ea31f69cfa5987d1b2"
+      }
+    ],
+    "full_figure": "figures/custom-tea_sets_2-view-013-full.png",
+    "crop_figure": "figures/custom-tea_sets_2-view-013-crop.png",
+    "error_figure": "figures/custom-tea_sets_2-view-013-error.png"
+  },
+  {
+    "scene": "custom:tea_sets_2",
+    "eval_index": 7,
+    "source": "data/processed/canonical/custom-tea_sets_2/images_2/frame_eval_00007.png",
+    "selection_reasons": [
+      "median-nerfacto-png-mse"
+    ],
+    "original_size": [
+      359,
+      639
+    ],
+    "crop_xyxy": [
+      90,
+      160,
+      269,
+      479
+    ],
+    "run_keys": [
+      "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+      "custom-tea_sets_2/splatfacto/20261001T153020900Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/gt_0007.png",
+        "sha256": "14933ab0e31516f7401aee02226cfb9fe6485ec715faea3d1eb685d5a2a6ffd7"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/nerfacto/20261001T151914364Z/pred_0007.png",
+        "sha256": "8e8d6e6b14c066762b521df904968f8319d5d3a8a238d82da70ef6683ca51b96"
+      },
+      {
+        "path": "artifacts/renders/custom-tea_sets_2/splatfacto/20261001T153020900Z/pred_0007.png",
+        "sha256": "89622ee34ad555c242019c232124b54077650ac687cf70d7252e3ee2df27c58d"
+      }
+    ],
+    "full_figure": "figures/custom-tea_sets_2-view-007-full.png",
+    "crop_figure": "figures/custom-tea_sets_2-view-007-crop.png",
+    "error_figure": "figures/custom-tea_sets_2-view-007-error.png"
+  },
+  {
+    "scene": "garden",
+    "eval_index": 0,
+    "source": "data/processed/canonical/garden/images_2/frame_eval_00000.png",
+    "selection_reasons": [
+      "first"
+    ],
+    "original_size": [
+      2593,
+      1680
+    ],
+    "crop_xyxy": [
+      976,
+      520,
+      1616,
+      1160
+    ],
+    "run_keys": [
+      "garden/nerfacto/20261001T032052797Z",
+      "garden/splatfacto/20261001T044422289Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/garden/nerfacto/20261001T032052797Z/gt_0000.png",
+        "sha256": "3d90084afa50455d79addf3fbfb8bfbbab5041ebecd438211f06be6ba573481a"
+      },
+      {
+        "path": "artifacts/renders/garden/nerfacto/20261001T032052797Z/pred_0000.png",
+        "sha256": "a1f9d8c1b84b0e3a791cba2e2c8c442131525ec1da48772142c48e20d8be6a16"
+      },
+      {
+        "path": "artifacts/renders/garden/splatfacto/20261001T044422289Z/pred_0000.png",
+        "sha256": "0caead773a6769b8462abb4e97c17b93b69f70bfb6a6648e22ba1af65bfab4a5"
+      }
+    ],
+    "full_figure": "figures/garden-view-000-full.png",
+    "crop_figure": "figures/garden-view-000-crop.png",
+    "error_figure": "figures/garden-view-000-error.png"
+  },
+  {
+    "scene": "garden",
+    "eval_index": 4,
+    "source": "data/processed/canonical/garden/images_2/frame_eval_00004.png",
+    "selection_reasons": [
+      "worst-nerfacto-png-mse",
+      "worst-splatfacto-png-mse"
+    ],
+    "original_size": [
+      2593,
+      1680
+    ],
+    "crop_xyxy": [
+      976,
+      520,
+      1616,
+      1160
+    ],
+    "run_keys": [
+      "garden/nerfacto/20261001T032052797Z",
+      "garden/splatfacto/20261001T044422289Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/garden/nerfacto/20261001T032052797Z/gt_0004.png",
+        "sha256": "758bd0e2fffc916f5225ca15ec6b1ca3d8df4be407eb5d13d69ef68f588088d9"
+      },
+      {
+        "path": "artifacts/renders/garden/nerfacto/20261001T032052797Z/pred_0004.png",
+        "sha256": "7287674fd25ca9d866429d18dd8d99abd7a91442681a23cc9aefe607623f77aa"
+      },
+      {
+        "path": "artifacts/renders/garden/splatfacto/20261001T044422289Z/pred_0004.png",
+        "sha256": "7aabcb4372f9dc88a7242a6882925e9a8f8fbb49f335f131d6a3ea30adb85a59"
+      }
+    ],
+    "full_figure": "figures/garden-view-004-full.png",
+    "crop_figure": "figures/garden-view-004-crop.png",
+    "error_figure": "figures/garden-view-004-error.png"
+  },
+  {
+    "scene": "garden",
+    "eval_index": 12,
+    "source": "data/processed/canonical/garden/images_2/frame_eval_00012.png",
+    "selection_reasons": [
+      "median-nerfacto-png-mse"
+    ],
+    "original_size": [
+      2593,
+      1680
+    ],
+    "crop_xyxy": [
+      976,
+      520,
+      1616,
+      1160
+    ],
+    "run_keys": [
+      "garden/nerfacto/20261001T032052797Z",
+      "garden/splatfacto/20261001T044422289Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/garden/nerfacto/20261001T032052797Z/gt_0012.png",
+        "sha256": "f39e7758388cb62776a740cce41f91ee0251f2d4bc1a67cbcf63641eee280798"
+      },
+      {
+        "path": "artifacts/renders/garden/nerfacto/20261001T032052797Z/pred_0012.png",
+        "sha256": "b2144f48e67a28cae523c07ff5fbbf7e71457a088739e3b0718c1a33e5dac27c"
+      },
+      {
+        "path": "artifacts/renders/garden/splatfacto/20261001T044422289Z/pred_0012.png",
+        "sha256": "4a01e494bf238ed4e2b832449298afb20a8dde60e267205fbd8bfc9790f08b5a"
+      }
+    ],
+    "full_figure": "figures/garden-view-012-full.png",
+    "crop_figure": "figures/garden-view-012-crop.png",
+    "error_figure": "figures/garden-view-012-error.png"
+  },
+  {
+    "scene": "room",
+    "eval_index": 0,
+    "source": "data/processed/canonical/room/images_2/frame_eval_00000.png",
+    "selection_reasons": [
+      "first"
+    ],
+    "original_size": [
+      1557,
+      1037
+    ],
+    "crop_xyxy": [
+      458,
+      259,
+      1098,
+      777
+    ],
+    "run_keys": [
+      "room/nerfacto/20261001T071118206Z",
+      "room/splatfacto/20261001T081439786Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/gt_0000.png",
+        "sha256": "8057da9d11fd3a46814cd38bc29e5903e35771697be2803de6869a1468963af6"
+      },
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/pred_0000.png",
+        "sha256": "cc7d50ec2f05724892bc759f942513c6984d0af4ca880843d00cd91be5f3ede5"
+      },
+      {
+        "path": "artifacts/renders/room/splatfacto/20261001T081439786Z/pred_0000.png",
+        "sha256": "b7d8b26f5f8939224a1fd43400a877324084333362e4fdc44dcab3c2ce920053"
+      }
+    ],
+    "full_figure": "figures/room-view-000-full.png",
+    "crop_figure": "figures/room-view-000-crop.png",
+    "error_figure": "figures/room-view-000-error.png"
+  },
+  {
+    "scene": "room",
+    "eval_index": 29,
+    "source": "data/processed/canonical/room/images_2/frame_eval_00029.png",
+    "selection_reasons": [
+      "worst-nerfacto-png-mse"
+    ],
+    "original_size": [
+      1557,
+      1037
+    ],
+    "crop_xyxy": [
+      458,
+      259,
+      1098,
+      777
+    ],
+    "run_keys": [
+      "room/nerfacto/20261001T071118206Z",
+      "room/splatfacto/20261001T081439786Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/gt_0029.png",
+        "sha256": "1b25a9e93445dc8cb837cea25de713167fc6342e37840a9251aacfb1eca6349e"
+      },
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/pred_0029.png",
+        "sha256": "d269d1aa44b1e3e06175f9f9820b75d4de60231fa3ec09c82a63044297673c5b"
+      },
+      {
+        "path": "artifacts/renders/room/splatfacto/20261001T081439786Z/pred_0029.png",
+        "sha256": "69d6718b02b0c98745ca841e093d4e4e5a662a83673e91804bded1edd785ad29"
+      }
+    ],
+    "full_figure": "figures/room-view-029-full.png",
+    "crop_figure": "figures/room-view-029-crop.png",
+    "error_figure": "figures/room-view-029-error.png"
+  },
+  {
+    "scene": "room",
+    "eval_index": 36,
+    "source": "data/processed/canonical/room/images_2/frame_eval_00036.png",
+    "selection_reasons": [
+      "worst-splatfacto-png-mse"
+    ],
+    "original_size": [
+      1557,
+      1037
+    ],
+    "crop_xyxy": [
+      458,
+      259,
+      1098,
+      777
+    ],
+    "run_keys": [
+      "room/nerfacto/20261001T071118206Z",
+      "room/splatfacto/20261001T081439786Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/gt_0036.png",
+        "sha256": "9347193052cf2217b1f7da63f47d59639ed5315141b5ca72227cb119b69624b5"
+      },
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/pred_0036.png",
+        "sha256": "699114425429558fdf735afefbc189ed0f66e3b6fbd5f17e1379970ad4197d1f"
+      },
+      {
+        "path": "artifacts/renders/room/splatfacto/20261001T081439786Z/pred_0036.png",
+        "sha256": "4b46e2d39c96cc460383f26c7ac9c45ffb523d2f31e665520b50f369f34eddda"
+      }
+    ],
+    "full_figure": "figures/room-view-036-full.png",
+    "crop_figure": "figures/room-view-036-crop.png",
+    "error_figure": "figures/room-view-036-error.png"
+  },
+  {
+    "scene": "room",
+    "eval_index": 2,
+    "source": "data/processed/canonical/room/images_2/frame_eval_00002.png",
+    "selection_reasons": [
+      "median-nerfacto-png-mse"
+    ],
+    "original_size": [
+      1557,
+      1037
+    ],
+    "crop_xyxy": [
+      458,
+      259,
+      1098,
+      777
+    ],
+    "run_keys": [
+      "room/nerfacto/20261001T071118206Z",
+      "room/splatfacto/20261001T081439786Z"
+    ],
+    "inputs": [
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/gt_0002.png",
+        "sha256": "ba67ae9103a102393f2543c9a86e5ae7f1e451e35fbd23ca86906b03b925dba5"
+      },
+      {
+        "path": "artifacts/renders/room/nerfacto/20261001T071118206Z/pred_0002.png",
+        "sha256": "676338d0db23d01e80556857bda6bc7e4e9ad7ee7f273f9b575dc585b38aed3b"
+      },
+      {
+        "path": "artifacts/renders/room/splatfacto/20261001T081439786Z/pred_0002.png",
+        "sha256": "13c049a09ab4d82099d8adc5c24f6d0018bd627ee0e4c091a38b64e352aeedaf"
+      }
+    ],
+    "full_figure": "figures/room-view-002-full.png",
+    "crop_figure": "figures/room-view-002-crop.png",
+    "error_figure": "figures/room-view-002-error.png"
+  }
+]

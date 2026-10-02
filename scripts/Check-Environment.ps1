@@ -9,9 +9,15 @@ Write-Host "Project: $ProjectRoot"
 Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
 
 foreach ($name in @('git', 'conda', 'nvidia-smi')) {
-    $command = Get-Command $name -ErrorAction SilentlyContinue
-    if ($command) {
-        Write-Host ('[ok]      {0,-18} {1}' -f $name, $command.Source)
+    $source = $null
+    if ($name -eq 'conda') {
+        try { $source = Get-CondaCommand } catch { $source = $null }
+    } else {
+        $command = Get-Command $name -ErrorAction SilentlyContinue
+        if ($command) { $source = $command.Source }
+    }
+    if ($source) {
+        Write-Host ('[ok]      {0,-18} {1}' -f $name, $source)
     } else {
         Write-Host ('[missing] {0,-18}' -f $name) -ForegroundColor Red
         $failures++

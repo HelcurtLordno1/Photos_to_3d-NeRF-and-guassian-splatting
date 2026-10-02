@@ -41,12 +41,19 @@ try {
         }
     }
     @{ frames = $frames } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $raw 'transforms.json') -Encoding utf8
-    @{ frames = @($frames | Select-Object -First $config.PosterImageCount) } |
-        ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $processed 'transforms.json') -Encoding utf8
+    $processedJson = @{ frames = @($frames | Select-Object -First $config.PosterImageCount) } | ConvertTo-Json -Depth 5
+    [IO.File]::WriteAllText((Join-Path $processed 'transforms.json'), $processedJson, (New-Object Text.UTF8Encoding($false)))
     & $validator -Mode smoke -DatasetRoot $fixtureRoot -ManifestDirectory $manifestRoot -WriteManifest | Out-Null
     $manifest = Join-Path $manifestRoot 'poster.json'
     if (-not (Test-Path -LiteralPath $manifest)) { throw 'Valid fixture did not create a manifest.' }
     $oldHash = (Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash
+    $processedJson | Set-Content -LiteralPath (Join-Path $processed 'transforms.json') -Encoding utf8
+    $failed = $false
+    try { & $validator -Mode smoke -DatasetRoot $fixtureRoot -ManifestDirectory $manifestRoot -WriteManifest | Out-Null }
+    catch { $failed = $true }
+    if (-not $failed) { throw 'UTF-8 BOM incompatible with Nerfstudio was accepted.' }
+    [IO.File]::WriteAllText((Join-Path $processed 'transforms.json'), $processedJson, (New-Object Text.UTF8Encoding($false)))
+    Write-Host '[ok] Nerfstudio-incompatible UTF-8 BOM rejected.'
     'corrupt but nonempty' | Set-Content -LiteralPath (Join-Path $processed 'images_2\099.png')
     $failed = $false
     try { & $validator -Mode smoke -DatasetRoot $fixtureRoot -ManifestDirectory $manifestRoot -WriteManifest | Out-Null }

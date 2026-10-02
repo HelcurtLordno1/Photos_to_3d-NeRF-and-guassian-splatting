@@ -45,11 +45,15 @@ if ($Mode -in @('smoke', 'all')) {
     $processed = Join-Path $DatasetRoot 'processed\nerfstudio\poster'
     $transform = Join-Path $processed 'transforms.json'
     Assert-File $transform
+    $metadataBytes = [IO.File]::ReadAllBytes($transform)
+    if ($metadataBytes.Length -ge 3 -and $metadataBytes[0] -eq 239 -and $metadataBytes[1] -eq 187 -and $metadataBytes[2] -eq 191) {
+        throw 'Processed transforms.json contains a UTF-8 BOM rejected by Nerfstudio. Rerun Download-Datasets.ps1 -Mode smoke to repair safely.'
+    }
     Assert-File (Join-Path $raw 'transforms.json')
     Assert-File (Join-Path $raw 'sparse_pc.ply')
     Assert-File (Join-Path $processed 'sparse_pc.ply')
-    $rawFrames = @((Get-Content -LiteralPath (Join-Path $raw 'transforms.json') -Raw | ConvertFrom-Json).frames)
-    $frames = @((Get-Content -LiteralPath $transform -Raw | ConvertFrom-Json).frames)
+    $rawFrames = @((Get-Content -LiteralPath (Join-Path $raw 'transforms.json') -Raw -Encoding UTF8 | ConvertFrom-Json).frames)
+    $frames = @((Get-Content -LiteralPath $transform -Raw -Encoding UTF8 | ConvertFrom-Json).frames)
     $images = @(Get-ChildItem -LiteralPath (Join-Path $processed 'images') -File)
     $downscaled = @(Get-ChildItem -LiteralPath (Join-Path $processed 'images_2') -File)
     $rawImages = @(Get-ChildItem -LiteralPath (Join-Path $raw 'images') -File)

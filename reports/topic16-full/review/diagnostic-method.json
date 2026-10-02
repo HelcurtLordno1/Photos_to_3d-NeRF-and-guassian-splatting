@@ -1,0 +1,11 @@
+{
+  "scope": "CPU comparison of already saved 8-bit RGB PNGs; no model inference",
+  "official_metrics": "../results.json: upstream float-render PSNR/SSIM/LPIPS remain authoritative",
+  "png_psnr": "-10*log10(mean((GT/255-PRED/255)^2)); float32 differences, float64 mean",
+  "warning": "PNG quantization makes these diagnostic PSNR values differ from upstream float-render PSNR",
+  "selection": "first, largest Nerfacto PNG MSE, largest Splatfacto PNG MSE, upper median Nerfacto PNG MSE; deduplicated",
+  "crops": "center crop: width=min(original_width//2,640); height=min(original_height//2,640); XYXY in case-selection.json",
+  "heatmap": "mean absolute RGB difference; both methods share fixed 0..0.15 color scale",
+  "view_count": 115,
+  "case_count": 14
+}

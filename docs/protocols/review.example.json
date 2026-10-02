@@ -1,0 +1,16 @@
+{
+  "settings_hash": "Copy from the selected g-core.json after actual experiments",
+  "run_keys": [],
+  "clean_machine_replay": {
+    "approved": false,
+    "reviewer": "",
+    "notes": "Describe actual independent setup/data/train/eval replay and hardware.",
+    "evidence": []
+  },
+  "research_review": {
+    "approved": false,
+    "reviewer": "",
+    "notes": "Link actual tables, same-camera crop analysis and limitations review.",
+    "evidence": []
+  }
+}

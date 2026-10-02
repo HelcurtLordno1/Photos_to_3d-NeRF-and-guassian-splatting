@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "status": "BLOCKED",
+  "checked_at": "2026-10-01T17:48:56.235273Z",
+  "checks": {
+    "poster_pair": true,
+    "bonsai_calibration": true,
+    "benchmark_matrix": true,
+    "custom_pair": true,
+    "artifact_contracts": true,
+    "paired_render": true,
+    "exports": true,
+    "clean_machine_replay": false,
+    "research_review": false
+  },
+  "settings_hash": "073b7afb201c242c211e556f8e07640b1d8a7187771976eedbe38e65e867efad",
+  "matrices": [
+    {
+      "path": "artifacts/logs/matrices/topic16-full-benchmark.json",
+      "sha256": "036dade595f4e3a09b48de2b451f6f267a111f1a723db02ab3aa6bd1406c77ba"
+    },
+    {
+      "path": "artifacts/logs/matrices/topic16-full-calibration.json",
+      "sha256": "0abd8947c21f7e19f8e467d959e7dcae571d6a37cb07b52a31ab22cde2c07e9e"
+    },
+    {
+      "path": "artifacts/logs/matrices/topic16-full-custom.json",
+      "sha256": "d288ddf585cb8297860c7d8613ea5b1a49f2e80dc18377d91c8daec71d3fc3b3"
+    },
+    {
+      "path": "artifacts/logs/matrices/topic16-full-poster.json",
+      "sha256": "6c15a785bbc546f3f0a04dbdc1d8355f2773242bb63fd89420b8876daff12c38"
+    }
+  ],
+  "review_evidence": [],
+  "review": null,
+  "run_keys": [
+    "bonsai/nerfacto/20261001T014957052Z",
+    "bonsai/splatfacto/20261001T022329468Z",
+    "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+    "custom-tea_sets_2/splatfacto/20261001T153020900Z",
+    "garden/nerfacto/20261001T032052797Z",
+    "garden/splatfacto/20261001T044422289Z",
+    "poster/nerfacto/20260930T170359134Z",
+    "poster/splatfacto/20260930T173253498Z",
+    "room/nerfacto/20261001T071118206Z",
+    "room/splatfacto/20261001T081439786Z"
+  ]
+}

@@ -1,0 +1,141 @@
+[topic16] Parsed 38 PowerShell files.
+[topic16] PSScriptAnalyzer unavailable; check skipped (use -RequireAnalyzer to enforce).
+[ok] Missing Conda fails clearly.
+[ok] Missing MSVC fails clearly.
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-success.json
+[ok] valid-success
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-failure.json
+[ok] valid-failure
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-custom.json
+[ok] valid-custom
+[ok] unknown-key
+[ok] missing-finish
+[ok] wrong-run-key
+[ok] bad-split-hash
+[ok] time-reversed
+[ok] wrong-schema-version
+[ok] missing-success-artifacts
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-success.json
+[topic16] Run manifest saved: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\artifacts\logs\garden\nerfacto\20260927T145759000Z\manifest.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-success.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\artifacts\logs\garden\nerfacto\20260927T145759000Z\manifest.json
+[ok] Path mapping with spaces/Unicode and immutable completed run.
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-running.json
+[ok] valid-running
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-running.json
+[topic16] Run manifest saved: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\artifacts\logs\room\nerfacto\20260927T145759000Z\manifest.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-transition.json
+[ok] valid-transition
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\valid-transition.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\artifacts\logs\room\nerfacto\20260927T145759000Z\manifest.json
+[topic16] Run manifest saved: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-55ce6539c2f741e6bf8147c666a09afd\artifacts\logs\room\nerfacto\20260927T145759000Z\manifest.json
+[ok] Running-to-failed transition saved.
+[topic16] Manifest contract tests passed.
+[ok] Missing dataset rejected without a success manifest.
+[topic16] Scene manifest: 
+C:\Users\ADMIN\AppData\Local\Temp\topic16-data-a44c72de06314e9f80aee6bb2a125220\manifests\poster.json
+[topic16] Poster data validated (100 frames).
+[topic16] Dataset validation 'smoke' passed.
+[ok] Nerfstudio-incompatible UTF-8 BOM rejected.
+[ok] Corrupt image rejected; prior manifest preserved.
+test_aggregate_selection_is_deterministic (test_pipeline.PipelineTests) ... ok
+test_atomic_json_preserves_prior_on_nonfinite (test_pipeline.PipelineTests) ... ok
+test_benchmark_exact_resume (test_pipeline.PipelineTests) ... ok
+test_bom_input_and_unicode_output (test_pipeline.PipelineTests) ... ok
+test_core_not_pass_from_one_fixture_pair (test_pipeline.PipelineTests) ... ok
+test_core_rejects_old_safety_registry (test_pipeline.PipelineTests) ... ok
+test_demo_trajectory_does_not_change_primary_throughput (test_pipeline.PipelineTests) ... ok
+test_diagnostic_excluded (test_pipeline.PipelineTests) ... ok
+test_failed_eval_resumes_same_training_config (test_pipeline.PipelineTests) ... ok
+test_failed_run (test_pipeline.PipelineTests) ... ok
+test_good_pair (test_pipeline.PipelineTests) ... ok
+test_half_pair (test_pipeline.PipelineTests) ... ok
+test_incomplete_training_safety_evidence_rejected (test_pipeline.PipelineTests) ... ok
+test_invalid_run_key (test_pipeline.PipelineTests) ... ok
+test_metric_range (test_pipeline.PipelineTests) ... ok
+test_missing_checkpoint (test_pipeline.PipelineTests) ... ok
+test_missing_render (test_pipeline.PipelineTests) ... ok
+test_missing_required_metric (test_pipeline.PipelineTests) ... ok
+test_mixed_protocol (test_pipeline.PipelineTests) ... ok
+test_mixed_runtime (test_pipeline.PipelineTests) ... ok
+test_model_rejects_blocked_gate (test_pipeline.PipelineTests) ... ok
+test_modified_checkpoint (test_pipeline.PipelineTests) ... ok
+test_modified_config (test_pipeline.PipelineTests) ... ok
+test_modified_metrics (test_pipeline.PipelineTests) ... ok
+test_nonfinite_and_string_metrics (test_pipeline.PipelineTests) ... ok
+test_reject_config_outside_runs (test_pipeline.PipelineTests) ... ok
+test_reject_path_traversal (test_pipeline.PipelineTests) ... ok
+test_release_health_rejects_another_selected_model (test_pipeline.PipelineTests) ... ok
+test_repeated_analysis_keeps_gate_checksum (test_pipeline.PipelineTests) ... ok
+test_resume_ancestry_cycle_rejected (test_pipeline.PipelineTests) ... ok
+test_review_of_another_selection_is_rejected (test_pipeline.PipelineTests) ... ok
+test_split_leakage (test_pipeline.PipelineTests) ... ok
+test_split_pose_nonfinite (test_pipeline.PipelineTests) ... ok
+test_unsafe_evaluation_cannot_enter_results (test_pipeline.PipelineTests) ... ok
+test_wrong_camera_identity (test_pipeline.PipelineTests) ... ok
+test_arbitrary_additional_metadata_not_accepted_as_legacy (test_runtime_snapshot.RuntimeSnapshotTests) ... ok
+test_both_saved_import_orders_load_in_either_current_import_order (test_runtime_snapshot.RuntimeSnapshotTests) ... ok
+test_changed_vendor_version_rejects_legacy_snapshot (test_runtime_snapshot.RuntimeSnapshotTests) ... ok
+test_missing_installed_package_not_replaced_by_bundled_copy (test_runtime_snapshot.RuntimeSnapshotTests) ... ok
+test_real_installed_version_change_still_rejected (test_runtime_snapshot.RuntimeSnapshotTests) ... ok
+test_snapshot_unchanged_when_vendor_path_becomes_visible (test_runtime_snapshot.RuntimeSnapshotTests) ... ok
+test_capture_review_is_bound_to_pose_images (test_safety_video.RenderContractTests) ... ok
+test_export_rejects_modified_ply (test_safety_video.RenderContractTests) ... ok
+test_good_render (test_safety_video.RenderContractTests) ... ok
+test_gpu_render_requires_successful_current_safety_record (test_safety_video.RenderContractTests) ... ok
+test_reject_forged_fps (test_safety_video.RenderContractTests) ... ok
+test_reject_io_included_or_bad_dimensions (test_safety_video.RenderContractTests) ... ok
+test_reject_missing_or_modified_frame (test_safety_video.RenderContractTests) ... ok
+test_reject_other_checkpoint_or_incomplete_status (test_safety_video.RenderContractTests) ... ok
+test_block_before_worker_start (test_safety_video.SafetyTests) ... ok
+test_clock_reapply_native_arguments_and_permission_failure (test_safety_video.SafetyTests) ... ok
+test_cooldown_is_bounded (test_safety_video.SafetyTests) ... ok
+test_cooperative_pause_records_safe_exit (test_safety_video.SafetyTests) ... ok
+test_fail_closed_on_missing_or_nonfinite_telemetry (test_safety_video.SafetyTests) ... ok
+test_overheat_kills_owned_child_and_records_reason (test_safety_video.SafetyTests) ... ok
+test_parse_nvidia_telemetry (test_safety_video.SafetyTests) ... ok
+test_reject_exact_stop_thresholds (test_safety_video.SafetyTests) ... ok
+test_safe_idle_and_safe_load (test_safety_video.SafetyTests) ... ok
+test_start_requires_cool_gpu (test_safety_video.SafetyTests) ... ok
+test_successful_guard_records_policy (test_safety_video.SafetyTests) ... ok
+test_telemetry_loss_interrupts_inline_job (test_safety_video.SafetyTests) ... ok
+Paired matrix PASS: C:\Users\ADMIN\AppData\Local\Temp\topic16 test 5h89rn9b\artifacts\logs\matrices\main.json
+Paired matrix PASS: C:\Users\ADMIN\AppData\Local\Temp\topic16 test 5h89rn9b\artifacts\logs\matrices\main.json
+Paired matrix PASS: C:\Users\ADMIN\AppData\Local\Temp\topic16 test m6pw56l1\artifacts\logs\matrices\retry.json
+Research artifacts: C:\Users\ADMIN\AppData\Local\Temp\topic16 test uca38db4\reports\results; G-Core=BLOCKED
+Research artifacts: C:\Users\ADMIN\AppData\Local\Temp\topic16 test uca38db4\reports\results; G-Core=BLOCKED
+GPU cooling: 70 C; no project GPU workload has started
+test_warm_start_waits_without_gpu_work (test_safety_video.SafetyTests) ... ok
+test_choose_qualifying_connected_model_instead_of_zero (test_safety_video.VideoTests) ... ok
+test_constant_rate_exact_endpoints_and_unique (test_safety_video.VideoTests) ... ok
+test_cpu_colmap_explicitly_disables_gpu_and_bounds_threads (test_safety_video.VideoTests) ... ok
+test_cpu_colmap_rejects_gpu_and_unknown_stages (test_safety_video.VideoTests) ... ok
+test_never_combine_disconnected_models_or_drop_eval (test_safety_video.VideoTests) ... ok
+test_registration_minimum_and_unknown_names (test_safety_video.VideoTests) ... ok
+test_reject_bad_timestamps_and_counts (test_safety_video.VideoTests) ... ok
+test_reject_repeated_nearest_frame (test_safety_video.VideoTests) ... ok
+test_variable_rate_uses_time (test_safety_video.VideoTests) ... ok
+test_evaluation_supports_read_only_loader_property (test_sessions.SessionTests) ... ok
+test_remaining_budget_not_added_to_saved_steps (test_sessions.SessionTests) ... ok
+test_resume_rejects_tampered_checkpoint_and_protocol (test_sessions.SessionTests) ... ok
+test_stop_loader_checks_each_camera (test_sessions.SessionTests) ... ok
+
+----------------------------------------------------------------------
+Ran 75 tests in 3.341s
+
+OK
+[topic16] Project CPU checks PASS; GPU/capture gates require their own real evidence.

@@ -1,0 +1,37 @@
+{
+  "settings_hash": "073b7afb201c242c211e556f8e07640b1d8a7187771976eedbe38e65e867efad",
+  "run_keys": [
+    "bonsai/nerfacto/20261001T014957052Z",
+    "bonsai/splatfacto/20261001T022329468Z",
+    "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+    "custom-tea_sets_2/splatfacto/20261001T153020900Z",
+    "garden/nerfacto/20261001T032052797Z",
+    "garden/splatfacto/20261001T044422289Z",
+    "poster/nerfacto/20260930T170359134Z",
+    "poster/splatfacto/20260930T173253498Z",
+    "room/nerfacto/20261001T071118206Z",
+    "room/splatfacto/20261001T081439786Z"
+  ],
+  "clean_machine_replay": {
+    "approved": false,
+    "reviewer": "",
+    "notes": "Not performed. User has one host. Package-free same-host artifact audit does not qualify as fresh GPU setup/data/train/eval.",
+    "evidence": [
+      "reports/topic16-full/review/artifact-audit.json",
+      "reports/topic16-full/review/replay_runbook.md"
+    ]
+  },
+  "research_review": {
+    "approved": false,
+    "reviewer": "",
+    "notes": "AI technical analysis prepared for actual human review; no human signature or approval has been received.",
+    "evidence": [
+      "reports/topic16-full/review/research_review.md",
+      "reports/topic16-full/results.json",
+      "reports/topic16-full/review/paired-comparisons.json",
+      "reports/topic16-full/review/case-selection.json",
+      "reports/topic16-full/review/diagnostic-method.json",
+      "reports/topic16-full/review/evidence-index.json"
+    ]
+  }
+}

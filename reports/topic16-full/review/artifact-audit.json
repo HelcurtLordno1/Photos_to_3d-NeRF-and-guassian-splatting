@@ -1,0 +1,314 @@
+{
+  "schema_version": "1.0",
+  "checked_at": "2026-10-01T18:31:12.553915Z",
+  "status": "PASS",
+  "scope": "same-host package-free Python artifact verification and table recomputation",
+  "qualifies_as_independent_gpu_replay": false,
+  "hardware_independence": false,
+  "fresh_dataset_preparation": false,
+  "fresh_cuda_environment": false,
+  "fresh_training": false,
+  "fresh_model_evaluation": false,
+  "host": "DESKTOP-8TGG7VA",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.10.21 | packaged by conda-forge | (main, Aug 21 2026, 22:38:44) [MSC v.1944 64 bit (AMD64)]",
+  "executable": "D:\\Desktop_informations\\SGK năm 4\\SGK kì 1 năm 4\\ComputerVision - MToan\\CVCourse\\Project\\Topic_16_CV\\reports\\topic16-full\\review\\.venv\\Scripts\\python.exe",
+  "prefix": "D:\\Desktop_informations\\SGK năm 4\\SGK kì 1 năm 4\\ComputerVision - MToan\\CVCourse\\Project\\Topic_16_CV\\reports\\topic16-full\\review\\.venv",
+  "base_prefix": "D:\\Miniconda3\\miniconda_download\\envs\\topic16-ns115",
+  "isolated_mode": true,
+  "installed_distributions": [],
+  "copied_validator_sha256": {
+    "__init__.py": "8cd0bfb0d3dbd47295c492b1714def7929fbdede84d03717d8cb58f18891143b",
+    "contracts.py": "b016229015ebb2c34449d9ee4b5c75645f30d2c22b7855197e85e0c9842313c1",
+    "analysis.py": "dd501890a29a7e806f1404b16818be1071435893f85e7a67ee3ae74283a2ef29"
+  },
+  "settings_hash": "073b7afb201c242c211e556f8e07640b1d8a7187771976eedbe38e65e867efad",
+  "run_keys": [
+    "bonsai/nerfacto/20261001T014957052Z",
+    "bonsai/splatfacto/20261001T022329468Z",
+    "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+    "custom-tea_sets_2/splatfacto/20261001T153020900Z",
+    "garden/nerfacto/20261001T032052797Z",
+    "garden/splatfacto/20261001T044422289Z",
+    "poster/nerfacto/20260930T170359134Z",
+    "poster/splatfacto/20260930T173253498Z",
+    "room/nerfacto/20261001T071118206Z",
+    "room/splatfacto/20261001T081439786Z"
+  ],
+  "technical_checks": {
+    "poster_pair": true,
+    "bonsai_calibration": true,
+    "benchmark_matrix": true,
+    "custom_pair": true,
+    "artifact_contracts": true,
+    "paired_render": true,
+    "exports": true,
+    "clean_machine_replay": false,
+    "research_review": false
+  },
+  "results_exactly_recomputed": true,
+  "frozen_input_checks": [
+    {
+      "scene": "bonsai",
+      "image_count": 292,
+      "pose_file_count": 2,
+      "status": "PASS"
+    },
+    {
+      "scene": "custom:tea_sets_2",
+      "image_count": 120,
+      "pose_file_count": 2,
+      "status": "PASS"
+    },
+    {
+      "scene": "garden",
+      "image_count": 185,
+      "pose_file_count": 2,
+      "status": "PASS"
+    },
+    {
+      "scene": "poster",
+      "image_count": 100,
+      "pose_file_count": 2,
+      "status": "PASS"
+    },
+    {
+      "scene": "room",
+      "image_count": 311,
+      "pose_file_count": 2,
+      "status": "PASS"
+    }
+  ],
+  "runs": [
+    {
+      "scene": "bonsai",
+      "method": "nerfacto",
+      "run_key": "bonsai/nerfacto/20261001T014957052Z",
+      "train_count": 255,
+      "eval_count": 37,
+      "eval_resolutions": [
+        [
+          1559,
+          1039
+        ]
+      ],
+      "checkpoint_sha256": "20424ea921150d3e88f547b676eb5033bacb6305606db74819462a91294c1e3e",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": true,
+      "metric_view_std": {
+        "psnr_std": 1.1033202409744263,
+        "ssim_std": 0.08058086782693863,
+        "lpips_std": 0.022695833817124367,
+        "num_rays_per_sec_std": 8488.78515625,
+        "fps_std": 0.005240634083747864
+      }
+    },
+    {
+      "scene": "bonsai",
+      "method": "splatfacto",
+      "run_key": "bonsai/splatfacto/20261001T022329468Z",
+      "train_count": 255,
+      "eval_count": 37,
+      "eval_resolutions": [
+        [
+          1559,
+          1039
+        ]
+      ],
+      "checkpoint_sha256": "f08647c85bb37d394cd767bf89ae0258b12862a97b2261d02449700732fac6cc",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 2.795466661453247,
+        "ssim_std": 0.015921711921691895,
+        "lpips_std": 0.029507730156183243,
+        "num_rays_per_sec_std": 173424.140625,
+        "fps_std": 0.10706508904695511
+      }
+    },
+    {
+      "scene": "custom:tea_sets_2",
+      "method": "nerfacto",
+      "run_key": "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+      "train_count": 105,
+      "eval_count": 15,
+      "eval_resolutions": [
+        [
+          359,
+          639
+        ]
+      ],
+      "checkpoint_sha256": "42c8c65d91662efabd44b879fbebd622f3d5b01e4f874e7918f4213fc654a78e",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": true,
+      "metric_view_std": {
+        "psnr_std": 1.5502097606658936,
+        "ssim_std": 0.05988090857863426,
+        "lpips_std": 0.018348250538110733,
+        "num_rays_per_sec_std": 29468.119140625,
+        "fps_std": 0.12845680117607117
+      }
+    },
+    {
+      "scene": "custom:tea_sets_2",
+      "method": "splatfacto",
+      "run_key": "custom-tea_sets_2/splatfacto/20261001T153020900Z",
+      "train_count": 105,
+      "eval_count": 15,
+      "eval_resolutions": [
+        [
+          359,
+          639
+        ]
+      ],
+      "checkpoint_sha256": "0df58725e7976ae4c75773d11e6b19d5d0a730e1082337b44a781b02759a27c2",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 2.10736083984375,
+        "ssim_std": 0.01344266813248396,
+        "lpips_std": 0.009434539824724197,
+        "num_rays_per_sec_std": 257259.28125,
+        "fps_std": 1.1214393377304077
+      }
+    },
+    {
+      "scene": "garden",
+      "method": "nerfacto",
+      "run_key": "garden/nerfacto/20261001T032052797Z",
+      "train_count": 161,
+      "eval_count": 24,
+      "eval_resolutions": [
+        [
+          2593,
+          1680
+        ]
+      ],
+      "checkpoint_sha256": "fd29f5d4c44f218e56452348f950f3507fabd646451a3c5700a1b3b25a650431",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 1.24836266040802,
+        "ssim_std": 0.042406532913446426,
+        "lpips_std": 0.02798713929951191,
+        "num_rays_per_sec_std": 11037.6416015625,
+        "fps_std": 0.002533754101023078
+      }
+    },
+    {
+      "scene": "garden",
+      "method": "splatfacto",
+      "run_key": "garden/splatfacto/20261001T044422289Z",
+      "train_count": 161,
+      "eval_count": 24,
+      "eval_resolutions": [
+        [
+          2593,
+          1680
+        ]
+      ],
+      "checkpoint_sha256": "9d1b03e89d1cb22da4ad221d883acd1a6309a2c3f152f77d8554d00f94ec7dcc",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 2.0189058780670166,
+        "ssim_std": 0.04376235976815224,
+        "lpips_std": 0.016771424561738968,
+        "num_rays_per_sec_std": 130701.1875,
+        "fps_std": 0.03000321239233017
+      }
+    },
+    {
+      "scene": "poster",
+      "method": "nerfacto",
+      "run_key": "poster/nerfacto/20260930T170359134Z",
+      "train_count": 87,
+      "eval_count": 13,
+      "eval_resolutions": [
+        [
+          539,
+          959
+        ]
+      ],
+      "checkpoint_sha256": "0ba8e1f85fedca8613fa1d61bd3a600500e9ee581b58ddcdc6293f78f93f872c",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 3.843839168548584,
+        "ssim_std": 0.08326568454504013,
+        "lpips_std": 0.08684911578893661,
+        "num_rays_per_sec_std": 20452.828125,
+        "fps_std": 0.03956817090511322
+      }
+    },
+    {
+      "scene": "poster",
+      "method": "splatfacto",
+      "run_key": "poster/splatfacto/20260930T173253498Z",
+      "train_count": 87,
+      "eval_count": 13,
+      "eval_resolutions": [
+        [
+          539,
+          959
+        ]
+      ],
+      "checkpoint_sha256": "cd506e2408475f91c588a1fa4211c2ec870ddc1162cda338bc456f0a752c6513",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 3.404292345046997,
+        "ssim_std": 0.025958655402064323,
+        "lpips_std": 0.06248406693339348,
+        "num_rays_per_sec_std": 836185.75,
+        "fps_std": 1.6176903247833252
+      }
+    },
+    {
+      "scene": "room",
+      "method": "nerfacto",
+      "run_key": "room/nerfacto/20261001T071118206Z",
+      "train_count": 272,
+      "eval_count": 39,
+      "eval_resolutions": [
+        [
+          1557,
+          1037
+        ]
+      ],
+      "checkpoint_sha256": "3d18c1a099ca4a947845915e3afdb1b8b18897b6556dadf4c8cfdcf2406a9cde",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 1.8546524047851562,
+        "ssim_std": 0.061217986047267914,
+        "lpips_std": 0.07289262861013412,
+        "num_rays_per_sec_std": 15708.7705078125,
+        "fps_std": 0.009729146957397461
+      }
+    },
+    {
+      "scene": "room",
+      "method": "splatfacto",
+      "run_key": "room/splatfacto/20261001T081439786Z",
+      "train_count": 272,
+      "eval_count": 39,
+      "eval_resolutions": [
+        [
+          1557,
+          1037
+        ]
+      ],
+      "checkpoint_sha256": "d35e7d65c9cb4c93accc7ce439d02c6428ae169f7d2466f7115c83ecacd7dcaa",
+      "source_archive_sha256": "7bbbd8e12afca3c0c294f445263e672624148f2d3c80055ed29274ccc93ec193",
+      "has_resume_ancestry": false,
+      "metric_view_std": {
+        "psnr_std": 2.5054702758789062,
+        "ssim_std": 0.025224365293979645,
+        "lpips_std": 0.05106339603662491,
+        "num_rays_per_sec_std": 119795.8046875,
+        "fps_std": 0.07419493049383163
+      }
+    }
+  ]
+}

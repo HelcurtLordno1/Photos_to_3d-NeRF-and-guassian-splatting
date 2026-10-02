@@ -12,3 +12,7 @@
 *.zip binary
 *.mp4 binary
 *.ply binary
+
+# Research reports include hash-indexed evidence. Preserve their original bytes
+# across commits and checkouts instead of normalizing line endings.
+reports/** -text

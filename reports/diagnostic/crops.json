@@ -1,0 +1,16 @@
+[
+  {
+    "scene": "bonsai",
+    "camera": "data/processed/canonical/bonsai/images_2/frame_eval_00000.png",
+    "crop_xyxy": [
+      389,
+      259,
+      1169,
+      779
+    ],
+    "run_keys": [
+      "bonsai/nerfacto/20260930T131202856Z",
+      "bonsai/splatfacto/20260930T131621149Z"
+    ]
+  }
+]

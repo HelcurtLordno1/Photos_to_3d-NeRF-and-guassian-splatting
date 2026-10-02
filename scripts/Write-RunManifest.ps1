@@ -8,7 +8,7 @@ param(
 Assert-WindowsPowerShell
 if (-not $ArtifactsDirectory) { $ArtifactsDirectory = $ArtifactRoot }
 & (Join-Path $PSScriptRoot 'Test-RunManifest.ps1') -Path $InputPath
-$manifest = Get-Content -LiteralPath $InputPath -Raw | ConvertFrom-Json
+$manifest = Get-Content -LiteralPath $InputPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $parts = @($manifest.run_key -split '/')
 if ($parts.Count -ne 3) { throw 'Run key must have exactly three components.' }
 $logDirectory = Join-Path $ArtifactsDirectory "logs\$($parts[0])\$($parts[1])\$($parts[2])"
@@ -16,7 +16,7 @@ New-TopicDirectory -Path $logDirectory
 $destination = Join-Path $logDirectory 'manifest.json'
 if (Test-Path -LiteralPath $destination) {
     & (Join-Path $PSScriptRoot 'Test-RunManifest.ps1') -Path $destination
-    $previous = Get-Content -LiteralPath $destination -Raw | ConvertFrom-Json
+    $previous = Get-Content -LiteralPath $destination -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($previous.run_key -cne $manifest.run_key) { throw 'Existing manifest has a different run key.' }
     if ($previous.status -ne 'running') { throw 'Completed run manifests are immutable.' }
     if ($manifest.status -eq 'running') { throw 'A running manifest already exists for this run key.' }

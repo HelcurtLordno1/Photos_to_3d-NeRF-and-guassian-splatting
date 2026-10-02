@@ -1,0 +1,54 @@
+[topic16] Parsed 38 PowerShell files.
+[topic16] PSScriptAnalyzer unavailable; check skipped (use -RequireAnalyzer to enforce).
+[ok] Missing Conda fails clearly.
+[ok] Missing MSVC fails clearly.
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-success.json
+[ok] valid-success
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-failure.json
+[ok] valid-failure
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-custom.json
+[ok] valid-custom
+[ok] unknown-key
+[ok] missing-finish
+[ok] wrong-run-key
+[ok] bad-split-hash
+[ok] time-reversed
+[ok] wrong-schema-version
+[ok] missing-success-artifacts
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-success.json
+[topic16] Run manifest saved: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\artifacts\logs\garden\nerfacto\20260927T145759000Z\manifest.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-success.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\artifacts\logs\garden\nerfacto\20260927T145759000Z\manifest.json
+[ok] Path mapping with spaces/Unicode and immutable completed run.
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-running.json
+[ok] valid-running
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-running.json
+[topic16] Run manifest saved: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\artifacts\logs\room\nerfacto\20260927T145759000Z\manifest.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-transition.json
+[ok] valid-transition
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\valid-transition.json
+[topic16] Run manifest valid: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\artifacts\logs\room\nerfacto\20260927T145759000Z\manifest.json
+[topic16] Run manifest saved: C:\Users\ADMIN\AppData\Local\Temp\topic16 space 
+á-24475532ca704024b877bf7e465e17d8\artifacts\logs\room\nerfacto\20260927T145759000Z\manifest.json
+[ok] Running-to-failed transition saved.
+[topic16] Manifest contract tests passed.
+[ok] Missing dataset rejected without a success manifest.
+[topic16] Scene manifest: 
+C:\Users\ADMIN\AppData\Local\Temp\topic16-data-4c7cc1deacd64571b4fac05a0757ccda\manifests\poster.json
+[topic16] Poster data validated (100 frames).
+[topic16] Dataset validation 'smoke' passed.
+[ok] Nerfstudio-incompatible UTF-8 BOM rejected.
+[ok] Corrupt image rejected; prior manifest preserved.

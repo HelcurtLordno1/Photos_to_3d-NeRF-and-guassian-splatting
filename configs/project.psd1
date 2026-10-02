@@ -38,9 +38,34 @@
     MipNerf360ImageCounts = @{ garden = 185; bonsai = 292; room = 311 }
 
     TrainIterations = 30000
+    TrainCheckpointInterval = 500
     DownscaleFactor = 2
     EvalInterval = 8
     GpuSampleSeconds = 10
+    # Conservative project policy, not hardware manufacturer temperature ratings.
+    GpuClockMinMHz = 300
+    GpuClockMaxMHz = 800
+    GpuClockToleranceMHz = 15
+    GpuStartTemperatureC = 65
+    GpuCooldownMaximumSeconds = 300
+    GpuCooldownPollSeconds = 5
+    GpuStopTemperatureC = 78
+    GpuStopPowerWatts = 80
+    GpuMaxMemoryPercent = 95
+    GpuSafetyPollSeconds = 2
+    GpuSafetyQueryTimeoutSeconds = 5
+    GpuEmergencyGraceSeconds = 10
+    VideoFrameCount = 120
+    CpuWorkerThreads = 4
+    CaptureMatchingMethod = 'exhaustive'
+    CaptureNumDownscales = 0  # The common canonical stage makes the training downscale once.
     RandomSeed = 42
     MinimumDatasetFreeGiB = 20
+    MinimumRegistrationRatio = 0.90
+    RenderWarmupFrames = 3
+    RenderRepeats = 3
+    DemoPort = 7007
+    DemoWidth = 960
+    DemoHeight = 540
+    DemoQueueCapacity = 1
 }

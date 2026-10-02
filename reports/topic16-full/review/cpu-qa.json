@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "status": "PASS",
+  "scope": "Native Windows CPU QA with package-free Python venv; no GPU replay",
+  "powershell_parsed": 38,
+  "fixture_successes": 19,
+  "python_tests_passed": 75,
+  "psscriptanalyzer": "SKIPPED: unavailable",
+  "log": "reports/topic16-full/review/cpu-qa.log",
+  "log_sha256": "e5f750399cdd10c60da7f2fc41f138d2067120548a0ab43d173138951c8ad663",
+  "first_attempt": "Preserved cpu-qa-first-attempt.log: Windows PowerShell interpreted unittest progress on stderr as a fatal native error. Fixed Test-Project.ps1 to use the actual process exit code. Full rerun passed.",
+  "independent_gpu_replay": false
+}

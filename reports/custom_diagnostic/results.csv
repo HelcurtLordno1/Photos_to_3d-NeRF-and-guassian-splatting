@@ -1,0 +1,3 @@
+scene,method,run_key,git_commit,seed,iterations,downscale_factor,protocol_id,psnr,ssim,lpips,train_seconds,peak_vram_mb,checkpoint_bytes,offline_fps
+custom:tea_sets_2,nerfacto,custom-tea_sets_2/nerfacto/20260930T163635661Z,dd71887cec246234d10c298dc6da94877c1d407d,42,100,2,diagnostic,18.914573669433594,0.6124485731124878,0.6687228679656982,15.657256099999358,2924.0,176008702,
+custom:tea_sets_2,splatfacto,custom-tea_sets_2/splatfacto/20260930T164151196Z,dd71887cec246234d10c298dc6da94877c1d407d,42,100,2,diagnostic,18.201339721679688,0.6428406834602356,0.6950259208679199,10.347622400000546,2286.0,22082722,

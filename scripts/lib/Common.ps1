@@ -1,5 +1,6 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 
 $script:ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $script:Config = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\project.psd1')
@@ -34,7 +35,16 @@ function New-TopicDirectory {
     }
 }
 
+function Write-Utf8Text {
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Text)
+    [IO.File]::WriteAllText($Path, $Text, (New-Object Text.UTF8Encoding($false)))
+}
+
 function Get-CondaCommand {
+    if ($env:TOPIC16_CONDA_EXE -and (Test-Path -LiteralPath $env:TOPIC16_CONDA_EXE)) {
+        return $env:TOPIC16_CONDA_EXE
+    }
+    if ($env:CONDA_EXE -and (Test-Path -LiteralPath $env:CONDA_EXE)) { return $env:CONDA_EXE }
     $command = Get-Command conda.exe -ErrorAction SilentlyContinue
     if ($command) { return $command.Source }
 
@@ -72,9 +82,20 @@ function Invoke-Conda {
         [switch]$Quiet
     )
     $conda = Get-CondaCommand
-    if ($Quiet) { & $conda @Arguments | Out-Null }
-    else { & $conda @Arguments | Out-Host }
-    $exitCode = $LASTEXITCODE
+    $previousPreference = $ErrorActionPreference
+    try {
+        # Native stderr may contain ordinary progress/warnings. Preserve all
+        # output, then decide success from the actual native exit code.
+        $ErrorActionPreference = 'Continue'
+        if ($Quiet) { & $conda @Arguments 2>&1 | Out-Null }
+        else {
+            & $conda @Arguments 2>&1 | ForEach-Object {
+                $line = if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.Exception.Message } else { [string]$_ }
+                Write-Host $line
+            }
+        }
+        $exitCode = $LASTEXITCODE
+    } finally { $ErrorActionPreference = $previousPreference }
     if ($exitCode -ne 0 -and -not $AllowFailure) {
         throw "Conda command failed with exit code ${exitCode}: conda $($Arguments -join ' ')"
     }
@@ -104,6 +125,19 @@ function ConvertTo-CommandLine {
     return (($Tokens | ForEach-Object {
         if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
     }) -join ' ')
+}
+
+function Invoke-TopicPython {
+    param([Parameter(Mandatory)][string[]]$Arguments)
+    Assert-WindowsPowerShell
+    $settingsFile = Join-Path ([IO.Path]::GetTempPath()) ('topic16-' + [guid]::NewGuid().ToString('N') + '.json')
+    try {
+        $script:Config | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $settingsFile -Encoding utf8
+        $cli = Join-Path $script:ProjectRoot 'src\topic16\cli.py'
+        Invoke-InEnvironment -Command 'python' -Arguments (@($cli, '--root', $script:ProjectRoot, '--settings', $settingsFile) + $Arguments) | Out-Null
+    } finally {
+        if (Test-Path -LiteralPath $settingsFile) { Remove-Item -LiteralPath $settingsFile -Force }
+    }
 }
 
 function Import-VisualStudioEnvironment {

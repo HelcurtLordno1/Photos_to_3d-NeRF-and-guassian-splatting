@@ -1,0 +1,12 @@
+name: Contract checks
+on:
+  push:
+  pull_request:
+jobs:
+  windows-contracts:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse scripts and run CPU contracts
+        shell: powershell
+        run: .\scripts\Test-Project.ps1 -PythonExecutable python

@@ -6,11 +6,15 @@ Assert-WindowsPowerShell
 $oldPath = $env:PATH
 $oldUserProfile = $env:USERPROFILE
 $oldProgramFiles = ${env:ProgramFiles(x86)}
+$oldCondaExe = $env:CONDA_EXE
+$oldTopicCondaExe = $env:TOPIC16_CONDA_EXE
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('topic16-host-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
 try {
     $env:PATH = $fixtureRoot
     $env:USERPROFILE = $fixtureRoot
+    $env:CONDA_EXE = $null
+    $env:TOPIC16_CONDA_EXE = $null
     $missingConda = $false
     try { Get-CondaCommand | Out-Null }
     catch { $missingConda = $_.Exception.Message -match 'Conda was not found' }
@@ -26,6 +30,8 @@ try {
 } finally {
     $env:PATH = $oldPath
     $env:USERPROFILE = $oldUserProfile
+    $env:CONDA_EXE = $oldCondaExe
+    $env:TOPIC16_CONDA_EXE = $oldTopicCondaExe
     ${env:ProgramFiles(x86)} = $oldProgramFiles
     Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
 }

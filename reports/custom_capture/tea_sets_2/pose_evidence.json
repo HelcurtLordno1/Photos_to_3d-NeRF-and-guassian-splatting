@@ -1,0 +1,34 @@
+{
+  "scene": "custom:tea_sets_2",
+  "split_hash": "aa13714c4b4873c09b770901fb1fa9a4bb9768d294b55d279524111a209eeeed",
+  "camera_count": 120,
+  "sparse_point_count": 16894,
+  "rotation_orthogonality_max_error": 1.6234185551411429e-07,
+  "rotation_determinant_min": 0.9999998843253881,
+  "rotation_determinant_max": 1.0000001234174407,
+  "sampled_projection_visibility": [
+    {
+      "eval_index": 0,
+      "visible_sampled_points": 7836
+    },
+    {
+      "eval_index": 7,
+      "visible_sampled_points": 8637
+    },
+    {
+      "eval_index": 14,
+      "visible_sampled_points": 9507
+    }
+  ],
+  "visual_approval": false,
+  "files": [
+    {
+      "path": "reports/custom_capture/tea_sets_2/poses.png",
+      "sha256": "68281bd90d7f777ce6b1eefd0f4e4d595f38d61d49e362c9902204c6559266be"
+    },
+    {
+      "path": "reports/custom_capture/tea_sets_2/projections.png",
+      "sha256": "4ac5090ae8204b957c6c96aa2711dd146674e25a447c3e5d6c530716ec04504e"
+    }
+  ]
+}

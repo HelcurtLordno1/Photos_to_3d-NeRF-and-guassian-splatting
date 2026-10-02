@@ -1,0 +1,58 @@
+[
+  {
+    "scene": "bonsai",
+    "camera": "data/processed/canonical/bonsai/images_2/frame_eval_00000.png",
+    "crop_xyxy": [
+      389,
+      259,
+      1169,
+      779
+    ],
+    "run_keys": [
+      "bonsai/nerfacto/20261001T014957052Z",
+      "bonsai/splatfacto/20261001T022329468Z"
+    ]
+  },
+  {
+    "scene": "custom:tea_sets_2",
+    "camera": "data/processed/canonical/custom-tea_sets_2/images_2/frame_eval_00000.png",
+    "crop_xyxy": [
+      89,
+      159,
+      269,
+      479
+    ],
+    "run_keys": [
+      "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+      "custom-tea_sets_2/splatfacto/20261001T153020900Z"
+    ]
+  },
+  {
+    "scene": "garden",
+    "camera": "data/processed/canonical/garden/images_2/frame_eval_00000.png",
+    "crop_xyxy": [
+      648,
+      420,
+      1944,
+      1260
+    ],
+    "run_keys": [
+      "garden/nerfacto/20261001T032052797Z",
+      "garden/splatfacto/20261001T044422289Z"
+    ]
+  },
+  {
+    "scene": "room",
+    "camera": "data/processed/canonical/room/images_2/frame_eval_00000.png",
+    "crop_xyxy": [
+      389,
+      259,
+      1167,
+      777
+    ],
+    "run_keys": [
+      "room/nerfacto/20261001T071118206Z",
+      "room/splatfacto/20261001T081439786Z"
+    ]
+  }
+]

@@ -17,9 +17,18 @@ function Get-SmokeDataset {
         (Join-Path $posterRoot 'colmap\sparse\0\points3D.bin')
     )
     $processedTransform = Join-Path $processedRoot 'transforms.json'
+    if (Test-Path -LiteralPath $processedTransform) {
+        $bytes = [IO.File]::ReadAllBytes($processedTransform)
+        if ($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191) {
+            $backup = $processedTransform + '.bom.bak'
+            if (-not (Test-Path -LiteralPath $backup)) { Copy-Item -LiteralPath $processedTransform -Destination $backup }
+            Write-Utf8Text -Path $processedTransform -Text ([IO.File]::ReadAllText($processedTransform))
+            Write-TopicInfo 'Repaired UTF-8 BOM in processed metadata; original bytes preserved in .bom.bak.'
+        }
+    }
     $processedFrames = @()
     if (Test-Path -LiteralPath $processedTransform) {
-        try { $processedFrames = @((Get-Content -LiteralPath $processedTransform -Raw | ConvertFrom-Json).frames) }
+        try { $processedFrames = @((Get-Content -LiteralPath $processedTransform -Raw -Encoding UTF8 | ConvertFrom-Json).frames) }
         catch { Write-TopicInfo 'Processed poster metadata is invalid; rebuilding from raw data.' }
     }
     if ((Test-Path -LiteralPath $processedTransform) -and
@@ -66,7 +75,7 @@ function Get-SmokeDataset {
     foreach ($path in $requiredPaths) {
         if (-not (Test-Path -LiteralPath $path)) { throw "Poster download is incomplete: missing $path" }
     }
-    $metadata = Get-Content -LiteralPath $transform -Raw | ConvertFrom-Json
+    $metadata = Get-Content -LiteralPath $transform -Raw -Encoding UTF8 | ConvertFrom-Json
     $availableImages = @(Get-ChildItem -LiteralPath (Join-Path $posterRoot 'images') -File)
     $availableDownscaled = @(Get-ChildItem -LiteralPath (Join-Path $posterRoot 'images_2') -File)
     $fullNames = @{}; foreach ($file in $availableImages) { $fullNames[$file.Name] = $true }
@@ -93,8 +102,8 @@ function Get-SmokeDataset {
     }
     Copy-Item -LiteralPath (Join-Path $posterRoot 'sparse_pc.ply') -Destination (Join-Path $processedRoot 'sparse_pc.ply') -Force
     $metadata.frames = $selectedFrames
-    $metadata | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $processedTransform -Encoding utf8
-    $validated = Get-Content -LiteralPath $processedTransform -Raw | ConvertFrom-Json
+    Write-Utf8Text -Path $processedTransform -Text ($metadata | ConvertTo-Json -Depth 100)
+    $validated = Get-Content -LiteralPath $processedTransform -Raw -Encoding UTF8 | ConvertFrom-Json
     if (@($validated.frames).Count -ne 100 -or
         @($validated.frames | Where-Object {
             -not (Test-Path -LiteralPath (Join-Path $processedRoot $_.file_path)) -or

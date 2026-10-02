@@ -1,24 +1,20 @@
 [CmdletBinding()]
 param(
-    [string[]]$Scenes = @('garden', 'bonsai', 'room'),
-    [switch]$SkipTraining,
-    [switch]$SkipEvaluation
+    [string[]]$Scenes = @('bonsai', 'garden', 'room'),
+    [string]$MatrixPath,
+    [switch]$Resume,
+    [ValidateSet('primary', 'diagnostic', 'repeat')][string]$Protocol = 'primary',
+    [ValidateRange(1, 2147483647)][int]$Iterations,
+    [int]$Seed
 )
-
 . (Join-Path $PSScriptRoot 'lib\Common.ps1')
-Assert-WindowsPowerShell
-foreach ($scene in $Scenes) {
-    if ($scene -notin @('garden', 'bonsai', 'room')) { throw "Unsupported benchmark scene: $scene" }
-    foreach ($method in @('nerfacto', 'splatfacto')) {
-        if (-not $SkipTraining) {
-            & (Join-Path $PSScriptRoot 'Train.ps1') -Method $method -Dataset $scene
-        }
-        if (-not $SkipEvaluation) {
-            $runRoot = Join-Path $ArtifactRoot "runs\$scene\$method"
-            $config = Get-ChildItem -LiteralPath $runRoot -Filter config.yml -File -Recurse | Sort-Object FullName | Select-Object -Last 1
-            if (-not $config) { throw "No config.yml found for $scene/$method" }
-            & (Join-Path $PSScriptRoot 'Evaluate-Run.ps1') -ConfigPath $config.FullName
-        }
-    }
+if (-not $MatrixPath) {
+    if ($Resume) { throw '-Resume requires an explicit -MatrixPath.' }
+    $MatrixPath = Join-Path $ArtifactRoot ('logs\matrices\' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '.json')
 }
-Write-TopicInfo 'Requested paired benchmark matrix completed.'
+$arguments = @('benchmark', '--matrix', [IO.Path]::GetFullPath($MatrixPath), '--protocol', $Protocol, '--scenes') + $Scenes
+if ($Resume) { $arguments += '--resume' }
+if ($PSBoundParameters.ContainsKey('Iterations')) { $arguments += @('--iterations', [string]$Iterations) }
+if ($PSBoundParameters.ContainsKey('Seed')) { $arguments += @('--seed', [string]$Seed) }
+Write-TopicInfo "Explicit matrix for resume: $MatrixPath"
+Invoke-TopicPython -Arguments $arguments

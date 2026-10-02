@@ -16,6 +16,8 @@ data/raw/*
 data/processed/*
 !data/processed/README.md
 data/.cache/
+data/testing_real_video/*
+!data/testing_real_video/README.md
 
 # Generated experiment outputs
 artifacts/runs/*

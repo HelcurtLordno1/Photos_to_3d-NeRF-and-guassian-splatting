@@ -1,0 +1,367 @@
+{
+  "schema_version": "1.0",
+  "scope": "Research review package; original checkpoint artifacts remain under their run keys",
+  "settings_hash": "073b7afb201c242c211e556f8e07640b1d8a7187771976eedbe38e65e867efad",
+  "run_keys": [
+    "bonsai/nerfacto/20261001T014957052Z",
+    "bonsai/splatfacto/20261001T022329468Z",
+    "custom-tea_sets_2/nerfacto/20261001T151914364Z",
+    "custom-tea_sets_2/splatfacto/20261001T153020900Z",
+    "garden/nerfacto/20261001T032052797Z",
+    "garden/splatfacto/20261001T044422289Z",
+    "poster/nerfacto/20260930T170359134Z",
+    "poster/splatfacto/20260930T173253498Z",
+    "room/nerfacto/20261001T071118206Z",
+    "room/splatfacto/20261001T081439786Z"
+  ],
+  "author": "Codex (AI assistant)",
+  "human_approved": false,
+  "independent_gpu_replay_performed": false,
+  "files": [
+    {
+      "path": "reports/topic16-full/review/artifact-audit.json",
+      "bytes": 10591,
+      "sha256": "bb9a23dc665c97b729c5ea0875ae45d74d9d3a04afa0910ce304614e7b211068"
+    },
+    {
+      "path": "reports/topic16-full/review/audit_artifacts.py",
+      "bytes": 4989,
+      "sha256": "d1c5af849cb069443e641ca9b6b332bf921d9aacc592ce3948a3aa2efc48d1d9"
+    },
+    {
+      "path": "reports/topic16-full/review/Build-Evidence.ps1",
+      "bytes": 1204,
+      "sha256": "f3911183a43ba3fca5bf94aeb50bc6b406393de2b0262e81fed2a30dea10d7cb"
+    },
+    {
+      "path": "reports/topic16-full/review/build_figures.py",
+      "bytes": 9283,
+      "sha256": "22cc8c51b7b469b75b40cc41328282283c81de83cc159f96a90da9adc6ae8bbe"
+    },
+    {
+      "path": "reports/topic16-full/review/build_package.py",
+      "bytes": 9175,
+      "sha256": "d10541c7be48275107325bcba4137aa6f5df4d7b37728b23ad1627b7db35c6b7"
+    },
+    {
+      "path": "reports/topic16-full/review/case-gallery.html",
+      "bytes": 8695,
+      "sha256": "f68a552329e043ce4b0109ce452e5cdd023cf9e95645ee79ba6ba916526eab29"
+    },
+    {
+      "path": "reports/topic16-full/review/case-selection.json",
+      "bytes": 17588,
+      "sha256": "e0c20b7c5282cc9b4bf2aefc6bd1aa4ff02144377c13f49059a66010a7494d8d"
+    },
+    {
+      "path": "reports/topic16-full/review/cpu-qa-first-attempt.log",
+      "bytes": 3134,
+      "sha256": "30ddfb5ae74bb88e1b62fff88cc10b941573197261f2a82fd43d7717fc7d3473"
+    },
+    {
+      "path": "reports/topic16-full/review/cpu-qa.json",
+      "bytes": 651,
+      "sha256": "47d252c7f88ef291bbfcbb8bb160ac36a6e0ebc03c669e64400cab516a3f844c"
+    },
+    {
+      "path": "reports/topic16-full/review/cpu-qa.log",
+      "bytes": 9807,
+      "sha256": "e5f750399cdd10c60da7f2fc41f138d2067120548a0ab43d173138951c8ad663"
+    },
+    {
+      "path": "reports/topic16-full/review/diagnostic-method.json",
+      "bytes": 772,
+      "sha256": "a866453ae506de827ddeeeeeeb7be4545e7cc102ba0b92657f1cfdebe38f71f3"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-000-crop.png",
+      "bytes": 1378362,
+      "sha256": "dfd3165321517b72734816dc33e80f76e070e2bc38d77704a9bd8c1e04ac562f"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-000-error.png",
+      "bytes": 563038,
+      "sha256": "6f2d5fe7e200d9b36fb2b0bc35f3acdc5d15e52eba0f18b13828305d63f541bf"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-000-full.png",
+      "bytes": 514214,
+      "sha256": "1941aed0b5ff1a44a90d8afc32d1685579b6ed32d52cde45192398953d468209"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-009-crop.png",
+      "bytes": 1244137,
+      "sha256": "50e1fe57162eda181a255e2697d83165556b4c1938fb263c7f8aaf515e4da9ef"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-009-error.png",
+      "bytes": 539494,
+      "sha256": "52d928392e779f792ed33e16c75145baf04c1d3167f9aa2357a1d68a2293153c"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-009-full.png",
+      "bytes": 531971,
+      "sha256": "06ae0738a02af288ac103aa2b2bc1b1a281c55d06972cc70ca2e0d26f578dc02"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-016-crop.png",
+      "bytes": 1337226,
+      "sha256": "5b5f0f52259af9747d976ff94cf4b5e7c90a542a6f05d869edda8796f6892063"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-016-error.png",
+      "bytes": 555536,
+      "sha256": "47c1ad41492553801888e6d6f0efb9adcffb62a31b9fcdc11ffe3dbc53607db3"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/bonsai-view-016-full.png",
+      "bytes": 571365,
+      "sha256": "9232810b6b42d6b1c41e94731d2079059ced5083fec139297c4bd70c6d436e22"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-000-crop.png",
+      "bytes": 219744,
+      "sha256": "87977c6f914e242be91ed432cc2181b9893d454756ac1e6da8521c48d00070f0"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-000-error.png",
+      "bytes": 521459,
+      "sha256": "73fc2ce4a121a54a11c60068ff8bc79a07578aed1ffdbe95e54fbcbe1d8b3ac8"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-000-full.png",
+      "bytes": 932653,
+      "sha256": "ff4bdc9c1a53c27561fe5ce5422a170018a759985a44cd1ca7cdd84e7ff46060"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-007-crop.png",
+      "bytes": 227536,
+      "sha256": "f0df3766e602e5e99eba7f69b21b84a678a5f58bb2388f0c4dae016e6bc17215"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-007-error.png",
+      "bytes": 558472,
+      "sha256": "c65e9e21890c47c837018156b25c279baee12a93a63b23e590abccbb1428d614"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-007-full.png",
+      "bytes": 1036103,
+      "sha256": "4adda48c7058826744de07fe7078104dccb0c97e13890f0eed5e41ff752ab92a"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-010-crop.png",
+      "bytes": 238660,
+      "sha256": "5c6a2361f7999f5e68674df59311bed5506932bd945a121d891a6ee83c0fde8d"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-010-error.png",
+      "bytes": 561849,
+      "sha256": "bf80ddc28af65adb39359be6084f451c2aaa8123e30efadd2fc44bdfbba9b2ba"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-010-full.png",
+      "bytes": 1107281,
+      "sha256": "dafea8c3b31f8378eeff4df2d28f255ac8619ea91eb5839e25593d1b88d0fad3"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-013-crop.png",
+      "bytes": 221217,
+      "sha256": "768f5c852ed409571b30d7e1a279877c8168a04c40d94be9febafbd3b997efcf"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-013-error.png",
+      "bytes": 538508,
+      "sha256": "0fa46c2a5571434a081691b1530f70cc104359b21dead11afd77afd085b9e953"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/custom-tea_sets_2-view-013-full.png",
+      "bytes": 994174,
+      "sha256": "2ed22ffcb4d6e6e481cb5e99d7663a448b87b8f0c2f7f9360004d014c0911ab5"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-000-crop.png",
+      "bytes": 1957038,
+      "sha256": "1c179f260b8d36c13a9cff6491ec16a4d295d1c8d9d823306b798e91666d529a"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-000-error.png",
+      "bytes": 602246,
+      "sha256": "fd1db680d5e43399e8ee7d82a66e498f3a3a2502e07317d2720ddd5c627abb05"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-000-full.png",
+      "bytes": 687644,
+      "sha256": "f95d38414e1a30c57a94fab13e6272527414472bf78a24e200c3eb8f12113a1c"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-004-crop.png",
+      "bytes": 2055446,
+      "sha256": "9efd287ac6a9625619e1daa3d1b826eefc824524a0da3da14f49bb934f797221"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-004-error.png",
+      "bytes": 604526,
+      "sha256": "5caf5f577543f5c5e3231ba8429513536850bd940893f4420528d17c5e8c8781"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-004-full.png",
+      "bytes": 693825,
+      "sha256": "7c2dc70242c9425968baf4225b833fa18ac596b0682c2c70c14495643e96e417"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-012-crop.png",
+      "bytes": 1544303,
+      "sha256": "92ec0fda3ad447a1dd77d358fd2e0595e25ab4d1aa53790714474532eb96753d"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-012-error.png",
+      "bytes": 594999,
+      "sha256": "a2e5869c494373ccbb8370a94b874b8f90527945eab7f7b62676d8323579dab5"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/garden-view-012-full.png",
+      "bytes": 668344,
+      "sha256": "fed59a690b44d7a4b28ad725a2c5e896250d43a99a47e5a52d18fad1773966d2"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/research-comparison.png",
+      "bytes": 144538,
+      "sha256": "aeae88dfac2aac104db4a78b0564dee8d41d4f3b09c521c503bd06a51b8582f7"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-000-crop.png",
+      "bytes": 1148670,
+      "sha256": "ff3572d6b32c4ebfec4688ab0ac0c31176f99ca0ccd52e021e2620fb90ada76e"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-000-error.png",
+      "bytes": 532550,
+      "sha256": "759daeb7d67eb8b97936b2276a03393727c1a8a1f182b7c55cbf1c1ed80126b2"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-000-full.png",
+      "bytes": 479440,
+      "sha256": "460ac8cd4cfc15836bc92465c2757a2224d75d17203930229c12374563ab179b"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-002-crop.png",
+      "bytes": 1271339,
+      "sha256": "1b3341e199fce6ef5950ae8e2dc8f6b6f109e53bde37115315db9b8c23932604"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-002-error.png",
+      "bytes": 530157,
+      "sha256": "b90d81825be81fe234b5250bf8631ab143d2bf8c61449e972d35bef3a6b50851"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-002-full.png",
+      "bytes": 506262,
+      "sha256": "6e9601d1faf5cb38a77c8fb49a7984e033660460c17b18a9af53cfe5feec6caf"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-029-crop.png",
+      "bytes": 1091873,
+      "sha256": "132a9fab5b97c5ed2dcb2617866f9cf2bef4b82363683e4d4f92c3edae855007"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-029-error.png",
+      "bytes": 541382,
+      "sha256": "ccd49a1fb7a29f12cf37f6289f61a18ccbc40740750e8bdec91dd98b4e37d9a0"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-029-full.png",
+      "bytes": 483743,
+      "sha256": "95e57aaf9f3ee8145a7f2cb96046ce2465ec9ae994a1353459cdb2d212a1e421"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-036-crop.png",
+      "bytes": 907693,
+      "sha256": "10fbca217195629af293fa4068223050c1f0a4a088429695ec6359a166ec635a"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-036-error.png",
+      "bytes": 533140,
+      "sha256": "2cafe82fe654e9e4f6de282f9d54ba6321db2ec30b1ec649f1d004599889ba03"
+    },
+    {
+      "path": "reports/topic16-full/review/figures/room-view-036-full.png",
+      "bytes": 416987,
+      "sha256": "bb7aca26f79d2e603db1f1fdd0f2e3f55920e5d791d2187551c9b1dc10325c9f"
+    },
+    {
+      "path": "reports/topic16-full/review/isolated-source/topic16/__init__.py",
+      "bytes": 62,
+      "sha256": "8cd0bfb0d3dbd47295c492b1714def7929fbdede84d03717d8cb58f18891143b"
+    },
+    {
+      "path": "reports/topic16-full/review/isolated-source/topic16/analysis.py",
+      "bytes": 13744,
+      "sha256": "dd501890a29a7e806f1404b16818be1071435893f85e7a67ee3ae74283a2ef29"
+    },
+    {
+      "path": "reports/topic16-full/review/isolated-source/topic16/contracts.py",
+      "bytes": 18557,
+      "sha256": "b016229015ebb2c34449d9ee4b5c75645f30d2c22b7855197e85e0c9842313c1"
+    },
+    {
+      "path": "reports/topic16-full/review/paired-comparisons.csv",
+      "bytes": 729,
+      "sha256": "e5ac42e566d20923f376ba53f12e6a1bc6ffdc1171bc4b868fed288ab96cbd1a"
+    },
+    {
+      "path": "reports/topic16-full/review/paired-comparisons.json",
+      "bytes": 1533,
+      "sha256": "57f8fdfba2067f08595e27335d8d159fcd86bc7411dd1bd7eb7e9dab501c7c33"
+    },
+    {
+      "path": "reports/topic16-full/review/per-view-png-diagnostics.csv",
+      "bytes": 17834,
+      "sha256": "cc7a698ee3807821b202878037b9995bf24810d074fa207aad8f02b6c0927218"
+    },
+    {
+      "path": "reports/topic16-full/review/recomputed-results.json",
+      "bytes": 4267,
+      "sha256": "9333a08937275896020fbc9cbb7d3cbadd7f02cc27006e81f3b1b53121200238"
+    },
+    {
+      "path": "reports/topic16-full/review/replay-source-manifest.json",
+      "bytes": 13320,
+      "sha256": "ca67fec782b3a84da2961bb8b5700fe27465c041d26db2bd5e5d60b579467eda"
+    },
+    {
+      "path": "reports/topic16-full/review/replay-source.zip",
+      "bytes": 165324,
+      "sha256": "85d827b12f267fad92b1d4318dc8418c4eb4137bf2cd6e2ce25a91533762ecfe"
+    },
+    {
+      "path": "reports/topic16-full/review/replay_runbook.md",
+      "bytes": 10487,
+      "sha256": "3d68ed8f4a118d8c71e7d2c2ef37a0ad6cbc7d3977ff5162a0c45ea0cb0398fa"
+    },
+    {
+      "path": "reports/topic16-full/review/research_review.html",
+      "bytes": 13233160,
+      "sha256": "59f6daaa5714622bbb4839ee5def5bd999d86607e8d53e1aa035a1d32595b676"
+    },
+    {
+      "path": "reports/topic16-full/review/research_review.md",
+      "bytes": 22689,
+      "sha256": "3d8c1feaa742222898d8405ab0fbc970e2bf5190fe5db620e4111ad3da115aa9"
+    },
+    {
+      "path": "reports/topic16-full/review/review.pending.json",
+      "bytes": 1507,
+      "sha256": "0e682d2d0030911261bbdb09d1780567b378971e6aeba0fb82084597e1fb9239"
+    },
+    {
+      "path": "reports/topic16-full/review/review_checklist.md",
+      "bytes": 3336,
+      "sha256": "5d2845a2aefc29da5d937f1461cd19d010a25a27e807d9a445f45b51e434be77"
+    },
+    {
+      "path": "reports/topic16-full/review/settings.snapshot.json",
+      "bytes": 3070,
+      "sha256": "e6652658ce862cbf317e014e5d534dc75eeeb655d095551bde363dfff55b2c03"
+    }
+  ]
+}

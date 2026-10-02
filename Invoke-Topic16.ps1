@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Position = 0)][ValidateSet('help', 'check', 'host-tools', 'repos', 'setup', 'setup-all', 'papers', 'data-smoke', 'data-benchmark', 'data-all', 'train-smoke', 'benchmark')]
+    [Parameter(Position = 0)][ValidateSet('help', 'check', 'gpu-safety', 'qa', 'research', 'host-tools', 'repos', 'setup', 'setup-all', 'papers', 'data-smoke', 'data-benchmark', 'data-all', 'train-smoke', 'benchmark')]
     [string]$Task = 'help'
 )
 
@@ -9,7 +9,11 @@ switch ($Task) {
     'help' {
         @'
 Topic 16 PowerShell tasks
+  GPU commands require Windows PowerShell Administrator; clock cap 300-800 MHz is reapplied per job.
   .\Invoke-Topic16.ps1 check           Host/GPU/disk preflight
+  .\Invoke-Topic16.ps1 gpu-safety      Apply clock cap and verify conservative safety thresholds
+  .\Invoke-Topic16.ps1 qa              PowerShell parser and CPU contract tests
+  .\Invoke-Topic16.ps1 research        Ordered full primary research session
   .\Invoke-Topic16.ps1 host-tools      Install Git/Miniconda checks (MSVC: call script with -InstallBuildTools)
   .\Invoke-Topic16.ps1 repos           Fetch pinned Nerfstudio source
   .\Invoke-Topic16.ps1 setup           Create and validate the native Windows CUDA runtime
@@ -23,6 +27,9 @@ Topic 16 PowerShell tasks
 '@
     }
     'check' { & (Join-Path $scripts 'Check-Environment.ps1') }
+    'gpu-safety' { & (Join-Path $scripts 'Check-GpuSafety.ps1') }
+    'qa' { & (Join-Path $scripts 'Test-Project.ps1') }
+    'research' { & (Join-Path $scripts 'Run-Research.ps1') }
     'host-tools' { & (Join-Path $scripts 'Install-HostTools.ps1') }
     'repos' { & (Join-Path $scripts 'Download-Repositories.ps1') -Mode runtime }
     'setup' { & (Join-Path $scripts 'Setup-Runtime.ps1') }
@@ -32,8 +39,7 @@ Topic 16 PowerShell tasks
     'data-benchmark' { & (Join-Path $scripts 'Download-Datasets.ps1') -Mode benchmark }
     'data-all' { & (Join-Path $scripts 'Download-Datasets.ps1') -Mode all }
     'train-smoke' {
-        & (Join-Path $scripts 'Train.ps1') -Method nerfacto -Dataset poster
-        & (Join-Path $scripts 'Train.ps1') -Method splatfacto -Dataset poster
+        & (Join-Path $scripts 'Run-Benchmark.ps1') -Scenes @('poster')
     }
     'benchmark' { & (Join-Path $scripts 'Run-Benchmark.ps1') }
 }
