@@ -1,3 +1,4 @@
+from topic16.settings import experiment_settings_hash
 """Sequential matrices with explicit attempts and resume at run boundaries."""
 from pathlib import Path
 
@@ -11,7 +12,7 @@ def benchmark(root: Path, settings: dict, scenes: list[str], matrix_path: Path,
     if len(set(scenes)) != len(scenes):
         raise ValueError("Scene list contains duplicates")
     protocol = {"id": protocol_id, "iterations": settings["TrainIterations"] if iterations is None else iterations,
-                "seed": settings["RandomSeed"] if seed is None else seed, "settings_hash": digest_json(settings)}
+                "seed": settings["RandomSeed"] if seed is None else seed, "settings_hash": experiment_settings_hash(settings)}
     matrix_path = inside(root / "artifacts/logs/matrices", matrix_path)
     if matrix_path.exists():
         if not resume:

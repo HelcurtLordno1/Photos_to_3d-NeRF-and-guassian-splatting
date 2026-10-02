@@ -68,4 +68,40 @@
     DemoWidth = 960
     DemoHeight = 540
     DemoQueueCapacity = 1
+    # Presentation-only settings: excluded from the immutable experiment digest.
+    Ui = @{
+        SchemaVersion = 1
+        NodeVersion = '24.16.0'
+        Port = 7016
+        MaxPort = 7020
+        DevPort = 5176
+        Selection = 'topic16-full'
+        CacheBytes = 2147483648
+        LeaseSeconds = 45
+        HeartbeatSeconds = 10
+        MaxPixels = 2073600
+        DecodeLimitBytes = 629145600
+        MaxVertices = 3000000
+        Packages = @{
+            'react' = '19.3.0'
+            'react-dom' = '19.3.0'
+            'three' = '0.186.1'
+            '@sparkjsdev/spark' = '2.3.1'
+            'lucide-react' = '1.49.0'
+            'mermaid' = '12.0.0'
+        }
+        DevPackages = @{
+            'vite' = '8.3.2'
+            'typescript' = '5.9.3'
+            '@vitejs/plugin-react' = '6.1.1'
+            '@types/react' = '19.3.0'
+            '@types/react-dom' = '19.3.0'
+            '@types/three' = '0.186.0'
+            '@types/node' = '26.6.4'
+            'vitest' = '5.0.3'
+            '@playwright/test' = '1.63.0'
+            '@axe-core/playwright' = '4.13.0'
+            'prettier' = '3.6.2'
+        }
+    }
 }

@@ -1,6 +1,8 @@
 """Validate capture inputs and freeze the split returned by the pinned dataparser."""
 from __future__ import annotations
 
+from topic16.settings import experiment_settings_hash
+
 from pathlib import Path
 
 from topic16.contracts import digest_json, file_required, inside, native_workspace, read_json, relative, sha256, validate_capture_review, validate_split, write_json
@@ -190,7 +192,7 @@ def verify_preparation_settings(root: Path, destination: Path, record: dict, set
         previous = read_json(path)
         if digest_json(previous) == record['settings_hash'] and digest_json(preparation_settings(previous)) == expected:
             return True
-    return record['settings_hash'] == digest_json(settings)
+    return record['settings_hash'] == experiment_settings_hash(settings)
 
 
 def capture_inputs(train: Path, evaluation: Path) -> dict:
@@ -301,7 +303,7 @@ def prepare_scene(root: Path, scene: str, settings: dict) -> Path:
         return destination
     destination.mkdir(parents=True)
     record = {'schema_version': '1.0', 'status': 'running', 'scene': scene,
-              'settings_hash': digest_json(settings), 'data_settings_hash': digest_json(preparation_settings(settings)),
+              'settings_hash': experiment_settings_hash(settings), 'data_settings_hash': digest_json(preparation_settings(settings)),
               'source_files': [], 'output_files': [],
               'operation': 'pinhole-v1: pinned FullImageDatamanager undistort then Pillow LANCZOS downscale',
               'downscale_factor': settings['DownscaleFactor']}

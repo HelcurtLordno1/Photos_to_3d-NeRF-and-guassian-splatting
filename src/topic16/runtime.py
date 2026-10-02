@@ -1,6 +1,8 @@
 """GPU execution with one process at a time and immutable run provenance."""
 from __future__ import annotations
 
+from topic16.settings import experiment_settings_hash
+
 import csv
 import os
 import subprocess
@@ -305,7 +307,7 @@ def train(root: Path, settings: dict, method: str, scene: str, iterations: int |
         provenance = {"protocol_id": protocol_id, "git_commit": commit, "git_dirty": bool(git_status),
                       "git_diff_sha256": digest_json({"diff": diff, "sources": source_hashes}),
                       'source_files': source_hashes, 'source_archive_sha256': sha256(paths['logs'] / 'source.zip'),
-                      "settings_hash": digest_json(settings), "gpu": hardware,
+                      "settings_hash": experiment_settings_hash(settings), "gpu": hardware,
                       "runtime_sha256": digest_json(runtime_snapshot())}
         from topic16.safety import assert_safe, current_guard
         provenance['gpu_safety_path'] = relative(root, current_guard().path)

@@ -1,6 +1,8 @@
 """Cooperative stop requests, committed checkpoints and a read-only log console."""
 from __future__ import annotations
 
+from topic16.settings import experiment_settings_hash
+
 import os
 import time
 from pathlib import Path
@@ -64,7 +66,7 @@ def resume_source(root: Path, config: Path, settings: dict, split: dict, method:
     expected = {'iterations': iterations, 'seed': seed, 'downscale_factor': settings['DownscaleFactor'],
                 'eval_interval': settings['EvalInterval']}
     if (manifest['scene'] != scene or manifest['method'] != method or manifest['protocol'] != expected
-            or provenance['protocol_id'] != protocol or provenance['settings_hash'] != digest_json(settings)
+            or provenance['protocol_id'] != protocol or provenance['settings_hash'] != experiment_settings_hash(settings)
             or digest_json(read_json(paths['logs'] / 'split.json')) != digest_json(split)):
         raise ValueError('Resume source has different scene, protocol, registry or frozen cameras')
     if record['status'] not in ('checkpoint-ready', 'paused'):

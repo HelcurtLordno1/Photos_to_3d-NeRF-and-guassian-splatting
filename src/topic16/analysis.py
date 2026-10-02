@@ -1,6 +1,8 @@
 """Validate evidence, publish measured tables/figures, and compute the core gate."""
 from __future__ import annotations
 
+from topic16.settings import experiment_settings_hash
+
 import csv
 from pathlib import Path
 
@@ -141,7 +143,7 @@ def core_gate(root: Path, settings: dict, pairs: dict, matrices: list[Path], rev
         if not paired_throughput(runs):
             checks['paired_render'] = False
         for run in runs:
-            if run['provenance']['settings_hash'] != digest_json(settings):
+            if run['provenance']['settings_hash'] != experiment_settings_hash(settings):
                 raise ValueError('Primary evidence belongs to a different registry/safety policy')
             if 'GpuClockMinMHz' in settings and 'gpu_safety_path' not in run['provenance']:
                 raise ValueError('Primary evidence has no completed GPU safety record')
@@ -171,7 +173,7 @@ def core_gate(root: Path, settings: dict, pairs: dict, matrices: list[Path], rev
         review = read_json(review_path)
         if any(review.get(name, {}).get('approved') is True for name in ('clean_machine_replay', 'research_review')):
             expected_keys = sorted(run['manifest']['run_key'] for runs in pairs.values() for run in runs)
-            if review.get('run_keys') != expected_keys or review.get('settings_hash') != digest_json(settings):
+            if review.get('run_keys') != expected_keys or review.get('settings_hash') != experiment_settings_hash(settings):
                 raise ValueError('Human review does not endorse the current selected runs and registry')
         for name in ("clean_machine_replay", "research_review"):
             entry = review.get(name, {})
@@ -183,7 +185,7 @@ def core_gate(root: Path, settings: dict, pairs: dict, matrices: list[Path], rev
                     review_evidence.append({"path": relative(root, path), "sha256": sha256(path)})
                 checks[name] = True
     return {"schema_version": "1.0", "status": "PASS" if all(checks.values()) else "BLOCKED",
-            "checked_at": utc_now(), "checks": checks, "settings_hash": digest_json(settings),
+            "checked_at": utc_now(), "checks": checks, "settings_hash": experiment_settings_hash(settings),
             "matrices": [{"path": relative(root, path), "sha256": sha256(path)} for path in sorted(matrices)],
             "review_evidence": review_evidence,
             'review': review_record,

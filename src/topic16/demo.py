@@ -1,6 +1,8 @@
 """Local serial inference adapter and checksum-backed release manifests."""
 from __future__ import annotations
 
+from topic16.settings import experiment_settings_hash
+
 import io
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -37,7 +39,7 @@ def create_camera_path(root: Path, settings: dict, config: Path, output: Path) -
 
 def verified_gate(root: Path, settings: dict, path: Path) -> dict:
     gate = read_json(file_required(path))
-    if gate["status"] != "PASS" or not all(gate["checks"].values()) or gate["settings_hash"] != digest_json(settings):
+    if gate["status"] != "PASS" or not all(gate["checks"].values()) or gate["settings_hash"] != experiment_settings_hash(settings):
         raise ValueError("G-Core is not PASS for the current registry")
     if not gate.get('review'):
         raise ValueError('G-Core lacks its recorded human review manifest')
@@ -79,7 +81,7 @@ def select_model(root: Path, settings: dict, config: Path, gate_path: Path, came
               "run_key": run["manifest"]["run_key"], "config": relative(root, run["config"]),
               "checkpoint": relative(root, run["checkpoint"]), "config_sha256": run["provenance"]["config_sha256"],
               "checkpoint_sha256": run["provenance"]["checkpoint_sha256"],
-              "settings_hash": digest_json(settings), "runtime_sha256": run["provenance"]["runtime_sha256"],
+              "settings_hash": experiment_settings_hash(settings), "runtime_sha256": run["provenance"]["runtime_sha256"],
               "gate": relative(root, gate_path), "gate_sha256": sha256(gate_path),
               "camera_path": relative(root, camera_path), "camera_sha256": camera_hash,
               "fallback_video": relative(root, fallback), "fallback_sha256": sha256(fallback),
@@ -93,7 +95,7 @@ def select_model(root: Path, settings: dict, config: Path, gate_path: Path, came
 
 def verify_model(root: Path, settings: dict, model: Path) -> tuple[dict, dict]:
     record = read_json(file_required(model))
-    if record["settings_hash"] != digest_json(settings):
+    if record["settings_hash"] != experiment_settings_hash(settings):
         raise ValueError("Demo registry differs from model selection")
     for path_field, hash_field in (("gate", "gate_sha256"), ("camera_path", "camera_sha256"),
                                   ("fallback_video", "fallback_sha256")):

@@ -1,10 +1,11 @@
 [CmdletBinding()]
 param(
-    [Parameter(Position = 0)][ValidateSet('help', 'check', 'gpu-safety', 'qa', 'research', 'host-tools', 'repos', 'setup', 'setup-all', 'papers', 'data-smoke', 'data-benchmark', 'data-all', 'train-smoke', 'benchmark')]
+    [Parameter(Position = 0)][ValidateSet('help', 'check', 'gpu-safety', 'qa', 'research', 'host-tools', 'repos', 'setup', 'setup-all', 'papers', 'data-smoke', 'data-benchmark', 'data-all', 'train-smoke', 'benchmark', 'ui-setup', 'ui-prepare', 'ui-build', 'ui', 'ui-test', 'ui-dev', 'ui-stop')]
     [string]$Task = 'help'
 )
 
 $scripts = Join-Path $PSScriptRoot 'scripts'
+$uiScripts = Join-Path $PSScriptRoot 'UI_design\scripts'
 switch ($Task) {
     'help' {
         @'
@@ -24,6 +25,13 @@ Topic 16 PowerShell tasks
   .\Invoke-Topic16.ps1 data-all        Download smoke and benchmark data
   .\Invoke-Topic16.ps1 train-smoke     Train both methods on poster
   .\Invoke-Topic16.ps1 benchmark       Train/evaluate the paired 3-scene matrix
+  .\Invoke-Topic16.ps1 ui-setup        Install isolated UI packages from registry pins
+  .\Invoke-Topic16.ps1 ui-prepare      Validate completed pairs and prepare UI catalog
+  .\Invoke-Topic16.ps1 ui-build        Build the production UI
+  .\Invoke-Topic16.ps1 ui              Open Spatial Studio (no training)
+  .\Invoke-Topic16.ps1 ui-test         UI typecheck and CPU contracts
+  .\Invoke-Topic16.ps1 ui-dev          Vite hot reload with the local artifact API
+  .\Invoke-Topic16.ps1 ui-stop         Stop the matching local UI safely
 '@
     }
     'check' { & (Join-Path $scripts 'Check-Environment.ps1') }
@@ -42,4 +50,11 @@ Topic 16 PowerShell tasks
         & (Join-Path $scripts 'Run-Benchmark.ps1') -Scenes @('poster')
     }
     'benchmark' { & (Join-Path $scripts 'Run-Benchmark.ps1') }
+    'ui-setup' { & (Join-Path $uiScripts 'Setup-UI.ps1') }
+    'ui-prepare' { & (Join-Path $uiScripts 'Prepare-UIAssets.ps1') }
+    'ui-build' { & (Join-Path $uiScripts 'Build-UI.ps1') }
+    'ui' { & (Join-Path $uiScripts 'Start-UI.ps1') }
+    'ui-test' { & (Join-Path $uiScripts 'Test-UI.ps1') }
+    'ui-dev' { & (Join-Path $uiScripts 'Dev-UI.ps1') }
+    'ui-stop' { & (Join-Path $uiScripts 'Stop-UI.ps1') }
 }

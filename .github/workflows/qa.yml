@@ -10,3 +10,22 @@ jobs:
       - name: Parse scripts and run CPU contracts
         shell: powershell
         run: .\scripts\Test-Project.ps1 -PythonExecutable python
+  ui-contracts:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install UI pins and build
+        shell: powershell
+        run: |
+          .\UI_design\scripts\Setup-UI.ps1
+          .\UI_design\scripts\Build-UI.ps1
+      - name: UI CPU and portable bookmark contracts
+        shell: powershell
+        run: |
+          . .\UI_design\scripts\Common-UI.ps1
+          Invoke-UiNpm -Arguments @('test')
+          $env:PYTHONPATH = "$RepoRoot;$RepoRoot\src"
+          python -m unittest discover -s UI_design\tests -p 'test_*.py'
+          if ($LASTEXITCODE) { throw 'UI CPU contracts failed' }
+          Invoke-UiNpm -Arguments @('exec','playwright','install','chromium')
+          Invoke-UiNpm -Arguments @('run','e2e')

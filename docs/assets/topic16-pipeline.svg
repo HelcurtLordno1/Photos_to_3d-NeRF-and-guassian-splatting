@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="405" viewBox="0 0 1120 405" role="img" aria-labelledby="t d">
+<title id="t">Topic 16: shared-input reconstruction, artifact validation and interactive research UI</title>
+<desc id="d">Source photos and poses are canonicalized once, then consumed by sequential Nerfacto and Splatfacto runs. Shared held-out evaluation and timed render/export produce validated pairs for analysis and Spatial Studio.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#526071"/></marker></defs>
+<rect width="1120" height="405" fill="white"/>
+<g fill="none" stroke="#526071" stroke-width="1.6" marker-end="url(#a)">
+<path d="M175 202H210"/><path d="M385 190H404V105H435"/><path d="M385 215H404V278H435"/>
+<path d="M610 105H665"/><path d="M610 278H665"/>
+<path d="M610 105H631V278H665"/><path d="M610 278H645V105H665"/>
+<path d="M850 105H872V190H903"/><path d="M850 278H884V217H903"/>
+<path d="M1005 244V323"/><path d="M210 352H375"/>
+</g>
+<rect x="10" y="165" width="165" height="74" rx="7" fill="#edf4f4" stroke="#65788a" stroke-width="1.2"/>
+<text x="92.5" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Input</text>
+<text x="92.5" y="213" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Ảnh/video + poses</text>
+<rect x="210" y="165" width="175" height="74" rx="7" fill="#edf4f4" stroke="#65788a" stroke-width="1.2"/>
+<text x="297.5" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Canonical</text>
+<text x="297.5" y="213" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">GT/camera/split chung</text>
+<rect x="435" y="65" width="175" height="80" rx="7" fill="#eef0ff" stroke="#65788a" stroke-width="1.2"/>
+<text x="522.5" y="90" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Nerfacto</text>
+<text x="522.5" y="113" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Neural radiance field</text>
+<text x="522.5" y="131" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Exact config + CKPT</text>
+<rect x="435" y="238" width="175" height="80" rx="7" fill="#fff0eb" stroke="#65788a" stroke-width="1.2"/>
+<text x="522.5" y="263" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Splatfacto</text>
+<text x="522.5" y="286" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">3D Gaussians</text>
+<text x="522.5" y="304" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Exact config + CKPT</text>
+<rect x="665" y="65" width="185" height="80" rx="7" fill="#eef4f9" stroke="#65788a" stroke-width="1.2"/>
+<text x="757.5" y="90" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Held-out eval</text>
+<text x="757.5" y="113" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Cùng GT / cameras</text>
+<text x="757.5" y="131" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">PSNR · SSIM · LPIPS</text>
+<rect x="665" y="238" width="185" height="80" rx="7" fill="#eef4f9" stroke="#65788a" stroke-width="1.2"/>
+<text x="757.5" y="263" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Render / export</text>
+<text x="757.5" y="286" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Warm-up + CUDA sync</text>
+<text x="757.5" y="304" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">FPS + PLY + hashes</text>
+<rect x="903" y="161" width="204" height="83" rx="7" fill="#f4f2eb" stroke="#65788a" stroke-width="1.2"/>
+<text x="1005.0" y="186" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Validated pairs</text>
+<text x="1005.0" y="209" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Explicit matrices</text>
+<text x="1005.0" y="227" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Data/model/source hashes</text>
+<rect x="885" y="323" width="222" height="71" rx="7" fill="#f2edfa" stroke="#65788a" stroke-width="1.2"/>
+<text x="996.0" y="348" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="bold" fill="#1b293a">Analysis + Studio</text>
+<text x="996.0" y="371" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#334a60">Tables · figures · 3D UI</text>
+<text x="218" y="147" font-family="Arial,sans-serif" font-size="13" fill="#496778">COLMAP / capture review</text>
+<text x="426" y="37" font-family="Arial,sans-serif" font-size="14" fill="#496778">Một GPU operation tại một thời điểm</text>
+<text x="390" y="357" font-family="Arial,sans-serif" font-size="14" fill="#6f4a22">Registry pins · GPU guard · checkpoint resume</text>
+<rect x="10" y="332" width="200" height="39" rx="5" fill="#faf6e9" stroke="#a39062"/><text x="110" y="356" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#5f4e2b">PowerShell + Conda</text>
+</svg>

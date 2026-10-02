@@ -1,10 +1,22 @@
 # Local environments and caches
+.codex/
 .pixi/
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+node_modules/
+UI_design/dist/
+UI_design/spike/dist/
+UI_design/.tools/
+UI_design/.cache/
+UI_design/.cache-*.log
+UI_design/test-results/
+UI_design/playwright-report/
+UI_design/*.tsbuildinfo
+artifacts/ui/
+reports/ui/
 
 # Downloaded third-party source trees
 third_party/*

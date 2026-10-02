@@ -5,6 +5,8 @@ Assert-WindowsPowerShell
 $files = @(Get-ChildItem -LiteralPath $PSScriptRoot -Recurse -Filter '*.ps1' -File)
 $files += @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'tests') -Filter '*.ps1' -File)
 $files += Get-Item -LiteralPath (Join-Path $ProjectRoot 'Invoke-Topic16.ps1')
+$uiScripts = Join-Path $ProjectRoot 'UI_design\scripts'
+if (Test-Path -LiteralPath $uiScripts) { $files += @(Get-ChildItem -LiteralPath $uiScripts -Filter '*.ps1' -File) }
 foreach ($file in $files) {
     $tokens = $null
     $errors = $null

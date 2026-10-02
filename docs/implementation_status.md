@@ -19,7 +19,7 @@ hoàn tất. Không có số benchmark giả hoặc approval giả.
 
 ## Trước và sau integration
 
-Member 1 P0–P2 đã bàn giao theo [acceptance cũ](member1_acceptance_2026-09-28.md).
+Member 1 P0–P2 đã bàn giao tại audit ngày 2026-09-28; acceptance note riêng đã được lược bỏ khỏi cây tài liệu hiện tại. Phần dưới giữ lịch sử integration; xem [README](../README.md#6-cấu-trúc-project-và-điểm-vào-code) để tìm code và tài liệu đang sử dụng.
 Lúc audit, các wrapper train/eval/benchmark chưa nối đầy đủ immutable manifest,
 exact checkpoint, paired resume, held-out evidence hoặc analysis/demo gate.
 

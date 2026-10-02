@@ -237,6 +237,7 @@ def validate_render(directory: Path, checkpoint_hash: str, root: Path | None = N
 
 
 def load_run(root: Path, config_path: Path, require_eval: bool = False) -> dict:
+    from topic16.settings import experiment_settings_hash
     root = root.resolve()
     config_path = inside(root / "artifacts" / "runs", config_path)
     if config_path.name != "config.yml":
@@ -268,7 +269,7 @@ def load_run(root: Path, config_path: Path, require_eval: bool = False) -> dict:
     if digest_json(split) != manifest["provenance"]["dataset_split_hash"]:
         raise ValueError("Frozen split changed after training")
     settings = read_json(paths['logs'] / 'settings.json')
-    if digest_json(settings) != provenance['settings_hash']:
+    if experiment_settings_hash(settings) != provenance['settings_hash']:
         raise ValueError('Registry snapshot changed after training')
     if 'source_archive_sha256' in provenance:
         import zipfile
