@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import tempfile
 import unittest
+from contextlib import nullcontext
+from unittest.mock import patch
 
 from topic16_upgrade.teacher import validate_profile, resolve
 from topic16_upgrade.teacher_worker import ARMS, differences, plain
@@ -50,6 +52,39 @@ class TeacherContracts(unittest.TestCase):
 
     def test_malformed_or_smoke_matrix_is_rejected(self):
         with self.assertRaises(ValueError): validate_profile({'Iterations': 10})
+
+    def test_resume_after_teacher_report_preserves_committed_bytes_and_skips_all_arms(self):
+        from topic16_upgrade.teacher import execute
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); study = 'teacher-room-v1'
+            directory = root / 'artifacts/jobs/teacher' / study; directory.mkdir(parents=True)
+            report = root / 'reports' / study / 'report.json'
+            write_json(report, {'status': 'complete', 'completed_arms': ['A', 'B', 'C']})
+            report_hash = sha256(report)
+            pin = root / 'pin.json'; write_json(pin, {'fixture': True})
+            doc = {'source_pin': reference(root, pin), 'spec': {'Arms': ['A', 'B', 'C'],
+                'ContinueFinalCampaign': True, 'FinalStudy': 'final-quality-v1'}}
+            write_json(directory / 'declaration.json', doc)
+            stages = {key: [reference(root, pin)] for key in ['preflight', 'nerfacto-historical-common',
+                'splatfacto-historical-common', *[a + '-' + k for a in 'ABC' for k in ('train', 'eval', 'common')]]}
+            stages['teacher-report'] = [reference(root, report)]
+            state = {'study': study, 'status': 'paused', 'phase': 'upgrade-final', 'stages': stages,
+                'arms': {a: {'status': 'complete', 'output': a} for a in 'ABC'}}
+            write_json(directory / 'state.json', state)
+            with patch('topic16_upgrade.teacher.prepare'), \
+                 patch('topic16_upgrade.teacher.verify_pin', return_value=({}, root)), \
+                 patch('topic16_upgrade.teacher.check_stop'), \
+                 patch('topic16_upgrade.runtime.gpu_lock', return_value=nullcontext()), \
+                 patch('topic16_upgrade.teacher_report.publish', side_effect=AssertionError('Committed report rewritten')) as publish_mock, \
+                 patch('topic16_upgrade.runtime.run_command', side_effect=AssertionError('Completed arm rerun')), \
+                 patch('topic16_upgrade.final_campaign.execute', return_value={'status': 'succeeded'}) as continuation:
+                result = execute(root, {'Teacher': {}, 'DownscaleFactor': 2}, study, resume=True)
+            self.assertEqual(result['status'], 'succeeded')
+            self.assertEqual(sha256(report), report_hash)
+            publish_mock.assert_not_called()
+            self.assertTrue(continuation.call_args.kwargs['resume'])
+            self.assertEqual(continuation.call_args.args[2], 'final-quality-v1')
+            self.assertEqual(continuation.call_args.args[1]['DownscaleFactor'], 1)
 
     def test_complete_supplement_keeps_negative_result_native_metrics_and_all39_views(self):
         from PIL import Image

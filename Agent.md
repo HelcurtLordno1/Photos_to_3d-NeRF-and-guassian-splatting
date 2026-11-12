@@ -175,3 +175,17 @@ Never claim GS improvements resolve the Nerfacto confound, nor29–31dB as a
 guaranteed outcome. Keep historical comparisons provisional and separate from
 current controlled A–C contrasts. Older sessions stay paused; only the new owner
 may continue the saved final campaign after the teacher report gate.
+
+
+## User pause — 2026-11-13, 02:13 +07
+
+The user wants to stop for the night and continue tomorrow. Session
+`topic16-teacher-room-v1` is confirmed paused at Bonsai step25303/30000;
+checkpoint SHA256 a5e369d1e208220802e63136935ae06c7c896c52fe340fc3513dde5ae7c8b71a
+was reverified. All Room A/B/C arms, evaluation and the teacher supplement are
+complete; preserve their committed bytes. No automatic training restart until
+the user requests Resume. Resume the teacher session, not an older owner; it
+skips completed Room work and continues the Gaussian checkpoint.
+A controller-only Resume repair prevents incremental publication from replacing
+a committed complete teacher report. The original declarations/trainer pins
+remain unchanged; archive the live controller separately on execution.

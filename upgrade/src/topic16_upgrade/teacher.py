@@ -9,11 +9,12 @@ import subprocess
 import sys
 import threading
 import time
+import zipfile
 
 from .contracts import (digest_json, file_required, inside, load_run, read_json,
     relative, sha256, utc_now, validate_metrics, write_json)
 from .sessions import check_stop, SessionPaused
-from .source_pin import freeze_current, verify_pin
+from .source_pin import freeze_current, verify_pin, source_files, identity
 
 
 def reference(base, path):
@@ -290,6 +291,19 @@ def execute(root, settings, study, resume=False):
     with gpu_lock(root, {'SharedGpuLock': str(directory / 'queue.lock')}):
         try:
             for key in state['stages']: done(key)
+            # Operational repairs are separate from the immutable trainer pin.
+            # Never rewrite a completed scientific declaration to fix Resume.
+            controller_files = source_files(root)
+            controller_id = identity(controller_files)
+            archive = directory / 'controllers' / controller_id / 'source.zip'
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            if not archive.exists():
+                with zipfile.ZipFile(archive, 'x', compression=zipfile.ZIP_DEFLATED) as snapshot:
+                    for name in controller_files: snapshot.write(root / name, name)
+            controller = {'source_id': controller_id, 'archive': reference(root, archive),
+                'source_files': controller_files, 'scope': 'Controller only; child trainer keeps original frozen source'}
+            if controller not in state.setdefault('controllers', []):
+                state['controllers'].append(controller); save()
             if not done('preflight'):
                 save('preflight'); output = directory / ('preflight-' + str(time.time_ns()))
                 evidence = guarded('preflight', output)
@@ -327,8 +341,9 @@ def execute(root, settings, study, resume=False):
                 if not done(common_key):
                     save(common_key); commit(common_key, [score_arm(root, doc, output)])
                 state['arms'][arm]['status'] = 'complete'; save()
-                from .teacher_report import publish
-                publish(root, doc, state, final=False)
+                if not done('teacher-report'):
+                    from .teacher_report import publish
+                    publish(root, doc, state, final=False)
             for method in ('nerfacto', 'splatfacto'):
                 key = method + '-historical-common'
                 if not done(key):
