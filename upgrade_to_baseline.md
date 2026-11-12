@@ -1,136 +1,180 @@
-# Tea visual quality — kế hoạch thực thi hiện hành
+# Teacher-first research plan — Room Nerfacto diagnosis, then Gaussian delivery
 
-Cập nhật 2026-11-12. User đã cho phép triển khai, debug và chạy toàn bộ chuỗi
-Tea bên dưới. Trạng thái thực tế nằm trong job/session artifacts, không suy từ
-việc launch. Bản kế hoạch và toàn bộ lịch sử thay đổi trước đây được bảo toàn ở
-[archive](upgrade/reports/plans/upgrade_to_baseline-through-v3-20261112.md).
+Updated 2026-11-12. This is the current execution plan, authorized by the user.
+The teacher assignment takes priority over all pending visual-quality upgrades.
+Previous plans and evidence remain immutable; the preceding master plan is saved
+at `upgrade/reports/plans/upgrade_to_baseline-before-teacher-room-20261112.md`.
+`docs/plans/final-quality-campaign.md` remains the frozen Gaussian protocol, now
+subordinate to the Room diagnostic/report gate in this document.
 
-## 1. Mục tiêu và nguyên tắc
+## 1. Problem, evidence and hypotheses
 
-Ảnh 3D sắc nét, sạch, chi tiết đúng GT và hiệu quả trên RTX A4500 Laptop16GB.
-Ưu tiên toàn bộ105 ảnh train sẵn có; cùng15 camera test/canonical SfM với baseline.
-Tea trước; Bonsai, Room, Garden và campaign60-view cũ tiếp tục dừng. Không chọn
-seed đẹp nhất hoặc sửa tham số dựa vào Tea test. Tea đã được xem nhiều lần nên
-kết luận là khám phá; cần independent scene/seed để xác nhận tổng quát.
+The original academic DOCX reports Room Nerfacto PSNR 22.9068 dB. Its saved
+configuration enables camera optimizer SO3xR3 and 32-dimensional appearance
+conditioning, evaluated with the mean training embedding. Room Splatfacto turns
+camera optimization off. These are confirmed settings, not proof of causality.
+The teacher requests fresh Room A/B/C runs; no warm-start from any old checkpoint.
+A result around 29–31 dB for C is a hypothesis, never a tuning target or a
+permission to alter the frozen test, silently change methods, or conceal losses.
 
-Không hứa SOTA hay không có lỗi. Bất kỳ lỗi, kết quả âm hoặc điều kiện chưa đạt
-phải được giữ, giải thích và chặn bước phụ thuộc khi cần. Không sửa checkpoint,
-source pin, lịch train hoặc protocol của run đã bắt đầu để biến nó thành run mới.
+The primary question is whether camera refinement and/or appearance conditioning
+explain the low Nerfacto score. New Gaussian improvements, UI polishing,4K/8K
+outputs and other scenes cannot answer it and must wait for its report.
 
-## 2. Những gì đã có bằng chứng
+## 2. Scheduling and preserved work
 
-- Q0: chỉnh projection/SH/filter theo renderer và đo parity trên checkpoint cũ.
-  Các số của audit không được gán thành production parity hay GT quality.
-- Q1 hoàn thành native719×1279,105/15,30k,seed42,289331 Gaussian. Cùng native
-  output, PSNR+1.7738dB, LPIPS−11.24% so với half-trained control30k. ROI PSNR
-  +1.9492dB nhưng LPIPS chỉ−10.11%, chưa đạt mục tiêu−15%. Direct half359×639
-  kém hơn control−1.0114dB. Q1 không phải Improved-GS.
-- Q1 được đưa vào tab Visual quality riêng, đủ15view/GT/control/candidate,
-  metrics cả hai resolution và PLY thật. Không tạo cặp Nerfacto native giả.
-- Q1.5 hoàn thành12/12 cells, dùng hai checkpoint cũ × hai output resolutions ×
-  direct-classic / calibrated2x float-area / 2D-AA. Exact half supersampling là
-  718×1278, khác native719×1279. Q1 half2x đạt30.0588dB, còn dưới control30.3560dB;
-  FPS khoảng141→71. Native direct vẫn tốt hơn area2x. AA làm LPIPS xấu hơn.
-  Giữ classic làm default; AA flag không phải full Mip-Splatting.
-  [Báo cáo](upgrade/reports/tea-research-v3/q15/report.md).
-- Official CUDA dùng lại PLY Q1: parity64.72/63.48/61.33dB tại camera0/10/13.
-  Đây là phép kiểm tra camera/PLY/renderer, không phải điểm GT.
+1. Cooperatively pause `topic16-final-quality-v1`; verify state=paused and retain
+   Bonsai checkpoint13790/30000, optimizer/sampler/RNG and all existing attempts.
+   Tea replication, capacity selection and delivery evidence are reused, not rerun.
+2. CPU audit baseline Room contracts and freeze the diagnostic declaration,
+   source archive, exact input hashes, config recipe, runtime and safety identity.
+3. Preflight all A/B/C configs and parser outputs before the first long run.
+   All three real GPU integration checks must also pass: fresh model, two TRAIN
+   updates, save/reload the exact checkpoint, finite TRAIN-camera inference.
+   QA is excluded from quality tables. Freeze only the tested source/settings.
+4. Sequential A train30k -> A exact-checkpoint eval39 -> common CPU evaluation;
+   then B completely, then C completely. No concurrent GPU jobs or manual coding
+   between arms. Save partial tables as each arm completes.
+5. Finish the teacher report/table/gallery/evidence manifest. Only a complete,
+   integrity-valid matrix/report unlocks the queued Gaussian work. A low score
+   remains a valid negative result; it is not silently treated as a diagnosis
+   solved. Unresolved causes and further checks are prominently reported.
+6. Resume the already declared Gaussian final campaign from its saved Bonsai
+   state, then Room -> Garden -> Poster. Preserve its original source pins,
+   chosen Tea model, model budgets and dataset-first acceptance gates. No new
+   NeRF sweep is propagated to these scenes, and no completed Tea arm is repeated.
+7. Complete the final UI acceptance using the existing delivery machinery.
 
-## 3. Bài học từ pilot v3 — giữ nguyên, không gọi là full result
+One new managed session owns this entire sequence:
+`topic16-teacher-room-v1`. Older sessions stay paused and must not be resumed in
+parallel. No automatic retries change scientific settings. Integrity/resource
+failures pause the queue, retain evidence and require debugging before Resume.
+The old campaign remains recoverable independently if subsequent priorities change.
 
-Pilot AbsGS dùng generic CLI threshold0.0003, sinh hơn1.24M Gaussian vào khoảng
-4500steps. Wrapper đã bỏ sót preset AbsGS của upstream: threshold0.0006. Pilot
-được dừng trước held-out evaluation, checkpoint và Stop/Resume proof được giữ.
-Không chuyển checkpoint pilot sang protocol mới. Threshold mới lấy từ source
-preset đã pin, không từ điểm test. Hai phương pháp cùng dùng0.0006 để cô lập
-nhóm thay đổi densification; không dùng riêng learning rate0.00016 của preset
-AbsGS vì như vậy sẽ thêm một thay đổi giữa hai bên.
+## 3. Frozen Room experiment
 
-QA ban đầu đòi raw-parameter/ten-step loss gần như bitwise và đã thất bại. Tất cả
-failed proofs/source pins được giữ. CUDA backward có unordered atomicAdd; sau
-khi kiểm tra exact restore, tiêu chí cuối đo hợp đồng checkpoint trực tiếp:
+|Run|Camera optimizer|Appearance during train|Appearance at test|Initialization|
+|---|---|---|---|---|
+|Historical reference|SO3xR3|32-dimensional embedding|Average|Existing untouched30k run|
+|A|Off|32-dimensional embedding|Average|Fresh, no checkpoint/config warm-start|
+|B|SO3xR3|Disabled|No embedding|Fresh, no checkpoint/config warm-start|
+|C|Off|Disabled|No embedding|Fresh, no checkpoint/config warm-start|
 
-1. TẤT CẢ model/optimizer/exposure/gradient/RNG/sampler/method state restore khớp
-   tuyệt đối; cùng camera sequence.
-2. FIRST pre-update forward loss lệch tối đa1e-7.
-3. Sau10steps, float RGB agreement tại ba camera TRAIN cố định đạt ít nhất60dB.
-4. Báo nguyên raw-parameter/loss drift; không hứa bitwise trajectory. Không dùng
-   held-out quality để chọn ngưỡng QA.
+All new runs clone the **saved original Room Nerfacto configuration**, not the
+latest library defaults. Keep30,000 iterations, seed42, batch4096, network,
+proposal sampling, optimizer/LR schedules, initial density, losses, background,
+mixed precision and dataparser normalization unchanged. Seed equality does not
+promise bitwise CUDA training. Only the declared model toggles differ. Operational
+changes are output/run identities, relocation of identical inputs, four CPU
+image-loading threads and persistence/audit hooks; serialize their exact diff.
+Keep the original single loader process and500-step checkpoint interval.
 
-Cả hai phương pháp đã qua gate này ở v3. Managed full-run Stop tại1093 đã lưu
-đủ sáu Adam states1093, RNG/sampler; Resume tiếp tục đúng schedule30k. V4 phải
-chạy lại QA mới vì threshold thay đổi. Chi tiết/lý do sửa gate:
-[acceptance history](upgrade/reports/tea-research-v3/resume-acceptance-amendment-r4.md).
+Use all272 train/39 test views, downscale2,1557x1037 output, original explicit
+split/poses/intrinsics/distortion and canonical pixels. Do not rerun COLMAP,
+resize again, change the split to match a paper, or write inside baseline data.
+Verify all input hashes; instantiate both parser splits and compare every camera
+and filename to the frozen baseline before training. Initial live model checks
+must verify optimizer mode, actual absence/presence of field embedding, camera
+parameter groups, start_step=0 and all load_* paths empty.
 
-## 4. Q2 hiện hành — Tea research v4
+**Important:** `use_average_appearance_embedding=False` means zero embedding at
+inference; it does not remove conditioning. B/C use
+`use_appearance_embedding=False` from model creation and train from scratch.
+Use the primary held-out protocol without per-test-image fitting. A later test-time
+appearance optimization experiment needs its own frozen calibration/scoring pixel
+split and must not be pooled with ordinary unseen-image evaluation.
 
-Nguồn cấu hình: `upgrade/configs/tea-research.psd1`. Profile v3 được giữ riêng tại
-`tea-research-v3.psd1`; registry `configs/project.psd1` của baseline/upgrade cũ
-không đổi. Không tự nâng safety ceiling khi model tăng lớn.
+## 4. Comparison validity and diagnosis
 
-| Hạng mục | Cố định |
-|---|---|
-| Dataset | Tea,105train/15eval, đúng camera/GT canonical, native719×1279 |
-| Upstream | official Improved-GS, commit20b5db343a87c2f9fb4b70c6e39ff1f042a8a47a, source sạch |
-| Runtime | isolated topic16-improvedgs-v1, Torch2.1.2+cu118, CUDA11.8; khác recipe cu121 tác giả khuyến nghị |
-| Cặp chạy | official backend AbsGS control → Improved-GS package candidate |
-| Chung | seed42,30k,SH3, cùng sparse init, optimizerours_adam, positionLR4e-5, densify threshold0.0006 |
-| Tắt cả hai | depth, exposure, pose optimization, random background, AA |
-| Candidate | LAS/EAS/RAP/MU official; budget300k,warmup multiplier3; MU20k/24k theo commit |
-| Khác biệt cần báo | native Gaussian growth, số optimizer updates và compute thực; không gọi là matched compute/count |
-| Ngân sách | tối đa3h train/method,6h pair;12GiB allocator,1.5M Gaussian hard ceiling,30GiB disk reserve |
-| Safety | một native GPU worker, lock chung,300–800MHz, start<65°C, stop78°C/80W/95%VRAM hoặc telemetry thiếu; CPU4 |
+Audit baseline config/checkpoint/evaluation and runtime fingerprints. The old
+on/average point remains a historical reference; A–C are a current controlled
+set. Report C−B (camera intervention with embedding off) and C−A (appearance
+intervention with camera off). Do not claim an unbiased full2x2 interaction from
+a historical fourth cell. If runtime/protocol differences prevent a firm
+historical comparison, explicitly request/declare a fresh on/average control as
+a separate follow-up; never add it secretly or resume the old weights.
 
-Đây là adaptation có kiểm soát trên Tea, không phải exact paper reproduction.
-Không chọn best repeat; không gộp bất cứ pilot nào vào kết quả30k.
+Primary evidence: all39 saved RGB predictions + byte-identical GT, one CPU
+PSNR/SSIM/AlexNet-LPIPS evaluator for both historical methods and A/B/C, per-view
+scores/deltas, unrounded aggregates and actual metric/runtime versions. Retain
+original float/native metrics separately; RGB8 common PSNR is not numerically
+identical to float PSNR. No color correction or test exposure fitting.
 
-### Thứ tự tự động
+Record actual final step29999, config/checkpoint/source/runtime hashes, live
+initialization proof, learned camera correction norms, train time, sampled device
+VRAM, safety logs, all interrupted attempts and exact commands. Validate all
+image dimensions and image counts before reporting. Recompute and hash cached
+metric inputs before reuse; valid empty Git diagnostics are allowed and hashed.
 
-1. Verify baseline153protected files/10runs và Q1 immutable report. Khóa declaration,
-   source.zip/tree, split, settings và binary/runtime fingerprints trước GPU.
-2. Reuse Q1.5 đã xác minh, không render/train lại checkpoint cũ. Chạy lại parity
-   official backend trên PLY Q1 theo declaration mới.
-3. Chạy600-step checkpoint/replay QA mới cho CẢ HAI phương pháp. Cả hai qua mới
-   bắt đầu lượt30k đầu tiên. QA bị Stop được chạy lại ở thư mục attempt mới.
-4. Train AbsGS30k; exact checkpoint eval; common RGB8PSNR/TorchMetricsSSIM/AlexNet
-   LPIPS, all15images, locked ROI, PLY, offline FPS và tài nguyên. Sau đó Improved-GS
-   làm đủ cùng chuỗi. Atomic checkpoints mỗi500steps và khi Stop; hai recovery
-   slots giữ current/preceding, append history hash. Không đụng checkpoints cũ.
-5. Báo cả so với same-backend AbsGS và Q1 native, kể cả âm. Giữ native/half/Q1.5
-   bằng chứng. Báo Gaussian count, optimizer updates, train time và allocator peak;
-   offline FPS không phải browser FPS. Kiểm tra GPU safety record trước publish.
-6. Xuất report.json/report.md và shared catalog. Chỉ refresh server artifacts-only
-   thuộc checkout; không dừng inference server khác. F5 UI để xem kết quả mới.
-7. DỪNG sau Tea pair để review chất lượng/chi tiết/scale/cost. Chỉ khi có tín hiệu
-   mạnh mới đề nghị thêm2seed rồi independent Bonsai. Không tự resume campaign cũ.
+Produce incremental results after each arm; the final report includes:
+- A/B/C and both historical methods, native and common metrics, time and VRAM;
+- per-view CSV, camera/appearance conditional effects, model/pipeline provenance;
+- gallery of all39 matched views and error maps, with full-resolution links;
+- whether the teacher hypothesis is supported and what remains unexplained;
+- differences from literature (implementation, split, image size and budget),
+  without claiming29–31dB is guaranteed or a reproduction of another NeRF method.
 
-### Tiêu chí nghiên cứu
+If C is still low: preserve that finding and prioritize a separately frozen
+follow-up audit of camera/GT alignment, normalization, distortion/cropping,
+photometric variation, convergence and saved-vs-runtime config. These are
+hypotheses, not confirmed bugs. Do not launch parameter searches against Room test.
+The diagnostic matrix/report can be technically complete with an unresolved
+scientific cause; downstream Gaussian claims remain scoped to GS-vs-GS.
 
-Mục tiêu đã nêu vẫn là ROI PSNR tăng khoảng1dB và LPIPS giảm15%, toàn ảnh không
-thoái lui rõ. Không đổi ngưỡng để biến kết quả thành thành công. Một phương pháp
-có thể tốt hơn về cost nhưng kém về quality: báo trade-off riêng. Chưa có A/B
-mù, geometry GT và independent scene thì không kết luận sản phẩm/SOTA đã đạt.
+## 5. Report and upgrade integration
 
-## 5. Theo dõi / Stop / Resume
+Preserve `reports/Photos_to_3D_Academic_Project.docx` as the submitted historical
+manuscript. Generate a teacher-response supplement under
+`upgrade/reports/teacher-room-v1/` (report.md/report.json/results.csv/per-view.csv/
+gallery.html) before any further Gaussian training. It explicitly marks the old
+broad NeRF-vs-GS conclusion as provisional while diagnosing Nerfacto. The current
+implementation does not automatically rewrite the historical DOCX or fabricate
+teacher approval. Incorporate the supplement into a revised manuscript only
+with an accurate separation of historical, diagnostic and upgrade results.
 
-PowerShell tại root repository:
+Reuse the existing Gaussian campaign/report/UI stages only after the supplement
+gate. Their baseline columns are retained historical references, not corrected
+Nerfacto results. No SOTA, geometry-ground-truth or new4K/8K-source-detail claims.
+4K/8K renders and UI acceptance run after all priority Room computation/report.
 
+## 6. Resources, estimates and Stop/Resume
+
+One native Windows GPU worker, shared baseline GPU lock, CPU4, clock300–800MHz,
+start<65C, stop78C/80W/95%VRAM or missing telemetry. Keep the existing safety
+policy and runtime pins; install no packages or change baseline configs.
+Reserve at least30GiB and pre-budget diagnostic outputs; GPU stage time cap3h
+per arm (historical Room train3417s≈57min, three training runs≈2h51min proxy).
+With eval/common scoring/startup, plan roughly3–5h for the teacher branch;
+this is an estimate, to replace with measured rates after A starts. Gaussian
+remainder has its independent original budget. No promise of zero failures.
+
+Teacher runs never resume model state: Stop saves the current checkpoint for
+forensics; Resume skips verified completed arms/stages but starts an interrupted
+training arm afresh in a new attempt. A completed30k arm awaiting evaluation is
+reused after integrity/safety checks, never trained twice. Gaussian continuation
+retains its original exact-state Resume behavior. This distinction is explicit
+in console, state and reports.
+
+Initial preparation/launch (already executed by the agent; do not start a second owner):
 ```powershell
-.\upgrade\scripts\Manage-Session.ps1 -Action Status -Name topic16-tea-research-v4
-.\upgrade\scripts\Manage-Session.ps1 -Action Attach -Name topic16-tea-research-v4
-.\upgrade\scripts\Manage-Session.ps1 -Action Stop -Name topic16-tea-research-v4
-# Chờ state=paused trước khi tắt máy.
-.\upgrade\scripts\Manage-Session.ps1 -Action Resume -Name topic16-tea-research-v4
+.\upgrade\scripts\Test-TeacherRoom.ps1
+.\upgrade\Invoke-Upgrade.ps1 teacher-plan -Study teacher-room-v1
+.\upgrade\scripts\Manage-Session.ps1 -Action Start -Name topic16-teacher-room-v1 -Task teacher -Study teacher-room-v1
 ```
 
-Trong WSL: `tmux attach -t topic16-tea-research-v4`. Detach: Ctrl+B rồi D.
-Tmux chỉ monitor native Windows worker; không có lệnh `tmux resume`.
-UI: http://127.0.0.1:7016/?scene=custom%3Atea_sets_2&tab=quality
-Trong training, xem saved images/metrics; interactive GPU view tự khóa.
+Monitoring/Stop/Resume, PowerShell at repository root:
+```powershell
+.\upgrade\scripts\Manage-Session.ps1 -Action Status -Name topic16-teacher-room-v1
+wsl.exe --exec tmux attach -t topic16-teacher-room-v1
+.\upgrade\scripts\Manage-Session.ps1 -Action Stop -Name topic16-teacher-room-v1
+# Wait for paused before shutdown. Teacher's interrupted arm restarts fresh.
+.\upgrade\scripts\Manage-Session.ps1 -Action Resume -Name topic16-teacher-room-v1
+```
+Detach tmux: Ctrl+B, then D. Tmux is the monitor, not the GPU runtime.
 
-Kết quả: `upgrade/reports/tea-research-v4/report.json` và `.md`.
-Trạng thái: `upgrade/artifacts/jobs/research/tea-research-v4/state.json`.
-Tiến độ/checkpoint: `upgrade/artifacts/research/tea-research-v4/runs/<method>/`.
-Session log: `upgrade/artifacts/logs/sessions/topic16-tea-research-v4/console.log`.
-Ước tính cặp train/eval khoảng1–3h, cập nhật bằng tiến độ thực; launch không phải
-completion. G-Core baseline/research release review vẫn chưa được chứng nhận.
+Declaration/state: `upgrade/artifacts/jobs/teacher/teacher-room-v1/`.
+Console: `upgrade/artifacts/logs/sessions/topic16-teacher-room-v1/console.log`.
+Results: `upgrade/reports/teacher-room-v1/`. Previous reports stay local/ignored.
+The two old architecture filenames mentioned by the skill are absent in this
+checkout; current README and docs/session_operations.md are used as the actual
+architecture/runbook references. G-Core release approval remains unchanged.

@@ -157,3 +157,21 @@ upgrade/artifacts/jobs/final/final-quality-v1/handoff/. Resume the final session
 not the former v5 session. Existing Tea-weight component QA also checks camera
 changes without PLY re-download; explicit preset redraw must work even when
 OrbitControls emits no pose change. Failed QA attempts remain preserved.
+
+
+## Teacher-first Room override — 2026-11-12
+
+The user explicitly prioritized the teacher's Room Nerfacto diagnosis before
+pending Gaussian upgrades. `upgrade_to_baseline.md` is the current master plan.
+`topic16-final-quality-v1` was cooperatively paused at Bonsai13790/30000; preserve
+its exact source/optimizer/RNG checkpoint. New owner `topic16-teacher-room-v1`
+runs fresh Room A/B/C (camera off/average, on/appearance off, off/appearance off),
+then emits a complete39-view common-evaluator supplement before resuming the
+unchanged Gaussian campaign. No old baseline weights may initialize these arms.
+Queue Resume skips completed arms but restarts interrupted teacher training in a
+new attempt; it does not load the partial model. Do not confuse disabling the
+average inference embedding with disabling appearance conditioning from training.
+Never claim GS improvements resolve the Nerfacto confound, nor29–31dB as a
+guaranteed outcome. Keep historical comparisons provisional and separate from
+current controlled A–C contrasts. Older sessions stay paused; only the new owner
+may continue the saved final campaign after the teacher report gate.

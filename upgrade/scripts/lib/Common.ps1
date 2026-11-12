@@ -128,7 +128,7 @@ function ConvertTo-CommandLine {
 }
 
 function Invoke-TopicPython {
-    param([Parameter(Mandatory)][string[]]$Arguments, [switch]$QualityProfile, [switch]$ResearchProfile, [switch]$ConfirmationProfile, [switch]$FinalProfile)
+    param([Parameter(Mandatory)][string[]]$Arguments, [switch]$QualityProfile, [switch]$ResearchProfile, [switch]$ConfirmationProfile, [switch]$FinalProfile, [switch]$TeacherProfile)
     Assert-WindowsPowerShell
     $hostFile = Join-Path $script:ProjectRoot 'artifacts\logs\host.json'
     if (Test-Path -LiteralPath $hostFile) {
@@ -159,6 +159,15 @@ function Invoke-TopicPython {
     if ($FinalProfile) {
         $script:Config = $script:Config.Clone()
         $script:Config.DownscaleFactor = 1
+        $script:Config.Final = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\final-quality.psd1')
+        $script:Config.Confirmation = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\tea-confirmation-v5.psd1')
+        $env:MKL_THREADING_LAYER = 'SEQUENTIAL'
+    }
+    if ($TeacherProfile) {
+        $script:Config = $script:Config.Clone()
+        $script:Config.DownscaleFactor = 2
+        $script:Config.Teacher = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\teacher-room.psd1')
+        # Load the existing frozen delivery recipe for the subordinate queue.
         $script:Config.Final = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\final-quality.psd1')
         $script:Config.Confirmation = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\tea-confirmation-v5.psd1')
         $env:MKL_THREADING_LAYER = 'SEQUENTIAL'

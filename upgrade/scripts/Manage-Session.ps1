@@ -3,7 +3,7 @@ param(
     [ValidateSet('Start','Resume','Stop','Status','Attach')][string]$Action = 'Status',
     [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')][string]$Name = 'topic16-upgrade',
     [string]$Study = 'tea60-v1',
-    [ValidateSet('study','full','quality','research','confirmation','final')][string]$Task = 'study',
+    [ValidateSet('study','full','quality','research','confirmation','final','teacher')][string]$Task = 'study',
     [string]$SplitPath
 )
 . (Join-Path $PSScriptRoot 'lib\Common.ps1')
@@ -25,6 +25,24 @@ if ($Action -eq 'Status') {
         $savedJob = Get-Content -LiteralPath $jobPath -Raw -Encoding UTF8 | ConvertFrom-Json
         $confirmationStudy = $savedJob.study
         $showConfirmation = $savedJob.PSObject.Properties['task'] -and $savedJob.task -eq 'confirmation'
+        if ($savedJob.PSObject.Properties['task'] -and $savedJob.task -eq 'teacher') {
+            $teacherPath = Join-Path $ArtifactRoot ('jobs\teacher\' + $savedJob.study + '\state.json')
+            if (Test-Path -LiteralPath $teacherPath) {
+                $teacherState = Get-Content -LiteralPath $teacherPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                $teacherState | Select-Object study,status,phase,teacher_assignment,arms,updated_at,error | ConvertTo-Json -Depth 7
+                if ($teacherState.phase -eq 'upgrade-final') {
+                    Get-Content -LiteralPath (Join-Path $ArtifactRoot 'jobs\final\final-quality-v1\state.json') -Raw -Encoding UTF8 | ConvertFrom-Json |
+                        Select-Object status,phase,current_worker,scenes,error | ConvertTo-Json -Depth 5
+                }
+            }
+            if (Test-Path -LiteralPath $active) {
+                $activeRecord = Get-Content -LiteralPath $active -Raw -Encoding UTF8 | ConvertFrom-Json
+                if ($activeRecord.PSObject.Properties['progress']) {
+                    $teacherProgress = Join-Path $ProjectRoot $activeRecord.progress
+                    if (Test-Path -LiteralPath $teacherProgress) { Get-Content -LiteralPath $teacherProgress -Raw -Encoding UTF8 }
+                }
+            }
+        }
         if ($savedJob.PSObject.Properties['task'] -and $savedJob.task -eq 'final') {
             $finalState = Get-Content -LiteralPath (Join-Path $ArtifactRoot ('jobs\final\' + $savedJob.study + '\state.json')) -Raw -Encoding UTF8 | ConvertFrom-Json
             $finalState | Select-Object study,status,phase,current_worker,scenes,stage_wall_seconds,error | ConvertTo-Json -Depth 6
@@ -83,7 +101,9 @@ if ($Action -eq 'Stop') {
 if ($LASTEXITCODE -ne 0) { throw 'Install tmux in the active WSL distribution before Start.' }
 if ($Action -eq 'Start') {
     if (Test-Path -LiteralPath $jobPath) { throw 'Session already exists. Use Resume.' }
-    if ($Task -eq 'final') {
+    if ($Task -eq 'teacher') {
+        if (-not (Test-Path -LiteralPath (Join-Path $ArtifactRoot ('jobs\teacher\' + $Study + '\declaration.json')))) { throw 'Run teacher-plan before Start.' }
+    } elseif ($Task -eq 'final') {
         if (-not (Test-Path -LiteralPath (Join-Path $ArtifactRoot ('jobs\final\' + $Study + '\declaration.json')))) { throw 'Run final-plan before Start.' }
     } elseif ($Task -eq 'confirmation') {
         if (-not (Test-Path -LiteralPath (Join-Path $ArtifactRoot ("jobs\confirmation\" + $Study + '\declaration.json')))) { throw 'Run confirmation-plan before Start.' }
