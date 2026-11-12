@@ -93,6 +93,11 @@ class Stages:
             output=root/'artifacts/research'/spec['Study']/('qa-'+attempt)/'improvedgs'
             if read_json(output/'resume-check.json')['status']!='passed':raise ValueError('Final full-state replay failed')
             self.commit(key,[output/'resume-check.json',output/'cache-proof.json',safety,declaration])
+        # New scenes must use the same installed backend/binaries that earned
+        # the Tea gate, not merely an environment with the same display name.
+        canonical_runtime=root/'artifacts/jobs/research/tea-research-v4/runtime.json'
+        if read_json(directory/'runtime.json')!=read_json(canonical_runtime):
+            raise ValueError('Final leaf backend packages or extension binaries differ from validated Tea')
         output=root/'artifacts/research'/spec['Study']/'runs/improvedgs';key=label+'-probe'
         if probe and not self.done(key):
             proof=output/'probe.json'
