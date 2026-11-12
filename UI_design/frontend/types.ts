@@ -111,6 +111,7 @@ export type UpgradeRow = {
   provenance: Record<string, unknown>;
 };
 export type Catalog = {
+  final_delivery?: { status: string; phase?: string; campaign_status?: string; errors?: { reason: string }[]; scenes: FinalScene[]; files?: Record<string,string> };
   visual_research?: {
     inspection?: { status: string; checks: Record<string, boolean>; viewer_encoding: string;
       browser: { method: string; mean_parity_db: number; minimum_parity_db: number; p95_frame_interval_ms: number }[]; cells: {
@@ -201,6 +202,18 @@ export type Catalog = {
     error_figure: string;
   }[];
   settings_compatibility: unknown[];
+};
+
+export type FinalScene = {
+  scene: string; campaign: string; cameras: Camera[]; train_count: number; eval_count: number;
+  models: Record<'baseline' | 'upgrade', { label: string; frames: { gt: string; pred: string }[];
+    metrics: { psnr: number; ssim: number; lpips: number }; training_seconds: number; gaussians: number; bytes: number; run: Run }>;
+  delta: { psnr: number; ssim: number; lpips: number }; per_view_delta: { view: number; psnr: number; ssim: number; lpips: number }[];
+  quality_dominates: boolean; preview_verdict: string; scope: string; report_url: string;
+  browser: { mean_parity_db: number; minimum_parity_db: number; p95_frame_interval_ms: number; parity_met: boolean; timing_met: boolean; scope: string };
+  high_resolution: { model: string; edge: number; view: number; width: number; height: number; url: string; render_seconds: number; peak_cuda_allocated_bytes: number }[];
+  profile_notes: { model: string; edge: number; reason: string }[];
+  roi?: null | { baseline: { psnr: number; ssim: number; lpips: number }; upgrade: { psnr: number; ssim: number; lpips: number }; original_target_met: boolean };
 };
 export type Job = {
   id: string;

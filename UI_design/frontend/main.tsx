@@ -32,6 +32,7 @@ const Viewer = lazy(() => import('./Viewer')),
   Compare = lazy(() => import('./Compare')),
   RunSetCompare = lazy(() => import('./RunSetCompare'));
 const Quality = lazy(() => import('./Quality'));
+const FinalQuality = lazy(() => import('./FinalQuality'));
 class Boundary extends React.Component<
   {
     children: React.ReactNode;
@@ -256,7 +257,7 @@ function App() {
     setComplete(null);
     // Keep tracking a cancelled worker until it unwinds; drawing stays paused.
     setRoute('workspace');
-    setTab(d.id === 'custom:tea_sets_2' && catalog?.visual_research?.q2 ? 'quality' : '3d');
+    setTab(catalog?.final_delivery?.scenes.some(s => s.scene === d.id) || (d.id === 'custom:tea_sets_2' && catalog?.visual_research?.q2) ? 'quality' : '3d');
     setRotating(false);
   };
   if (fatal)
@@ -883,7 +884,9 @@ function App() {
                       />
                     )
                   ) : tab === 'quality' ? (
-                    <Quality catalog={catalog} scene={dataset.id} paused={readiness.state === 'busy'} />
+                    catalog.final_delivery?.scenes.some(s => s.scene === dataset.id) ?
+                      <FinalQuality catalog={catalog} data={catalog.final_delivery.scenes.find(s => s.scene === dataset.id)!} paused={readiness.state === 'busy'} /> :
+                      <Quality catalog={catalog} scene={dataset.id} paused={readiness.state === 'busy'} />
                   ) : (
                     <Research catalog={catalog} dataset={dataset} />
                   )}

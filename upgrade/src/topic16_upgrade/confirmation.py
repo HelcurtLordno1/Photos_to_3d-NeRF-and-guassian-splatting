@@ -111,6 +111,7 @@ def execute(root,settings,study,resume=False):
     controller={'source_id':sid,'archive':relative(root,archive),'sha256':sha256(archive)}
     if controller not in state.setdefault('controllers',[]):state['controllers'].append(controller)
     def save(phase):
+        if phase!=state.get('phase'):print('[confirmation] '+study+' | '+phase,flush=True)
         state.update(status='running',phase=phase,updated_at=utc_now());state.pop('error',None);write_json(directory/'state.json',state)
     def complete(key):
         if key not in state['stages']:return False

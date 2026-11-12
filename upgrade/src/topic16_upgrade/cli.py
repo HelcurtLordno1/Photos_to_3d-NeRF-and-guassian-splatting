@@ -15,7 +15,7 @@ def main():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--settings', type=Path, required=True)
     subs = parser.add_subparsers(dest='command', required=True)
-    for command in ('inventory', 'verify', 'audit', 'plan', 'run', 'publish', 'runtime-check', 'safety-check', 'session-watch', 'prepare', 'repair-study', 'preflight','full-plan','full-run','historical-common','quality-plan','quality-run','quality-audit','quality-measure','research-plan','research-run','confirmation-plan','confirmation-run'):
+    for command in ('inventory', 'verify', 'audit', 'plan', 'run', 'publish', 'runtime-check', 'safety-check', 'session-watch', 'prepare', 'repair-study', 'preflight','full-plan','full-run','historical-common','quality-plan','quality-run','quality-audit','quality-measure','research-plan','research-run','confirmation-plan','confirmation-run','final-plan','final-run','final-ui-check'):
         p = subs.add_parser(command)
         p.add_argument('--baseline-root', type=Path)
         p.add_argument('--study', default='tea60-v1')
@@ -42,7 +42,13 @@ def main():
     os.environ['MKL_NUM_THREADS'] = str(settings['CpuWorkerThreads'])
     baseline = (args.baseline_root or Path(settings.get('BaselineRoot', root.parent))).resolve()
     settings.setdefault('SharedGpuLock', str(baseline / 'artifacts/logs/gpu.lock'))
-    if args.command in ('confirmation-plan','confirmation-run'):
+    if args.command in ('final-plan','final-run','final-ui-check'):
+        from topic16_upgrade.final_campaign import prepare,execute
+        if args.command=='final-ui-check':
+            from topic16_upgrade.final_ui import check
+            result=check(root,settings,args.study)
+        else:result=prepare(root,settings,args.study) if args.command=='final-plan' else execute(root,settings,args.study,args.resume)
+    elif args.command in ('confirmation-plan','confirmation-run'):
         from topic16_upgrade.confirmation import prepare,execute
         result=prepare(root,settings,args.study) if args.command=='confirmation-plan' else execute(root,settings,args.study,args.resume)
     elif args.command in ('research-plan','research-run'):

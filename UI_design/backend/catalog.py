@@ -289,6 +289,11 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
         visual_research = read_research(root, asset, settings['Ui'])
     except (ValueError, KeyError, OSError, TypeError) as error:
         visual_research = {'status': 'invalid', 'reason': str(error), 'q15': [], 'q2': None}
+    from .final_provider import read_final
+    try:
+        final_delivery = read_final(root, asset, settings['Ui'])
+    except (ValueError, KeyError, OSError, TypeError) as error:
+        final_delivery = {'status': 'invalid', 'reason': str(error), 'scenes': [], 'errors': []}
     report_dir = root / "reports/topic16-full"
     for path in report_dir.rglob("*"):
         if (
@@ -305,6 +310,7 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
         "upgrade": upgrade,
         "quality": quality,
         "visual_research": visual_research,
+        "final_delivery": final_delivery,
         "created_at": utc_now(),
         "scenes": scenes,
         "ui": settings["Ui"],
@@ -314,7 +320,7 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
     }
     catalog["revision"] = hashlib.sha256(
         json.dumps(
-            {"scenes": scenes, "ui": ui_settings_hash(settings), "upgrade": upgrade, "quality": quality, "visual_research": visual_research}, sort_keys=True
+            {"scenes": scenes, "ui": ui_settings_hash(settings), "upgrade": upgrade, "quality": quality, "visual_research": visual_research, "final_delivery": final_delivery}, sort_keys=True
         ).encode()
     ).hexdigest()
     payload = {"catalog": catalog, "assets": assets}

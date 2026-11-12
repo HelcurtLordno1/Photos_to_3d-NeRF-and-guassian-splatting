@@ -138,3 +138,22 @@ AbsGS still has misses and wide zoom exposes uncovered backgrounds. Review
 allows controlled replication, not a clean360/production claim. A resume must
 reuse exact committed inspection bytes so its review hash stays valid; validate
 the full UI interaction proof before allowing fresh training.
+
+Latest authorization (2026-11-12): finish bounded Tea research, then apply the
+selected method once per other existing scene against its preserved baseline.
+Include Poster; do not propagate the Tea ablation matrix to other scenes. The
+versioned plan is docs/plans/final-quality-campaign.md. A continuous managed
+queue may proceed through already declared gates; stop on integrity/resource
+failure, preserve negative quality results, and do not wait for coding between
+validated stages.4K/8K are explicitly labelled inference outputs, not new source
+detail. Old full/Bonsai sessions remain paused. Preserve v4 numerical source;
+CPU-backed loading must have separate source and exact-input/replay evidence.
+
+Active owner is now `topic16-final-quality-v1`. The former
+`topic16-tea-quality-v5` session was cooperatively paused at seed2026 Improved-GS
+step24827 and handed off without changing its experiment/trainer. A verified
+checkpoint copy and handoff.json are retained under
+upgrade/artifacts/jobs/final/final-quality-v1/handoff/. Resume the final session,
+not the former v5 session. Existing Tea-weight component QA also checks camera
+changes without PLY re-download; explicit preset redraw must work even when
+OrbitControls emits no pose change. Failed QA attempts remain preserved.

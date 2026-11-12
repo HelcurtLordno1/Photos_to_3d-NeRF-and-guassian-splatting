@@ -3,7 +3,7 @@ param(
     [ValidateSet('Start','Resume','Stop','Status','Attach')][string]$Action = 'Status',
     [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')][string]$Name = 'topic16-upgrade',
     [string]$Study = 'tea60-v1',
-    [ValidateSet('study','full','quality','research','confirmation')][string]$Task = 'study',
+    [ValidateSet('study','full','quality','research','confirmation','final')][string]$Task = 'study',
     [string]$SplitPath
 )
 . (Join-Path $PSScriptRoot 'lib\Common.ps1')
@@ -23,8 +23,23 @@ if ($Action -eq 'Status') {
     if (Test-Path -LiteralPath $active) { Get-Content -LiteralPath $active -Raw -Encoding UTF8 }
     if (Test-Path -LiteralPath $jobPath) {
         $savedJob = Get-Content -LiteralPath $jobPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        if ($savedJob.PSObject.Properties['task'] -and $savedJob.task -eq 'confirmation') {
-            $confirmationState = Join-Path $ArtifactRoot ('jobs\confirmation\' + $savedJob.study + '\state.json')
+        $confirmationStudy = $savedJob.study
+        $showConfirmation = $savedJob.PSObject.Properties['task'] -and $savedJob.task -eq 'confirmation'
+        if ($savedJob.PSObject.Properties['task'] -and $savedJob.task -eq 'final') {
+            $finalState = Get-Content -LiteralPath (Join-Path $ArtifactRoot ('jobs\final\' + $savedJob.study + '\state.json')) -Raw -Encoding UTF8 | ConvertFrom-Json
+            $finalState | Select-Object study,status,phase,current_worker,scenes,stage_wall_seconds,error | ConvertTo-Json -Depth 6
+            if ($finalState.phase -eq 'tea-confirmation') {
+                $finalDeclaration = Get-Content -LiteralPath (Join-Path $ArtifactRoot ('jobs\final\' + $savedJob.study + '\declaration.json')) -Raw -Encoding UTF8 | ConvertFrom-Json
+                $confirmationStudy = $finalDeclaration.spec.ConfirmationStudy
+                $showConfirmation = $true
+            }
+            if ($finalState.PSObject.Properties['current_worker']) {
+                $progress = Join-Path $ArtifactRoot ('research\' + $finalState.current_worker.study + '\runs\improvedgs\progress.json')
+                if (Test-Path -LiteralPath $progress) { Get-Content -LiteralPath $progress -Raw -Encoding UTF8 }
+            }
+        }
+        if ($showConfirmation) {
+            $confirmationState = Join-Path $ArtifactRoot ('jobs\confirmation\' + $confirmationStudy + '\state.json')
             if (Test-Path -LiteralPath $confirmationState) {
                 Get-Content -LiteralPath $confirmationState -Raw -Encoding UTF8 | ConvertFrom-Json |
                     Select-Object study,status,phase,gpu_stage_wall_seconds,jobs,error | ConvertTo-Json -Depth 6
@@ -59,7 +74,7 @@ if ($Action -eq 'Status') {
 if ($Action -eq 'Stop') {
     if (-not (Test-Path -LiteralPath $statePath)) { throw 'Unknown session.' }
     $previous = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($previous.status -notin @('starting','running')) { Write-TopicInfo "Worker already stopped: $($previous.status). Use Status to inspect it."; return }
+    if ($previous.status -notin @('starting','running','ui-review')) { Write-TopicInfo "Worker already stopped: $($previous.status). Use Status to inspect it."; return }
     Write-Utf8Text -Path (Join-Path $directory 'stop.json') -Text '{"requested":true}'
     Write-TopicInfo 'Checkpoint stop requested. Wait for state=paused before shutdown.'
     return
@@ -68,7 +83,9 @@ if ($Action -eq 'Stop') {
 if ($LASTEXITCODE -ne 0) { throw 'Install tmux in the active WSL distribution before Start.' }
 if ($Action -eq 'Start') {
     if (Test-Path -LiteralPath $jobPath) { throw 'Session already exists. Use Resume.' }
-    if ($Task -eq 'confirmation') {
+    if ($Task -eq 'final') {
+        if (-not (Test-Path -LiteralPath (Join-Path $ArtifactRoot ('jobs\final\' + $Study + '\declaration.json')))) { throw 'Run final-plan before Start.' }
+    } elseif ($Task -eq 'confirmation') {
         if (-not (Test-Path -LiteralPath (Join-Path $ArtifactRoot ("jobs\confirmation\" + $Study + '\declaration.json')))) { throw 'Run confirmation-plan before Start.' }
     } elseif ($Task -eq 'research') {
         if (-not (Test-Path -LiteralPath (Join-Path $ArtifactRoot ("jobs\research\" + $Study + '\declaration.json')))) { throw 'Run research-plan before starting the research study.' }
@@ -85,7 +102,7 @@ if ($Action -eq 'Start') {
     if (Test-Path -LiteralPath $statePath) {
         $previous = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($previous.status -eq 'succeeded') { Write-TopicInfo 'Session completed; inspect Status/Attach.'; return }
-        if ($previous.status -in @('starting','running') -and (Get-Process -Id $previous.pid -ErrorAction SilentlyContinue)) {
+        if ($previous.status -in @('starting','running','ui-review') -and (Get-Process -Id $previous.pid -ErrorAction SilentlyContinue)) {
             throw 'Worker still active. Stop and wait for paused before Resume.'
         }
     }

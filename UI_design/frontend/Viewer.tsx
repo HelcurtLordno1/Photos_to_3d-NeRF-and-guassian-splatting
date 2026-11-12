@@ -123,6 +123,10 @@ export default forwardRef<
         .add(a.camera.position);
       a.controls.target.copy(target);
       a.controls.update();
+      // Intrinsics may change with an identical pose; OrbitControls need not
+      // emit a change event in that case. Presets still require a new draw.
+      a.dirty = true;
+      a.needsSort = true;
     }
   };
   useImperativeHandle(ref, () => ({

@@ -6,7 +6,33 @@ training, datasets, attempts, checkpoints and reports created here stay under
 This does not certify G-Core, reconstruct SfM from fewer raw photographs, or
 establish a general PSNR predictor from one video.
 
-## Current authorized work: Tea quality v5
+## Current authorized work: final single-winner campaign
+
+Read [the authorized final plan](../docs/plans/final-quality-campaign.md).
+Finish v5, test one300k/450k capacity pair on TRAIN-derived Tea validation, then
+run one selected-method model per scene: Bonsai -> Room -> Garden -> Poster.
+Existing baselines stay; no intermediate sweeps are propagated to other scenes.
+New CPU-backed loading has exact-input/edge and checkpoint replay gates. Native
+metrics and4K/8K output profiles are separate; larger renders do not add source
+detail. Completed stage artifacts survive publication failure.
+
+```powershell
+# Declare once after code/build/validation GT boxes are frozen.
+.\upgrade\Invoke-Upgrade.ps1 final-plan -Study final-quality-v1
+.\upgrade\scripts\Manage-Session.ps1 -Action Start -Task final -Study final-quality-v1 -Name topic16-final-quality-v1
+.\upgrade\scripts\Manage-Session.ps1 -Action Status -Name topic16-final-quality-v1
+wsl.exe --exec tmux attach -t topic16-final-quality-v1
+.\upgrade\scripts\Manage-Session.ps1 -Action Stop -Name topic16-final-quality-v1
+# Wait for paused; later:
+.\upgrade\scripts\Manage-Session.ps1 -Action Resume -Name topic16-final-quality-v1
+```
+
+The final session adopts the unchanged v5 state. Its former session must first
+be paused/completed; never run two owners. Do not resume the old full/Bonsai
+campaign. Reports stay local at `upgrade/reports/final-quality-v1/`; completion
+requires both `completion.json` and actual five-scene browser acceptance.
+
+## Tea quality v5 prerequisite
 
 The full campaign described below is historical and paused. V4 completed both
 native 30k models; v5 audits their scale/zoom/continuous path and packed browser

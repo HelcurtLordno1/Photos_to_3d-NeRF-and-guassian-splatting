@@ -25,6 +25,7 @@ try {
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'quality') { $command = 'quality-run' }
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'research') { $command = 'research-run' }
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'confirmation') { $command = 'confirmation-run' }
+    if ($job.PSObject.Properties['task'] -and $job.task -eq 'final') { $command = 'final-run' }
     & (Join-Path $ProjectRoot 'Invoke-Upgrade.ps1') $command @parameters *>&1 | ForEach-Object { Write-Log $_ }
     $state.status = 'succeeded'
     # Publish into the one existing UI cache after successful compute. This
@@ -35,7 +36,7 @@ try {
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $prepare *>&1 | ForEach-Object { Write-Log $_ }
             if ($LASTEXITCODE -ne 0) { throw 'Shared catalog preparation failed.' }
             $state.ui_catalog = 'prepared'
-            if ($job.PSObject.Properties['task'] -and $job.task -in @('research','confirmation')) {
+            if ($job.PSObject.Properties['task'] -and $job.task -in @('research','confirmation','final')) {
                 # Refresh only this checkout's artifacts-only server. A running
                 # inference server or another service is never stopped here.
                 $serverPath = Join-Path $hostRecord.BaselineRoot 'artifacts\ui\server.json'
@@ -76,9 +77,25 @@ try {
             }
         } catch { $state.ui_catalog = 'needs-prepare'; Write-Log $_ }
     }
+    if ($job.PSObject.Properties['task'] -and $job.task -eq 'final') {
+        # CUDA computation has ended. Let the production UI render its models
+        # while the guarded browser acceptance runs; this is not timed training.
+        $state.status = 'ui-review'
+        Write-Utf8Text -Path $statePath -Text ($state | ConvertTo-Json)
+        & (Join-Path $PSScriptRoot 'Complete-FinalUI.ps1') -Study $job.study *>&1 | ForEach-Object { Write-Log $_ }
+        $state.status = 'succeeded'
+        $state.ui_catalog = 'all-scenes-browser-verified-and-refreshed'
+    }
 } catch {
     $state.status = 'failed'
     if (Test-Path -LiteralPath (Join-Path $Directory 'stop.json')) { $state.status = 'paused' }
+    if ($job.PSObject.Properties['task'] -and $job.task -eq 'final') {
+        $finalState = Join-Path $ArtifactRoot ('jobs\final\' + $job.study + '\state.json')
+        if (Test-Path -LiteralPath $finalState) {
+            $stageState = Get-Content -LiteralPath $finalState -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($stageState.status -eq 'paused') { $state.status = 'paused' }
+        }
+    }
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'confirmation') {
         $confirmationState = Join-Path $ArtifactRoot ('jobs\confirmation\' + $job.study + '\state.json')
         if (Test-Path -LiteralPath $confirmationState) {

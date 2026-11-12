@@ -102,6 +102,7 @@ def execute(root,settings,study,resume=False):
     if controller not in state.setdefault('controllers',[]):state['controllers'].append(controller)
     write_json(directory/'state.json',state)
     def commit(phase):
+        if phase!=state.get('phase'):print('[research] '+study+' | '+phase,flush=True)
         state.update(status='running',phase=phase,updated_at=utc_now());state.pop('error',None)
         write_json(directory/'state.json',state)
     def completed(key):

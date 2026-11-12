@@ -21,7 +21,8 @@ mới, phải đóng băng trước khi đo; không dùng để sửa kết lu�
 
 ## 2. Bằng chứng hiện có và khoảng trống
 
-Nguồn: `../tea-research-v4/review/assessment.md` và `verification.json`.
+Nguồn local: `upgrade/reports/tea-research-v4/review/assessment.md` và
+`verification.json` trong cùng thư mục. Report không được publish lên Git.
 
 | Native719×1279,105train/15eval,30k | PSNR ↑ | SSIM ↑ | LPIPS ↓ |
 |---|---:|---:|---:|

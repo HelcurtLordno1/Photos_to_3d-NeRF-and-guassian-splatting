@@ -128,7 +128,7 @@ function ConvertTo-CommandLine {
 }
 
 function Invoke-TopicPython {
-    param([Parameter(Mandatory)][string[]]$Arguments, [switch]$QualityProfile, [switch]$ResearchProfile, [switch]$ConfirmationProfile)
+    param([Parameter(Mandatory)][string[]]$Arguments, [switch]$QualityProfile, [switch]$ResearchProfile, [switch]$ConfirmationProfile, [switch]$FinalProfile)
     Assert-WindowsPowerShell
     $hostFile = Join-Path $script:ProjectRoot 'artifacts\logs\host.json'
     if (Test-Path -LiteralPath $hostFile) {
@@ -155,6 +155,13 @@ function Invoke-TopicPython {
         $script:Config = $script:Config.Clone()
         $script:Config.DownscaleFactor = 1
         $script:Config.Confirmation = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\tea-confirmation-v5.psd1')
+    }
+    if ($FinalProfile) {
+        $script:Config = $script:Config.Clone()
+        $script:Config.DownscaleFactor = 1
+        $script:Config.Final = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\final-quality.psd1')
+        $script:Config.Confirmation = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\tea-confirmation-v5.psd1')
+        $env:MKL_THREADING_LAYER = 'SEQUENTIAL'
     }
     $settingsFile = Join-Path ([IO.Path]::GetTempPath()) ('topic16-' + [guid]::NewGuid().ToString('N') + '.json')
     try {
