@@ -25,6 +25,8 @@ type Adapter = {
   frustums: THREE.Group;
   points?: THREE.Points;
   cancelLoad?: () => void;
+  dirty?: boolean;
+  needsSort?: boolean;
 };
 function apply(camera: THREE.PerspectiveCamera, c: Camera) {
   const m = c.camera_to_world;
@@ -266,6 +268,8 @@ export default forwardRef<
         renderer.setSize(Math.max(1, width), Math.max(1, height));
         camera.aspect = width / Math.max(1, height);
         setCalibratedProjection(camera);
+        instance.dirty = true;
+        instance.needsSort = true;
       });
       observer.observe(host);
       const instance: Adapter = {
@@ -276,6 +280,8 @@ export default forwardRef<
         grid,
         axes,
         frustums,
+        dirty: true,
+        needsSort: true,
         cancelLoad: () => {
           abort.abort();
           worker?.terminate();
@@ -309,6 +315,8 @@ export default forwardRef<
         instances.forEach((a) => (a.controls.autoRotate = false));
       });
       controls.addEventListener('change', () => {
+        instance.dirty = true;
+        instance.needsSort = true;
         if (syncing) return;
         activeAdapter.current = instance;
         onMove();
@@ -322,6 +330,8 @@ export default forwardRef<
           other.camera.userData.calibration = camera.userData.calibration;
           setCalibratedProjection(other.camera);
           other.controls.target.copy(controls.target);
+          other.dirty = true;
+          other.needsSort = true;
           syncing = false;
         }
       });
@@ -346,13 +356,16 @@ export default forwardRef<
         spark = new SparkRenderer({
           renderer,
           ...splatFilter(run.rasterize_mode || run.architecture?.rasterize_mode),
+          accumExtSplats: run.splat_encoding === 'ext32-full' || run.splat_encoding === 'packed-ext',
           autoUpdate: false,
           minSortIntervalMs: 0,
           enableLod: false,
+          onDirty: () => { instance.dirty = true; },
         });
         scene.add(spark);
         instance.tick = () => {
-          if (mesh?.isInitialized && !pending) {
+          if (mesh?.isInitialized && !pending && instance.needsSort) {
+            instance.needsSort = false;
             pending = spark!
               .update({ scene, camera })
               .catch((error) => {
@@ -360,6 +373,7 @@ export default forwardRef<
               })
               .finally(() => {
                 pending = null;
+                instance.dirty = true;
               });
           }
         };
@@ -387,6 +401,7 @@ export default forwardRef<
               streamLength: run.bytes,
               fileName: 'splat.ply',
               lod: false,
+              extSplats: run.splat_encoding === 'ext32-full',
               onProgress: (e) =>
                 update(method, `Downloading · ${Math.round((e.loaded / run.bytes) * 100)}%`),
             });
@@ -398,6 +413,8 @@ export default forwardRef<
           .then(() => {
             if (disposed) return;
             update(method, `${mesh!.numSplats.toLocaleString()} Gaussian · ready`);
+            instance.needsSort = true;
+            instance.dirty = true;
             performance.mark('gaussian-ready');
           })
           .catch((error) => update(method, String(error)));
@@ -428,6 +445,7 @@ export default forwardRef<
           scene.add(points);
           instance.points = points;
           update(method, `${e.data.count.toLocaleString()} points · proxy ready`);
+          instance.dirty = true;
           worker?.terminate();
           performance.mark('point-ready');
         };
@@ -476,9 +494,13 @@ export default forwardRef<
       for (const a of instances) {
         a.controls.update();
         a.tick?.();
-        a.renderer.render(a.scene, a.camera);
+        if (a.dirty || a.controls.autoRotate) {
+          a.renderer.render(a.scene, a.camera);
+          a.dirty = false;
+          a.renderer.domElement.dataset.renderCount = String(Number(a.renderer.domElement.dataset.renderCount || 0) + 1);
+          frames++;
+        }
       }
-      frames++;
       const now = performance.now();
       if (now - last > 1000) {
         setFps(Math.round((frames * 1000) / (now - last)));
@@ -529,6 +551,7 @@ export default forwardRef<
               adapters.current.forEach((a) => {
                 a.grid.visible = e.target.checked;
                 a.axes.visible = e.target.checked;
+                a.dirty = true;
               });
             }}
           />{' '}
@@ -540,7 +563,7 @@ export default forwardRef<
             checked={frustumsVisible}
             onChange={(e) => {
               setFrustumsVisible(e.target.checked);
-              adapters.current.forEach((a) => (a.frustums.visible = e.target.checked));
+              adapters.current.forEach((a) => { a.frustums.visible = e.target.checked; a.dirty = true; });
             }}
           />{' '}
           Eval camera coverage
@@ -559,6 +582,7 @@ export default forwardRef<
               setPointSize(value);
               adapters.current.forEach((a) => {
                 if (a.points) (a.points.material as THREE.PointsMaterial).size = value;
+                a.dirty = true;
               });
             }}
           />
@@ -578,7 +602,7 @@ export default forwardRef<
       </div>
       <div ref={root} className={s.viewports} data-testid="viewer">
         <div className={s.viewerHelp}>
-          Drag orbit · scroll zoom · right-drag pan <span>{fps} browser FPS</span>
+          Drag orbit · scroll zoom · right-drag pan <span>{fps ? `${fps} rendered frames/s` : 'Idle · render on demand'}</span>
         </div>
         {(mode === 'both' ? ['nerfacto', 'splatfacto'] : [mode]).map((m) => (
           <section className={s.viewport} key={m} aria-label={m + ' 3D view'}>

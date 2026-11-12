@@ -128,7 +128,7 @@ function ConvertTo-CommandLine {
 }
 
 function Invoke-TopicPython {
-    param([Parameter(Mandatory)][string[]]$Arguments, [switch]$QualityProfile, [switch]$ResearchProfile)
+    param([Parameter(Mandatory)][string[]]$Arguments, [switch]$QualityProfile, [switch]$ResearchProfile, [switch]$ConfirmationProfile)
     Assert-WindowsPowerShell
     $hostFile = Join-Path $script:ProjectRoot 'artifacts\logs\host.json'
     if (Test-Path -LiteralPath $hostFile) {
@@ -150,6 +150,11 @@ function Invoke-TopicPython {
         if ($studyIndex -ge 0 -and $Arguments[$studyIndex + 1] -eq 'tea-research-v3') {
             $script:Config.Research = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\tea-research-v3.psd1')
         }
+    }
+    if ($ConfirmationProfile) {
+        $script:Config = $script:Config.Clone()
+        $script:Config.DownscaleFactor = 1
+        $script:Config.Confirmation = Import-PowerShellDataFile (Join-Path $script:ProjectRoot 'configs\tea-confirmation-v5.psd1')
     }
     $settingsFile = Join-Path ([IO.Path]::GetTempPath()) ('topic16-' + [guid]::NewGuid().ToString('N') + '.json')
     try {

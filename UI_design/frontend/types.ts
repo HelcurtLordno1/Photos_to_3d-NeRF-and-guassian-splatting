@@ -49,6 +49,7 @@ export type Run = {
   provenance: Record<string, unknown>;
   architecture?: Record<string, unknown>;
   rasterize_mode?: 'classic' | 'antialiased';
+  splat_encoding?: 'packed' | 'ext32-full' | 'packed-ext';
 };
 export type Dataset = {
   id: string;
@@ -111,6 +112,13 @@ export type UpgradeRow = {
 };
 export type Catalog = {
   visual_research?: {
+    inspection?: { status: string; checks: Record<string, boolean>; viewer_encoding: string;
+      browser: { method: string; mean_parity_db: number; minimum_parity_db: number; p95_frame_interval_ms: number }[]; cells: {
+      method: string; resolution: string; variant: string; metrics: { psnr: number; ssim: number; lpips: number };
+      fps: number; frames: { gt: string; pred: string }[];
+    }[] };
+    confirmation?: { study: string; status: string; phase: string; jobs: { seed: number; status: string }[]; error?: string };
+    confirmation_report?: { signal_gate_met: boolean; statistics: Record<string, { mean: number; std: number; min: number; max: number }> };
     status: string; study?: string; phase?: string; reason?: string;
     q15: { tag: string; metrics: { psnr: number; ssim: number; lpips: number }; fps: number;
       peak_cuda_allocated_bytes: number; frames: { gt: string; pred: string }[] }[];

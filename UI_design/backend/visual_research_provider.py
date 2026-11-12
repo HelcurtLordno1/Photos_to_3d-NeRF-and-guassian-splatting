@@ -4,7 +4,14 @@ from topic16.contracts import read_json,sha256,inside
 
 def read_research(root,asset,limits):
     upgrade=root/'upgrade'
-    study=next((s for s in ('tea-research-v4','tea-research-v3') if (upgrade/'artifacts/jobs/research'/s/'state.json').exists()),'tea-research-v3')
+    pointer_path=upgrade/'reports/confirmation-index.json'
+    confirmation_pointer=read_json(pointer_path) if pointer_path.exists() else None
+    if confirmation_pointer:
+        declared=inside(upgrade,confirmation_pointer['declaration'])
+        if sha256(declared)!=confirmation_pointer['declaration_sha256']:raise ValueError('Confirmation declaration checksum differs')
+        study=read_json(declared)['spec']['ReferenceStudy']
+    else:
+        study=next((s for s in ('tea-research-v4','tea-research-v3') if (upgrade/'artifacts/jobs/research'/s/'state.json').exists()),'tea-research-v3')
     directory=upgrade/'artifacts/jobs/research'/study
     if not (directory/'state.json').exists():return {'status':'unavailable','q15':[],'q2':None}
     state=read_json(directory/'state.json')
@@ -63,4 +70,35 @@ def read_research(root,asset,limits):
                            'peak_vram_mb':row['peak_cuda_allocated_bytes']/2**20,'offline_fps':row['offline_fps'],
                            'provenance':{'scope':report['scope'],'comparison':report['comparison']}}}
         result['q2']=report
+    if confirmation_pointer:
+        current=read_json(inside(upgrade,confirmation_pointer['state']))
+        result['confirmation']={k:current.get(k) for k in ('study','status','phase','jobs','gpu_stage_wall_seconds','error')}
+        inspection_path=inside(upgrade,confirmation_pointer['inspection'])
+        if inspection_path.exists():
+            proof=next((refs[0] for key,refs in current['stages'].items() if key.startswith('inspection-')
+                        and refs and inside(upgrade,refs[0]['path'])==inspection_path),None)
+            if proof is None:raise ValueError('Inspection has no committed stage')
+            if sha256(inspection_path)!=proof['sha256']:raise ValueError('Inspection report changed')
+            inspection=read_json(inspection_path)
+            cells=[]
+            for method in inspection['results']:
+                for cell in method['cells']:
+                    path=inside(upgrade,cell['path']);common=inside(upgrade,cell['common'])
+                    if sha256(path)!=cell['sha256'] or sha256(common)!=cell['common_sha256']:
+                        raise ValueError('Inspection metric/render changed')
+                    cells.append({**cell,'method':method['method'],'frames':frames(path.parent,read_json(path)['frames'])})
+            encoding=inspection.get('viewer_encoding','packed')
+            result['inspection']={'status':inspection['status'],'checks':inspection['checks'],'cells':cells,
+                'viewer_encoding':encoding,'browser':[{'method':r['method'],
+                    'mean_parity_db':sum(x['psnr'] for x in r['browser']['results'])/len(r['browser']['results']),
+                    'minimum_parity_db':min(x['psnr'] for x in r['browser']['results']),
+                    'p95_frame_interval_ms':r['browser']['benchmark']['p95_frame_interval_ms']} for r in inspection['results']]}
+            if inspection['status']=='passed' and encoding in ('ext32-full','packed-ext') and result['q2']:
+                for row in result['q2']['rows']:
+                    if 'model' in row:row['model']['run']['splat_encoding']=encoding
+        final=inside(upgrade,confirmation_pointer['report'])
+        if final.exists():
+            proof=current['stages']['report'][0]
+            if sha256(final)!=proof['sha256']:raise ValueError('Seed report changed')
+            result['confirmation_report']=read_json(final)
     return result

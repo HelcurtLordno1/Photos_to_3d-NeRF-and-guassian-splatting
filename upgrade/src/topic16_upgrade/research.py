@@ -27,7 +27,7 @@ def prepare(root,settings,study):
         if (spec['SharedDensifyGradThreshold']!=presets['absgs']['train_args']['densify_grad_threshold']
                 or spec['OptimizerType']!='ours_adam' or spec['PositionLearningRate']!=.00004):
             raise ValueError('Shared v4 settings differ from the declared audited preset/controls')
-    split=root/'data/processed/canonical/tea_sets_2-native-v2/split.json'
+    split=inside(root,spec.get('Split','data/processed/canonical/tea_sets_2-native-v2/split.json'))
     directory=root/'artifacts/jobs/research'/study;directory.mkdir(parents=True,exist_ok=True)
     declaration=directory/'declaration.json'
     if declaration.exists():
@@ -38,14 +38,15 @@ def prepare(root,settings,study):
         if sha256(pin)!=old['source_pin_sha256']:raise ValueError('Research source pin changed')
         return read_json(directory/'state.json')
     if shutil.disk_usage(root).free<50*2**30:raise ValueError('Research requires 50 GiB free, including 30 GiB reserve')
-    pin=freeze_current(root,study)
+    reference=inside(root,spec['TrainingSourcePin']) if spec.get('TrainingSourcePin') else None
+    pin=freeze_current(root,study,reference=reference)
     record={'schema_version':'tea-research-declaration-1','root':str(root),'spec':spec,
             'upstream_method_presets':{m:{'path':relative(root,source/'configs'/f'{m}.json'),
                 'sha256':sha256(source/'configs'/f'{m}.json'),'train_args':v['train_args']} for m,v in presets.items()},
             'upstream':relative(root,source),'split':relative(root,split),'split_sha256':digest_json(read_json(split)),
             'source_pin':relative(root,pin),'source_pin_sha256':sha256(pin),'q1_report_sha256':q1['report_sha256'],
             'safety':{k:v for k,v in settings.items() if k.startswith('Gpu')},'created_at':utc_now(),
-            'protocol':'105 train /15 eval; native719x1279; SH3; seed42; 30k; identical SfM initialization; no exposure/depth/pose optimization',
+            'protocol':f"{len(read_json(split)['train'])} train /{len(read_json(split)['eval'])} eval; declared frozen cameras; SH3; seed{spec['Seed']}; {spec['Iterations']} iterations; identical SfM initialization; no exposure/depth/pose optimization",
             'comparison':'Official AbsGS vs Improved-GS package intervention. Same shared optimizer settings, but MU update count and method-native Gaussian growth differ. Not a same-compute or same-Gaussian-count claim.',
             'scope':'Exploratory Tea only, not exact paper reproduction; cu118 recipe, off-center camera adapter, 300k Improved-GS budget.',
             'gate':'Both 600-step resume replays must pass before either full run. No scene expansion or seed selection.'}
@@ -223,7 +224,7 @@ def execute(root,settings,study,resume=False):
                     'scope':document['scope'],'comparison':document['comparison'],'finished_at':utc_now(),
                     'next_gate':'Independent visual review, scale stability and resources before extra seeds or Bonsai. Negative results remain published.'}
             write_json(output/'report.json',report)
-            lines=['# Tea research v3 — measured results','',report['scope'],'',report['comparison'],'',
+            lines=[f'# {study} — measured results','',report['scope'],'',report['comparison'],'',
                    '| Method | PSNR | SSIM | LPIPS | Gaussians | Optimizer updates | Train minutes | Offline FPS |',
                    '|---|---:|---:|---:|---:|---:|---:|---:|']
             lines.extend(f"| {r['method']} | {r['metrics']['psnr']:.4f} | {r['metrics']['ssim']:.5f} | {r['metrics']['lpips']:.5f} | {r['gaussians']} | {r['optimizer_updates']} | {r['training_seconds']/60:.1f} | {r['offline_fps']:.2f} |" for r in rows)

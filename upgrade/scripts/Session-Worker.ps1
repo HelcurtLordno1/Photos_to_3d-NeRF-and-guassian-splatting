@@ -24,6 +24,7 @@ try {
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'full') { $command = 'full-run' }
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'quality') { $command = 'quality-run' }
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'research') { $command = 'research-run' }
+    if ($job.PSObject.Properties['task'] -and $job.task -eq 'confirmation') { $command = 'confirmation-run' }
     & (Join-Path $ProjectRoot 'Invoke-Upgrade.ps1') $command @parameters *>&1 | ForEach-Object { Write-Log $_ }
     $state.status = 'succeeded'
     # Publish into the one existing UI cache after successful compute. This
@@ -34,7 +35,7 @@ try {
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $prepare *>&1 | ForEach-Object { Write-Log $_ }
             if ($LASTEXITCODE -ne 0) { throw 'Shared catalog preparation failed.' }
             $state.ui_catalog = 'prepared'
-            if ($job.PSObject.Properties['task'] -and $job.task -eq 'research') {
+            if ($job.PSObject.Properties['task'] -and $job.task -in @('research','confirmation')) {
                 # Refresh only this checkout's artifacts-only server. A running
                 # inference server or another service is never stopped here.
                 $serverPath = Join-Path $hostRecord.BaselineRoot 'artifacts\ui\server.json'
@@ -78,6 +79,13 @@ try {
 } catch {
     $state.status = 'failed'
     if (Test-Path -LiteralPath (Join-Path $Directory 'stop.json')) { $state.status = 'paused' }
+    if ($job.PSObject.Properties['task'] -and $job.task -eq 'confirmation') {
+        $confirmationState = Join-Path $ArtifactRoot ('jobs\confirmation\' + $job.study + '\state.json')
+        if (Test-Path -LiteralPath $confirmationState) {
+            $stageState = Get-Content -LiteralPath $confirmationState -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($stageState.status -eq 'paused') { $state.status = 'paused' }
+        }
+    }
     if ($job.PSObject.Properties['task'] -and $job.task -eq 'research') {
         $researchState = Join-Path $ArtifactRoot ('jobs\research\' + $job.study + '\state.json')
         if (Test-Path -LiteralPath $researchState) {

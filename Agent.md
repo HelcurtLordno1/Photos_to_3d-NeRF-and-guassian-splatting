@@ -120,3 +120,21 @@ Read method-specific upstream presets before freezing a wrapper, and make every
 shared training override explicit. The final direct checkpoint QA gate is in
 the rewritten upgrade_to_baseline.md; it does not promise bitwise CUDA training.
 Old Bonsai/full and v3 resource pilot remain paused.
+
+## Approved v5 and repository publication (2026-11-12)
+
+User authorized push of all source changes and execution of the v5 plan.
+Report/reports directories are local-only: stop Git tracking without deleting
+their local contents. Preserve historical Git history and all source-pin bytes.
+The current versioned plan is docs/plans/tea-quality-v5.md. Implement P0→P1→P2
+and honor measured gates; later capacity/Mip/Bonsai work is conditional. Never
+claim the queued long runs or a failed gate have completed successfully.
+
+P1 v5 exposed two precision stages in Spark: input decoding and intermediate
+render accumulation. Extending input alone did not fix parity. Preserve the
+2x2 negative results; the adopted research profile is packed input + extended
+accumulator, not the slower fully extended profile. Candidate parity passes;
+AbsGS still has misses and wide zoom exposes uncovered backgrounds. Review
+allows controlled replication, not a clean360/production claim. A resume must
+reuse exact committed inspection bytes so its review hash stays valid; validate
+the full UI interaction proof before allowing fresh training.

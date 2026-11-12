@@ -256,7 +256,7 @@ function App() {
     setComplete(null);
     // Keep tracking a cancelled worker until it unwinds; drawing stays paused.
     setRoute('workspace');
-    setTab('3d');
+    setTab(d.id === 'custom:tea_sets_2' && catalog?.visual_research?.q2 ? 'quality' : '3d');
     setRotating(false);
   };
   if (fatal)
@@ -681,7 +681,7 @@ function App() {
                 {[
                   ['3d', Box, t('Khám phá 3D', 'Explore 3D')],
                   ['images', ImageIcon, t('So sánh ảnh', 'Image comparison')],
-                  ['quality', ChartNoAxesCombined, 'Q1 · Visual quality'],
+                  ['quality', ChartNoAxesCombined, 'Visual quality'],
                   [
                     'research',
                     ChartNoAxesCombined,

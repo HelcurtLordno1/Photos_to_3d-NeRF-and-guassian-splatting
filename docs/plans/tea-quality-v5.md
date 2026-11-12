@@ -1,9 +1,10 @@
 # Tea Quality v5 — đề xuất sau kết quả v4
 
-**Trạng thái: PROPOSED, để user xem.** Chưa được dùng để đổi runtime/config,
-khởi chạy training, chuyển default model hoặc resume Bonsai. V4 hoàn thành và
-mọi checkpoint/report/source pin cũ được giữ nguyên. Plan này là tài liệu riêng,
-không thay declaration hay kế hoạch thực thi v4.
+**Trạng thái: APPROVED — user cho phép triển khai và chạy sau khi push Git.**
+V4 hoàn thành; mọi checkpoint/report/source pin cũ được giữ nguyên. Thực hiện
+P0→P1→P2 trước; mọi bước sau phải theo gate và ngân sách trong kế hoạch này.
+Báo cáo/số liệu nằm local dưới reports/, không được Git theo dõi theo yêu cầu
+user. Tài liệu này không thay declaration hay kế hoạch thực thi v4.
 
 ## 1. Quyết định nghiên cứu
 
@@ -261,4 +262,28 @@ Báo một review gate sau đó, gồm cả kết quả xấu. P3 chỉ chọn m
 chẩn đoán đủ rõ; P4 chỉ sau khi Tea được khóa. Không tự triển khai cả roadmap
 như một campaign dài không có điểm kiểm tra.
 
-Đây là plan để review; chưa launch bất cứ job nào theo v5.
+## 10. P1 renderer amendment — 2026-11-12
+
+P1 đã chạy: native/half quality và browser frame time đạt. Packed Improved-GS
+mean35.50095dB nhưng view4 chỉ29.85630dB, không qua min30dB; giữ nguyên phép đo
+ở `upgrade/reports/tea-quality-v5/inspection.json`. Chưa chạy seed mới.
+
+Kiểm tra đúng một giả thuyết inference: độ chính xác packing ở input và render
+accumulator của Spark. Ma trận2×2 trên cả hai model giữ nguyên checkpoint, SH3,
+camera, classic filter, sorting, viewport và các ngưỡng35/30dB,33.3ms. Đo/nguồn
+được archive riêng; không sửa packed failure thành pass. Extended input đơn lẻ
+không đạt parity; extended cả hai bước đạt parity nhưng p95 candidate47.1ms.
+
+**Profile research được chọn: packed input + extended accumulator (`packed-ext`).**
+Improved-GS mean36.38445dB,min30.47078dB,p95 frame interval24.3ms, qua ngưỡng
+không đổi. AbsGS mean34.77209,min29.75823dB,p9529.9ms; vẫn có parity miss,
+không được tuyên bố cả hai model đều qua. Đây là sửa viewer P1, giữ nguyên model
+v4 và trainer. Profile đo một lần; không diễn giải timing thành cam kết FPS.
+
+P0 thực tế đã kiểm fresh-default/model/camera/resolution, 300k3D load/drag/idle
+với zero page errors. Review P1 giữ rõ lỗi background ngoài coverage khi zoom0.75,
+ghosting/chi tiết ly mờ, ROI regressions và giới hạn contact sheet không chứng
+minh flicker-free. Gate cho phép paired replication, chưa phải clean360 release.
+P2 đã được mở sau review; kết quả mới chỉ công bố khi đủ bốn lượt30k. Giữ trần
+3giờ compute; P3 và Bonsai chờ kết quả P2. Báo cáo chi tiết local:
+`upgrade/reports/tea-quality-v5/review/assessment.md` và `inspection-r4.json`.

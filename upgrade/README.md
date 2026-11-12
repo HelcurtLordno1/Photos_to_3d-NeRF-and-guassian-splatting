@@ -6,7 +6,30 @@ training, datasets, attempts, checkpoints and reports created here stay under
 This does not certify G-Core, reconstruct SfM from fewer raw photographs, or
 establish a general PSNR predictor from one video.
 
-## Current authorized full campaign (2026-11-08)
+## Current authorized work: Tea quality v5
+
+The full campaign described below is historical and paused. V4 completed both
+native 30k models; v5 audits their scale/zoom/continuous path and packed browser
+renderer, then confirms paired seeds17/2026 only when P0/P1 gates pass. It reuses
+the exact frozen v4 trainer and seed42 evidence. Read
+[the approved plan](../docs/plans/tea-quality-v5.md) and [Agent.md](../Agent.md).
+
+```powershell
+.\upgrade\scripts\Manage-Session.ps1 -Action Status -Name topic16-tea-quality-v5
+.\upgrade\scripts\Manage-Session.ps1 -Action Attach -Name topic16-tea-quality-v5
+.\upgrade\scripts\Manage-Session.ps1 -Action Stop -Name topic16-tea-quality-v5
+# Wait for paused before poweroff. Later:
+.\upgrade\scripts\Manage-Session.ps1 -Action Resume -Name topic16-tea-quality-v5
+```
+
+Native Windows owns compute. WSL `tmux attach -t topic16-tea-quality-v5` is only
+the monitor; Ctrl+B,D detaches. There is no `tmux resume` command. Reports and
+their generated assets are intentionally ignored by Git and stay on the local
+machine. Historical reports already committed remain in older Git history.
+Never delete reports to make a source-only clone resemble a completed study.
+Keep raw data, source pins, checkpoints and local reports in the user's backup.
+
+## Historical full campaign (2026-11-08; paused)
 
 Read [../Agent.md](../Agent.md) before operating this checkout. The old `tea60-v1`
 is a completed **10k pilot**, not the full-budget result. Smoke results remain
