@@ -2,9 +2,17 @@ import { useEffect, useState } from 'react';
 import type { Dataset, Job } from './types';
 import s from './studio.module.css';
 import { download } from './api';
-export default function Compare({ dataset, job }: { dataset: Dataset; job: Job | null }) {
+export default function Compare({
+  dataset,
+  job,
+  imageLabels,
+}: {
+  dataset: Dataset;
+  job: Job | null;
+  imageLabels?: Record<string, string>;
+}) {
   const [index, setIndex] = useState(0),
-    [left, setLeft] = useState('gt'),
+    [left, setLeft] = useState(imageLabels ? 'nerfacto' : 'gt'),
     [right, setRight] = useState('splatfacto'),
     [source, setSource] = useState<'saved' | 'live'>('saved'),
     [wipe, setWipe] = useState(50),
@@ -76,7 +84,9 @@ export default function Compare({ dataset, job }: { dataset: Dataset; job: Job |
           Left
           <select aria-label="Left image" value={left} onChange={(e) => setLeft(e.target.value)}>
             {labels.map((x) => (
-              <option key={x}>{x}</option>
+              <option key={x} value={x}>
+                {imageLabels?.[x] || x}
+              </option>
             ))}
           </select>
         </label>
@@ -84,7 +94,9 @@ export default function Compare({ dataset, job }: { dataset: Dataset; job: Job |
           Right
           <select aria-label="Right image" value={right} onChange={(e) => setRight(e.target.value)}>
             {labels.map((x) => (
-              <option key={x}>{x}</option>
+              <option key={x} value={x}>
+                {imageLabels?.[x] || x}
+              </option>
             ))}
           </select>
         </label>
@@ -144,16 +156,24 @@ export default function Compare({ dataset, job }: { dataset: Dataset; job: Job |
         }}
       >
         <div className={s.wipeImages} style={transform}>
-          <img src={image(left)} alt={left + ' reconstruction'} draggable={false} />
+          <img
+            src={image(left)}
+            alt={(imageLabels?.[left] || left) + ' reconstruction'}
+            draggable={false}
+          />
         </div>
         <div className={s.wipeRight} style={{ clipPath: `inset(0 0 0 ${wipe}%)` }}>
           <div className={s.wipeImages} style={transform}>
-            <img src={image(right)} alt={right + ' reconstruction'} draggable={false} />
+            <img
+              src={image(right)}
+              alt={(imageLabels?.[right] || right) + ' reconstruction'}
+              draggable={false}
+            />
           </div>
         </div>
         <div className={s.wipeLine} style={{ left: `${wipe}%` }} />
-        <span className={s.leftImageLabel}>{left}</span>
-        <span className={s.rightImageLabel}>{right}</span>
+        <span className={s.leftImageLabel}>{imageLabels?.[left] || left}</span>
+        <span className={s.rightImageLabel}>{imageLabels?.[right] || right}</span>
       </div>
       <label className={s.wipeSlider}>
         Comparison split

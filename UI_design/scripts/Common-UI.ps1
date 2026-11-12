@@ -60,6 +60,20 @@ function Invoke-UiNpm {
     try { Invoke-UiNode -Arguments (@($npm) + $Arguments) } finally { Pop-Location }
 }
 
+function Invoke-UiEnvironment {
+    param([Parameter(Mandatory)][string]$Command, [string[]]$Arguments = @())
+    $environmentName = $script:Config.EnvironmentName
+    if (-not (Get-CondaEnvironmentPath -Name $environmentName)) {
+        $upgradeRegistry = Join-Path $RepoRoot 'upgrade\configs\project.psd1'
+        if (-not (Test-Path -LiteralPath $upgradeRegistry)) { throw 'No baseline or upgrade Python environment is configured for the shared UI.' }
+        $upgradeConfig = Import-PowerShellDataFile -LiteralPath $upgradeRegistry
+        $environmentName = $upgradeConfig.EnvironmentName
+        if (-not (Get-CondaEnvironmentPath -Name $environmentName)) { throw 'Set up the baseline or isolated upgrade environment before opening the shared UI.' }
+        Write-TopicInfo "Shared UI CPU adapters use $environmentName (baseline environment unavailable)."
+    }
+    Invoke-Conda -Arguments (@('run','--no-capture-output','-n',$environmentName,$Command) + $Arguments) | Out-Null
+}
+
 function Invoke-UiPython {
     param([Parameter(Mandatory)][string[]]$Arguments)
     $settingsFile = Join-Path ([IO.Path]::GetTempPath()) ('topic16-ui-' + [guid]::NewGuid().ToString('N') + '.json')
@@ -68,7 +82,7 @@ function Invoke-UiPython {
         Write-Utf8Text -Path $settingsFile -Text ($script:Config | ConvertTo-Json -Depth 20)
         $env:PYTHONPATH = "$RepoRoot;$RepoRoot\src" + $(if ($oldPythonPath) { ";$oldPythonPath" } else { '' })
         Push-Location -LiteralPath $RepoRoot
-        try { Invoke-InEnvironment -Command python -Arguments (@('-m', 'UI_design.backend.cli', '--root', $RepoRoot, '--settings', $settingsFile) + $Arguments) | Out-Null } finally { Pop-Location }
+        try { Invoke-UiEnvironment -Command python -Arguments (@('-m', 'UI_design.backend.cli', '--root', $RepoRoot, '--settings', $settingsFile) + $Arguments) } finally { Pop-Location }
     } finally {
         $env:PYTHONPATH = $oldPythonPath
         Remove-Item -LiteralPath $settingsFile -Force -ErrorAction SilentlyContinue

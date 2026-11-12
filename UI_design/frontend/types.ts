@@ -13,12 +13,15 @@ export type View = {
   source: string;
   camera: Camera;
   gt: string;
+  gt_sha256?: string;
   nerfacto: string;
   splatfacto: string;
   nerfacto_error: string;
   splatfacto_error: string;
 };
 export type Run = {
+  display_label?: string;
+  background_rgb?: [number, number, number];
   run_key: string;
   config: string;
   checkpoint_sha256: string;
@@ -32,11 +35,20 @@ export type Run = {
     ssim: number;
     lpips: number;
   };
+  common_metrics?: { psnr: number; ssim: number; lpips: number };
+  common_evaluator_id?: string;
   train_seconds: number;
   peak_vram_mb: number;
-  offline_fps: number;
+  offline_fps: number | null;
+  checkpoint_bytes?: number;
+  budget?: number;
+  seed?: number;
+  downscale?: number;
+  evaluator_id?: string;
+  variant?: string;
   provenance: Record<string, unknown>;
   architecture?: Record<string, unknown>;
+  rasterize_mode?: 'classic' | 'antialiased';
 };
 export type Dataset = {
   id: string;
@@ -51,13 +63,119 @@ export type Dataset = {
   alignment: string;
   source_matrix: string;
   inference: boolean;
+  run_sets?: RunSet[];
+  default_run_set?: string;
+  active_run_set?: string;
+  inference_reason?: string;
+  view_mode?: 'baseline' | 'upgrade' | 'compare';
+};
+export type RunSet = {
+  id: string;
+  variant: 'baseline' | 'upgrade';
+  label: string;
+  recipe: string;
+  budget: number;
+  seed: number;
+  downscale: number;
+  evaluator_id: string;
+  eval_camera_hash: string;
+  train_count: number;
+  eval_count: number;
+  views: View[];
+  methods: Record<Method, Run>;
+  inference: boolean;
+  inference_reason?: string;
+  tier?: 'full' | 'pilot' | 'smoke';
+  full_reference?: boolean;
+};
+export type UpgradeRow = {
+  scene_group: string;
+  method: Method;
+  variant: string;
+  recipe: string;
+  views: number;
+  budget: number;
+  seed: number;
+  downscale: number;
+  study: string;
+  evaluator_id: string;
+  experiment_key: string;
+  run_key: string;
+  train_seconds: number;
+  peak_vram_mb: number;
+  checkpoint_bytes: number;
+  metrics: { psnr: number; ssim: number; lpips: number };
+  selection?: { indices: number[] };
+  features: Record<string, number>;
+  provenance: Record<string, unknown>;
 };
 export type Catalog = {
+  visual_research?: {
+    status: string; study?: string; phase?: string; reason?: string;
+    q15: { tag: string; metrics: { psnr: number; ssim: number; lpips: number }; fps: number;
+      peak_cuda_allocated_bytes: number; frames: { gt: string; pred: string }[] }[];
+    q2: null | { scope: string; comparison: string; next_gate: string;
+      rows: { method: string; metrics: { psnr: number; ssim: number; lpips: number };
+        roi_metrics: { psnr: number; ssim: number; lpips: number }; gaussians: number; optimizer_updates: number;
+        training_seconds: number; offline_fps: number; frames: { gt: string; pred: string }[];
+        model?: { id: string; label: string; cameras: Camera[]; run: Run } }[] };
+  };
+  quality?: {
+    status: string; reason?: string;
+    experiments: {
+      id: string; scene: string; label: string; scope: string; numeric_target_met: boolean;
+      train_seconds: number;
+      rows: { tag: string; metrics: { psnr: number; ssim: number; lpips: number };
+        roi_metrics?: { psnr: number; ssim: number; lpips: number };
+        frames: { index: number; gt: string; pred: string; gt_sha256: string; size: number[] }[] }[];
+      models: { id: string; label: string; cameras: Camera[]; run: Run }[];
+    }[];
+  };
   schema_version: 1;
   revision: string;
   created_at: string;
   scenes: Dataset[];
   csrf: string;
+  upgrade?: {
+    status: string;
+    reason?: string;
+    runs: UpgradeRow[];
+    audits: {
+      scene_group: string;
+      coverage_url: string;
+      previews?: { index: number; url: string }[];
+      features: {
+        features: Record<string, number>;
+        cpu_seconds: number;
+        sfm_scope: string;
+        overlap: { status: string; reason?: string; kind?: string };
+        frames: {
+          index: number;
+          azimuth: number;
+          elevation: number;
+          coverage_bin: string;
+          sharpness: number;
+          path: string;
+        }[];
+      };
+    }[];
+    models: {
+      method: string;
+      budget: number;
+      status: string;
+      reason: string;
+      training_groups: string[];
+      validation?: Record<string, { mae_db: number; rmse_db: number }>;
+      out_of_fold?: { scene_group: string; observed: number; predicted: number }[];
+    }[];
+    controlled_comparisons?: {
+      status: string;
+      left: string;
+      right: string;
+      delta: Record<string, number>;
+      units: Record<string, string>;
+    }[];
+  };
   ui: {
     MaxPixels: number;
     HeartbeatSeconds: number;
@@ -99,6 +217,7 @@ export type Job = {
 export type Bookmark = {
   id: string;
   scene: string;
+  run_set_id?: string;
   title: string;
   revision: string;
   camera: Camera;

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+data/
+artifacts/
+third_party/
+reports/preservation/*.zip
+reports/baseline-inventory.json
+reports/baseline-inventory-full.json
+reports/baseline-integrity.json
+reports/ui-index.json
+reports/study-results.json
+reports/qa/

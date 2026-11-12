@@ -1,3 +1,4 @@
+import CaptureIntelligence from './CaptureIntelligence';
 import { useState, useEffect, useRef } from 'react';
 import type { Catalog, Dataset, Method } from './types';
 import s from './studio.module.css';
@@ -10,9 +11,9 @@ const units: Record<string, string> = {
   offline_fps: 'FPS ↑',
 };
 export default function Research({ catalog, dataset }: { catalog: Catalog; dataset: Dataset }) {
-  const [scope, setScope] = useState(new URLSearchParams(location.search).get('scope') || 'all'),
-    [metric, setMetric] = useState(new URLSearchParams(location.search).get('metric') || 'psnr'),
-    [diagram, setDiagram] = useState('pipeline'),
+  const scope = dataset.id,
+    metric = 'psnr';
+  const [diagram, setDiagram] = useState('pipeline'),
     [diagramZoom, setDiagramZoom] = useState(1),
     [node, setNode] = useState('');
   const diagramRef = useRef<HTMLDivElement>(null);
@@ -45,18 +46,7 @@ export default function Research({ catalog, dataset }: { catalog: Catalog; datas
       cancelled = true;
     };
   }, [diagram]);
-  const scenes = catalog.scenes.filter((d) => scope === 'all' || d.id === scope);
-  const values = scenes.flatMap((d) =>
-    (['nerfacto', 'splatfacto'] as Method[]).map((m) => ({
-      title: d.title,
-      method: m,
-      value:
-        metric in d.methods[m].metrics
-          ? d.methods[m].metrics[metric as 'psnr']
-          : d.methods[m][metric as 'offline_fps'],
-    })),
-  );
-  const max = Math.max(...values.map((v) => v.value));
+  const scenes = [dataset];
   return (
     <div className={s.research}>
       <div className={s.sectionTitle}>
@@ -86,85 +76,7 @@ export default function Research({ catalog, dataset }: { catalog: Catalog; datas
           </a>
         </div>
       </div>
-      <div className={s.panelTools}>
-        <label>
-          Dataset
-          <select value={scope} onChange={(e) => setScope(e.target.value)}>
-            <option value="all">All scenes · no aggregate</option>
-            {catalog.scenes.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Metric
-          <select value={metric} onChange={(e) => setMetric(e.target.value)}>
-            {Object.keys(units).map((x) => (
-              <option key={x} value={x}>
-                {x} · {units[x]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className={s.chart}>
-        {values.map((v) => (
-          <div className={s.barRow} key={v.title + v.method}>
-            <span>
-              {v.title} · {v.method === 'nerfacto' ? 'N' : 'S'}
-            </span>
-            <div className={s.barTrack}>
-              <div
-                className={v.method === 'nerfacto' ? s.barN : s.barS}
-                style={{ width: `${(v.value / max) * 100}%` }}
-              />
-            </div>
-            <b>{v.value.toFixed(3)}</b>
-          </div>
-        ))}
-      </div>
-      <div className={s.tableWrap}>
-        <table>
-          <caption>Exact paired runs · 30,000 iterations · seed 42 · downscale 2</caption>
-          <thead>
-            <tr>
-              <th>Scene / method</th>
-              {Object.entries(units).map(([k, u]) => (
-                <th key={k}>
-                  {k}
-                  <small>{u}</small>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {scenes.flatMap((d) =>
-              (['nerfacto', 'splatfacto'] as Method[]).map((m) => (
-                <tr key={d.id + m}>
-                  <th>
-                    {d.title}
-                    <span className={s.methodBadge}>{m === 'nerfacto' ? 'N' : 'S'}</span>
-                    <small>{d.scope}</small>
-                  </th>
-                  <td>{d.methods[m].metrics.psnr.toFixed(2)}</td>
-                  <td>{d.methods[m].metrics.ssim.toFixed(4)}</td>
-                  <td>{d.methods[m].metrics.lpips.toFixed(4)}</td>
-                  <td>{d.methods[m].train_seconds.toFixed(1)}</td>
-                  <td>{d.methods[m].peak_vram_mb.toFixed(0)}</td>
-                  <td>{d.methods[m].offline_fps.toFixed(3)}</td>
-                </tr>
-              )),
-            )}
-          </tbody>
-        </table>
-      </div>
-      <p className={s.caption}>
-        Offline FPS is the original synchronized CUDA camera-path measurement and excludes image IO.
-        Browser FPS and live inference latency are separate measurements. Poster is a smoke scene
-        and is excluded from benchmark aggregation.
-      </p>
+      <CaptureIntelligence catalog={catalog} dataset={dataset} />
       <div className={s.diagramHeader}>
         <h3>Inside the reconstruction</h3>
         <div>

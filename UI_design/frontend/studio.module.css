@@ -508,6 +508,26 @@
   overflow-wrap: anywhere;
   margin: 10px 0;
 }
+.comparisonNote {
+  margin: 16px 0;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+}
+.comparisonNote h4 {
+  margin: 0 0 12px;
+}
+.comparisonNote p {
+  margin: 8px 0;
+  line-height: 1.65;
+}
+.metricDelta {
+  display: block;
+  white-space: nowrap;
+  opacity: 0.75;
+  margin-top: 4px;
+}
 .jobStatus {
   font-size: 11px;
   color: var(--accent);

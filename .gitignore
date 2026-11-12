@@ -18,6 +18,10 @@ UI_design/*.tsbuildinfo
 artifacts/ui/
 reports/ui/
 
+# Local research reports remain on disk but are not published to GitHub.
+[Rr]eport/
+[Rr]eports/
+
 # Downloaded third-party source trees
 third_party/*
 !third_party/README.md

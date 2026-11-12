@@ -23,12 +23,15 @@ import type { Catalog, Dataset, Method, Bookmark, Job } from './types';
 import type { ViewerHandle } from './Viewer';
 import { api, download, infer } from './api';
 import { importBookmarks } from './bookmarks';
+import { diagnostic, hasGeometry, preferredRunSet, resolveRunSet } from './runSelection';
 import s from './studio.module.css';
 import './global.css';
 const Viewer = lazy(() => import('./Viewer')),
   Gallery = lazy(() => import('./Gallery')),
   Research = lazy(() => import('./Research')),
-  Compare = lazy(() => import('./Compare'));
+  Compare = lazy(() => import('./Compare')),
+  RunSetCompare = lazy(() => import('./RunSetCompare'));
+const Quality = lazy(() => import('./Quality'));
 class Boundary extends React.Component<
   {
     children: React.ReactNode;
@@ -65,7 +68,9 @@ function App() {
     [fatal, setFatal] = useState(''),
     [route, setRoute] = useState<'collection' | 'workspace' | 'gallery'>('collection'),
     [selected, setSelected] = useState('custom:tea_sets_2'),
-    [tab, setTab] = useState<'3d' | 'images' | 'research'>('3d'),
+    [runSetId, setRunSetId] = useState('baseline'),
+    [variantMode, setVariantMode] = useState<'baseline' | 'upgrade' | 'compare'>('baseline'),
+    [tab, setTab] = useState<'3d' | 'images' | 'research' | 'quality'>('3d'),
     [mode, setMode] = useState<'both' | Method>('both'),
     [query, setQuery] = useState(''),
     [help, setHelp] = useState(false),
@@ -95,6 +100,7 @@ function App() {
     [readiness, setReadiness] = useState<{
       state: string;
       reason?: string;
+      external_compute?: boolean;
     }>({ state: 'checking' });
   const viewer = useRef<ViewerHandle>(null),
     token = useRef(''),
@@ -115,6 +121,24 @@ function App() {
         setCatalog(c);
         const scene = new URLSearchParams(location.search).get('scene');
         if (scene && c.scenes.some((d) => d.id === scene)) setSelected(scene);
+        const params = new URLSearchParams(location.search),
+          id = params.get('runSet');
+        if (id) {
+          const target = c.scenes
+            .find((d) => d.id === (scene || selected))
+            ?.run_sets?.find((r) => r.id === id && !diagnostic(r));
+          if (target) {
+            setRunSetId(id);
+            setVariantMode(target.variant);
+          } else
+            setNotice(
+              'Run được yêu cầu không có trong kết quả nghiên cứu hiện tại. Đang mở baseline.',
+            );
+        }
+        if (['images', 'research', 'quality'].includes(params.get('tab') || '')) {
+          setTab(params.get('tab') as 'images' | 'research' | 'quality');
+          setRoute('workspace');
+        }
       })
       .catch((error) => setFatal(String(error)));
   }, []);
@@ -181,7 +205,15 @@ function App() {
         (e.target as HTMLElement).closest('input,select,textarea,button,[contenteditable]')
       )
         return;
-      if (e.code === 'Digit1') setTab('3d');
+      if (e.code === 'Digit1') {
+        const scene = catalog?.scenes.find((item) => item.id === selected);
+        const target = resolveRunSet(
+          scene?.run_sets || [],
+          runSetId,
+          variantMode === 'baseline' ? 'baseline' : 'upgrade',
+        );
+        if (variantMode !== 'compare' && target && hasGeometry(target)) setTab('3d');
+      }
       if (e.code === 'Digit2') setTab('images');
       if (e.code === 'Digit3') setTab('research');
       if (e.code === 'KeyR') viewer.current?.reset();
@@ -192,7 +224,7 @@ function App() {
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [shortcuts, help, onboarding]);
+  }, [shortcuts, help, onboarding, catalog, selected, runSetId, variantMode]);
   const move = () => {
     if (active.current?.status === 'succeeded') return;
     if (active.current) {
@@ -219,6 +251,8 @@ function App() {
       );
     active.current = null;
     setSelected(d.id);
+    setRunSetId(d.default_run_set || 'baseline');
+    setVariantMode(d.run_sets?.some((r) => r.variant === 'baseline') ? 'baseline' : 'upgrade');
     setComplete(null);
     // Keep tracking a cancelled worker until it unwinds; drawing stays paused.
     setRoute('workspace');
@@ -240,9 +274,29 @@ function App() {
         SPATIAL / STUDIO<span>Loading the verified collection…</span>
       </div>
     );
-  const dataset = catalog.scenes.find((d) => d.id === selected) || catalog.scenes[0];
+  const baseDataset = catalog.scenes.find((d) => d.id === selected) || catalog.scenes[0];
+  const runSets = (baseDataset.run_sets || []).filter((r) => !diagnostic(r));
+  const activeSet =
+    resolveRunSet(runSets, runSetId, variantMode === 'baseline' ? 'baseline' : 'upgrade') ||
+    runSets[0];
+  const dataset: Dataset = activeSet
+    ? {
+        ...baseDataset,
+        ...activeSet,
+        id: baseDataset.id,
+        active_run_set: activeSet.id,
+        run_sets: runSets,
+        view_mode: variantMode,
+      }
+    : baseDataset;
   const run = async () => {
-    if (submitting || (job && ['queued', 'running'].includes(job.status))) return;
+    if (
+      !dataset.inference ||
+      readiness.external_compute ||
+      submitting ||
+      (job && ['queued', 'running'].includes(job.status))
+    )
+      return;
     setSubmitting(true);
     const id = ++sequence.current;
     viewer.current?.rotate(false);
@@ -330,6 +384,7 @@ function App() {
     const b: Bookmark = {
       id: crypto.randomUUID(),
       scene: dataset.id,
+      run_set_id: dataset.active_run_set || 'baseline',
       title: dataset.title + ' · ' + new Date().toLocaleTimeString(),
       revision: catalog.revision,
       camera: viewer.current?.camera() || dataset.views[0].camera,
@@ -540,15 +595,93 @@ function App() {
                 >
                   {catalog.scenes.map((d) => (
                     <option key={d.id} value={d.id}>
-                      {d.title} · {d.train_count} train / {d.eval_count} eval
+                      {d.title} · {d.id === dataset.id ? dataset.train_count : d.train_count} train
+                      / {d.eval_count} eval
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className={s.panelTools} style={tab === 'quality' ? { display: 'none' } : undefined}>
+                <label>
+                  Bản hiển thị
+                  <select
+                    aria-label="Variant"
+                    value={
+                      activeSet?.variant === 'upgrade' && variantMode === 'baseline'
+                        ? 'upgrade'
+                        : variantMode
+                    }
+                    onChange={(e) => {
+                      move();
+                      setComplete(null);
+                      const variant = e.target.value as typeof variantMode;
+                      const target = preferredRunSet(
+                        runSets,
+                        variant === 'baseline' ? 'baseline' : 'upgrade',
+                      );
+                      setVariantMode(variant);
+                      if (target) setRunSetId(target.id);
+                      setTab(
+                        variant !== 'compare' && target && hasGeometry(target) ? '3d' : 'images',
+                      );
+                    }}
+                  >
+                    <option
+                      value="baseline"
+                      disabled={!runSets.some((r) => r.variant === 'baseline')}
+                    >
+                      Baseline
+                    </option>
+                    <option
+                      value="upgrade"
+                      disabled={!runSets.some((r) => r.variant === 'upgrade')}
+                    >
+                      Upgrade
+                    </option>
+                    <option
+                      value="compare"
+                      disabled={
+                        !runSets.some((r) => r.variant === 'baseline') ||
+                        !runSets.some((r) => r.variant === 'upgrade')
+                      }
+                    >
+                      Compare
+                    </option>
+                  </select>
+                </label>
+                <label>
+                  Điều kiện nghiên cứu
+                  <select
+                    aria-label="Run set"
+                    value={activeSet?.id || ''}
+                    onChange={(e) => {
+                      move();
+                      setComplete(null);
+                      setRunSetId(e.target.value);
+                      const target = runSets.find((r) => r.id === e.target.value);
+                      if (target && !hasGeometry(target) && tab === '3d') setTab('images');
+                    }}
+                  >
+                    {runSets
+                      .filter(
+                        (r) =>
+                          r.variant === (variantMode === 'baseline' ? 'baseline' : 'upgrade') ||
+                          r.id === activeSet?.id,
+                      )
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.tier === 'pilot' ? 'Pilot · ' : ''}
+                          {r.label}
+                        </option>
+                      ))}
+                  </select>
+                </label>
               </div>
               <div className={s.tabs}>
                 {[
                   ['3d', Box, t('Khám phá 3D', 'Explore 3D')],
                   ['images', ImageIcon, t('So sánh ảnh', 'Image comparison')],
+                  ['quality', ChartNoAxesCombined, 'Q1 · Visual quality'],
                   [
                     'research',
                     ChartNoAxesCombined,
@@ -559,6 +692,15 @@ function App() {
                   return (
                     <button
                       key={String(value)}
+                      disabled={
+                        String(value) === '3d' &&
+                        (!hasGeometry(dataset) || variantMode === 'compare')
+                      }
+                      title={
+                        String(value) === '3d' && !hasGeometry(dataset)
+                          ? 'Điều kiện này hiện có ảnh và metrics; cặp full 3D được công bố sau nghiệm thu.'
+                          : undefined
+                      }
                       aria-pressed={tab === value}
                       onClick={() => setTab(value as typeof tab)}
                     >
@@ -638,20 +780,30 @@ function App() {
                     </button>
                   </div>
                 </div>
-                <Boundary key={dataset.id}>
+                <Boundary key={dataset.id + dataset.active_run_set}>
                   <Suspense fallback={<div className={s.loading}>Loading 3D renderer…</div>}>
-                    <Viewer
-                      ref={viewer}
-                      dataset={dataset}
-                      mode={mode}
-                      catalog={catalog}
-                      onMove={move}
-                      initialCamera={restored?.scene === dataset.id ? restored.camera : undefined}
-                      paused={
-                        readiness.state === 'busy' ||
-                        (!!job && ['queued', 'running'].includes(job.status))
-                      }
-                    />
+                    {dataset.methods.nerfacto.asset &&
+                    dataset.methods.splatfacto.asset &&
+                    variantMode !== 'compare' ? (
+                      <Viewer
+                        ref={viewer}
+                        dataset={dataset}
+                        mode={mode}
+                        catalog={catalog}
+                        onMove={move}
+                        initialCamera={restored?.scene === dataset.id ? restored.camera : undefined}
+                        paused={
+                          readiness.state === 'busy' ||
+                          (!!job && ['queued', 'running'].includes(job.status))
+                        }
+                      />
+                    ) : (
+                      <div className={s.loading}>
+                        3D exports are unavailable for this pilot. Open Image comparison or
+                        Benchmarks to inspect the completed evidence. Dual 3D comparison requires
+                        verified exports in the same camera frame.
+                      </div>
+                    )}
                   </Suspense>
                 </Boundary>
                 <div className={s.inferenceBar}>
@@ -660,7 +812,8 @@ function App() {
                       {t('Render góc nhìn này', 'Render this viewpoint')} · {readiness.state}
                     </b>
                     <p>
-                      {readiness.reason ||
+                      {dataset.inference_reason ||
+                        readiness.reason ||
                         t(
                           'Di chuyển mượt bằng preview; render checkpoint chính xác khi bạn dừng.',
                           'Explore with the preview; render the exact checkpoint when you stop.',
@@ -680,6 +833,9 @@ function App() {
                     className={s.primary}
                     onClick={run}
                     disabled={
+                      !dataset.inference ||
+                      readiness.external_compute ||
+                      variantMode === 'compare' ||
                       readiness.state === 'not-enabled' ||
                       readiness.state === 'checking' ||
                       submitting ||
@@ -714,10 +870,20 @@ function App() {
                 )}
               </>
             ) : (
-              <Boundary key={tab + dataset.id}>
+              <Boundary key={tab + dataset.id + dataset.active_run_set + variantMode}>
                 <Suspense fallback={<div className={s.loading}>Loading panel…</div>}>
                   {tab === 'images' ? (
-                    <Compare key={dataset.id} dataset={dataset} job={complete} />
+                    variantMode === 'compare' ? (
+                      <RunSetCompare dataset={dataset} />
+                    ) : (
+                      <Compare
+                        key={dataset.id + dataset.active_run_set}
+                        dataset={dataset}
+                        job={complete}
+                      />
+                    )
+                  ) : tab === 'quality' ? (
+                    <Quality catalog={catalog} scene={dataset.id} paused={readiness.state === 'busy'} />
                   ) : (
                     <Research catalog={catalog} dataset={dataset} />
                   )}
@@ -789,11 +955,23 @@ function App() {
                   <div className={s.bookmarkRow} key={b.id}>
                     <button
                       onClick={() => {
-                        if (b.scene !== dataset.id) {
+                        const targetSet = catalog.scenes
+                          .find((d) => d.id === b.scene)
+                          ?.run_sets?.find((r) => r.id === (b.run_set_id || 'baseline'));
+                        if (!targetSet && b.run_set_id) {
+                          setNotice('Unresolved saved run set: ' + b.run_set_id);
+                          return;
+                        }
+                        if (
+                          b.scene !== dataset.id ||
+                          (b.run_set_id || 'baseline') !== dataset.active_run_set
+                        ) {
                           const target = catalog.scenes.find((d) => d.id === b.scene);
                           if (target) {
                             choose(target);
                             setRestored(b);
+                            setRunSetId(b.run_set_id || 'baseline');
+                            setVariantMode(targetSet?.variant || 'baseline');
                           } else setNotice('Unresolved scene: ' + b.scene);
                         } else {
                           viewer.current?.preset(b.camera);

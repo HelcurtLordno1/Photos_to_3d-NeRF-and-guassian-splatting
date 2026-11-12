@@ -121,6 +121,8 @@ class Jobs:
             )
             if not scene:
                 raise ValueError("Unknown exact scene")
+            if scene.get('inference') is False or request.get('run_set_id', 'baseline') != 'baseline':
+                raise ValueError('Novel-camera inference is unavailable for the selected upgrade run set')
             if request.get("revision") != self.catalog["revision"]:
                 raise ValueError("Catalog revision changed")
             methods = request.get("methods")

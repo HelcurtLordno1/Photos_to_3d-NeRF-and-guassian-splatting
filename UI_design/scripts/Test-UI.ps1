@@ -8,5 +8,5 @@ foreach ($file in Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1') {
     [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName,[ref]$tokens,[ref]$errors)
     if ($errors) { throw "PowerShell parser failed: $($file.FullName)" }
 }
-Invoke-InEnvironment -Command python -Arguments @('-m','unittest','discover','-s',(Join-Path $UiRoot 'tests'),'-p','test_*.py') | Out-Null
+Invoke-UiEnvironment -Command python -Arguments @('-m','unittest','discover','-s',(Join-Path $UiRoot 'tests'),'-p','test_*.py')
 if ($Browser) { Invoke-UiNode -Arguments @((Join-Path $UiRoot 'tests\browser.mjs'),$Url) }

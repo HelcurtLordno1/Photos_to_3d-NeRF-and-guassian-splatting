@@ -12,6 +12,22 @@ from .catalog import load_catalog
 from .jobs import Jobs
 
 
+def managed_compute(root):
+    """Probe only owned session locks; never contend with the GPU byte lock."""
+    if os.name!='nt':return None
+    for base in (root/'artifacts/logs/sessions',root/'upgrade/artifacts/logs/sessions'):
+        for path in base.glob('*/state.json'):
+            try:
+                state=json.loads(path.read_text(encoding='utf-8-sig'))
+                if state.get('status') not in ('running','starting'):continue
+                try:
+                    with (path.parent/'worker.lock').open('rb'):pass
+                except PermissionError:
+                    return {'name':state.get('name'),'study':state.get('study',state.get('task'))}
+            except (OSError,ValueError):continue
+    return None
+
+
 class UiHttpServer(ThreadingHTTPServer):
     # Windows SO_REUSEADDR can bind a second listener to an occupied port.
     # Exclusive binding makes strict-port failure and auto fallback reliable.
@@ -24,6 +40,27 @@ class UiHttpServer(ThreadingHTTPServer):
 
 
 def serve(root, settings, port=None, profile="auto"):
+    # A changed catalog or fallback port must not create a second owner lease
+    # for the same checkout. Release the OS handle even after a server crash.
+    path = root / 'artifacts/ui/server.lock'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open('a+b') as stream:
+        if stream.tell() == 0:
+            stream.write(b'0'); stream.flush()
+        stream.seek(0)
+        try:
+            if os.name == 'nt':
+                import msvcrt
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            raise RuntimeError('Spatial Studio is already running for this checkout; stop that server before loading a new catalog') from error
+        return _serve(root, settings, port, profile)
+
+
+def _serve(root, settings, port=None, profile="auto"):
     data = load_catalog(root)
     catalog = data["catalog"]
     assets = data["assets"]
@@ -94,19 +131,22 @@ def serve(root, settings, port=None, profile="auto"):
                 if path == "/api/catalog":
                     return self.json(catalog | {"csrf": secret})
                 if path == "/api/readiness":
+                    external=managed_compute(root)
                     return self.json(
                         {
                             "state": (
                                 "busy"
-                                if jobs.active
+                                if jobs.active or external
                                 else ("ready" if inference_enabled else "not-enabled")
                             ),
                             "reason": (
-                                None
-                                if inference_enabled
-                                else "Launch Start-UI.ps1 in Windows PowerShell Administrator to enable guarded CUDA inference."
+                                'Full research worker is running; interactive GPU views are paused.'
+                                if external else (None if inference_enabled else
+                                "Launch Start-UI.ps1 in Windows PowerShell Administrator to enable guarded CUDA inference.")
                             ),
                             "owner": bool(jobs.owner),
+                            "external_compute": bool(external),
+                            "compute": external,
                         }
                     )
                 if path.startswith("/api/jobs/") and "/image/" not in path:
@@ -157,7 +197,7 @@ def serve(root, settings, port=None, profile="auto"):
                 self.json({"error": str(error)}, 404)
             except (ValueError, PermissionError) as error:
                 self.json({"error": str(error)}, 400)
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 pass
 
         def file(self, path, head=False, etag=None):
@@ -238,6 +278,7 @@ def serve(root, settings, port=None, profile="auto"):
                     threading.Thread(target=self.server.shutdown, daemon=True).start()
                     return
                 if path == "/api/jobs":
+                    if managed_compute(root):raise RuntimeError('Managed research is using the GPU; inference is paused')
                     if not inference_enabled:
                         raise PermissionError(
                             "Guarded inference is not enabled in this server profile"

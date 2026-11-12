@@ -1,6 +1,0 @@
-{
-  "schema_version": "1.0",
-  "status": "BLOCKED",
-  "protocol_id": "diagnostic",
-  "reason": "Diagnostic/repeat reports do not satisfy the primary G-Core gate"
-}

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 're
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
-import type { Dataset, Method, Camera, Catalog } from './types';
+import type { Method, Camera, Catalog, Run } from './types';
 import s from './studio.module.css';
 import { download } from './api';
+import { setCalibratedProjection, extractIntrinsics, splatFilter } from './cameraProjection';
 export type ViewerHandle = {
   camera: () => Camera;
   reset: () => void;
@@ -49,13 +50,13 @@ function apply(camera: THREE.PerspectiveCamera, c: Camera) {
   );
   matrix.decompose(camera.position, camera.quaternion, camera.scale);
   camera.up.set(m[0][1], m[1][1], m[2][1]).normalize();
-  camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(c.height / (2 * c.fy)));
+  setCalibratedProjection(camera, c);
   camera.updateMatrixWorld();
 }
 export default forwardRef<
   ViewerHandle,
   {
-    dataset: Dataset;
+    dataset: { id: string; title: string; views: { camera: Camera }[]; methods: Partial<Record<Method, Run>> };
     mode: 'both' | Method;
     catalog: Catalog;
     onMove: () => void;
@@ -91,15 +92,11 @@ export default forwardRef<
     a.camera.updateMatrixWorld();
     const m = a.camera.matrixWorld.elements;
     const width = 640,
-      height = Math.round(width / (dataset.views[0].camera.width / dataset.views[0].camera.height));
-    const fy = height / (2 * Math.tan(THREE.MathUtils.degToRad(a.camera.fov) / 2));
+      height = Math.round(width / a.camera.aspect);
     return {
       width,
       height,
-      fx: fy,
-      fy,
-      cx: width / 2,
-      cy: height / 2,
+      ...extractIntrinsics(a.camera, width, height),
       camera_to_world: [
         [m[0], m[4], m[8], m[12]],
         [m[1], m[5], m[9], m[13]],
@@ -155,7 +152,7 @@ export default forwardRef<
                 : 'Splatfacto Gaussian'
               : mode === 'nerfacto'
                 ? 'Nerfacto point proxy'
-                : 'Splatfacto Gaussian'),
+                : (dataset.methods.splatfacto?.display_label || 'Splatfacto Gaussian')),
           offset + 15,
           33,
         );
@@ -268,7 +265,7 @@ export default forwardRef<
         const { width, height } = host.getBoundingClientRect();
         renderer.setSize(Math.max(1, width), Math.max(1, height));
         camera.aspect = width / Math.max(1, height);
-        camera.updateProjectionMatrix();
+        setCalibratedProjection(camera);
       });
       observer.observe(host);
       const instance: Adapter = {
@@ -322,7 +319,8 @@ export default forwardRef<
           other.camera.position.copy(camera.position);
           other.camera.quaternion.copy(camera.quaternion);
           other.camera.fov = camera.fov;
-          other.camera.updateProjectionMatrix();
+          other.camera.userData.calibration = camera.userData.calibration;
+          setCalibratedProjection(other.camera);
           other.controls.target.copy(controls.target);
           syncing = false;
         }
@@ -332,6 +330,13 @@ export default forwardRef<
         update(method, 'Graphics context lost. Reopen this scene to retry.');
       });
       const run = dataset.methods[method];
+      if (!run?.asset) {
+        update(method, 'No verified 3D asset for this method');
+        continue;
+      }
+      if (run.background_rgb) {
+        renderer.setClearColor(new THREE.Color().setRGB(...run.background_rgb, THREE.SRGBColorSpace), 1);
+      }
       update(method, 'Downloading · 0%');
       if (run.bytes > catalog.ui.DecodeLimitBytes || (run.vertices ?? 0) > catalog.ui.MaxVertices) {
         update(method, 'Asset exceeds decode budget');
@@ -340,6 +345,7 @@ export default forwardRef<
       if (method === 'splatfacto') {
         spark = new SparkRenderer({
           renderer,
+          ...splatFilter(run.rasterize_mode || run.architecture?.rasterize_mode),
           autoUpdate: false,
           minSortIntervalMs: 0,
           enableLod: false,
@@ -577,7 +583,7 @@ export default forwardRef<
         {(mode === 'both' ? ['nerfacto', 'splatfacto'] : [mode]).map((m) => (
           <section className={s.viewport} key={m} aria-label={m + ' 3D view'}>
             <div className={s.viewportLabel}>
-              <b>{m === 'nerfacto' ? 'N · Nerfacto' : 'S · Splatfacto'}</b>
+              <b>{dataset.methods[m as Method]?.display_label || (m === 'nerfacto' ? 'N · Nerfacto' : 'S · Splatfacto')}</b>
               <span>{m === 'nerfacto' ? 'Point cloud proxy' : 'Gaussian reconstruction'}</span>
             </div>
             <div

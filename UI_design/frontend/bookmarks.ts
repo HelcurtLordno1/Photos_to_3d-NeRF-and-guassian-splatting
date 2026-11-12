@@ -17,6 +17,8 @@ export function importBookmarks(raw: string): Bookmark[] {
       typeof b.title !== 'string' ||
       b.title.length > 120 ||
       typeof b.scene !== 'string' ||
+      (b.run_set_id !== undefined &&
+        (typeof b.run_set_id !== 'string' || b.run_set_id.length > 128)) ||
       typeof b.revision !== 'string' ||
       !b.camera ||
       !Array.isArray(b.camera.camera_to_world) ||

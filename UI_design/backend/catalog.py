@@ -13,6 +13,7 @@ from topic16.contracts import (
     validate_export,
     validate_render,
     utc_now,
+    digest_json,
 )
 from topic16.settings import assert_experiment_compatible, ui_settings_hash
 
@@ -114,6 +115,9 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
     ]
     if extra_matrix:
         matrices.append(inside(root, extra_matrix))
+    baseline_present = [p.exists() for p in matrices[:4]]
+    if not any(baseline_present) and not extra_matrix:
+        matrices = []  # Upgrade-only artifact bundles do not require baseline checkpoints.
     seen = set()
     for matrix in matrices:
         for scene_id, pair in read_json(matrix)["pairs"].items():
@@ -186,6 +190,7 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
                         run["paths"]["exports"] / ply["name"], ply["sha256"]
                     ),
                     "bytes": ply["bytes"],
+                    "checkpoint_bytes": run["checkpoint"].stat().st_size,
                     "vertices": vertices,
                     "kind": (
                         "point-cloud proxy"
@@ -213,6 +218,7 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
                     "index": index,
                     "source": camera["path"],
                     "camera": camera,
+                    "gt_sha256": frames[0]["gt_sha256"],
                     "gt": asset(
                         runs[0]["paths"]["renders"] / frames[0]["gt"],
                         frames[0]["gt_sha256"],
@@ -251,8 +257,38 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
             scene["train_count"] = len(runs[0]["split"]["train"])
             scene["eval_count"] = len(scene["views"])
             scene["inference"] = True
+            protocol = runs[0]['manifest']['protocol']
+            for method in scene['methods']:
+                scene['methods'][method].update(budget=protocol['iterations'], seed=protocol['seed'],
+                    downscale=protocol['downscale_factor'], evaluator_id='historical-method-native', variant='baseline')
+            baseline_set = {k: scene[k] for k in ('methods', 'views', 'train_count', 'eval_count', 'inference')}
+            baseline_set.update(id='baseline', variant='baseline', label=f"Historical baseline · {protocol['iterations']:,} steps · seed {protocol['seed']}",
+                budget=protocol['iterations'], seed=protocol['seed'], downscale=protocol['downscale_factor'],
+                evaluator_id='historical-method-native', eval_camera_hash=digest_json(runs[0]['split']['eval']), recipe='full-pool')
+            scene['run_sets'] = [baseline_set]
+            scene['default_run_set'] = 'baseline'
             scenes.append(scene)
+    from .upgrade_provider import merge_upgrade
+    import copy
+    baseline_scenes, baseline_assets = copy.deepcopy(scenes), dict(assets)
+    try:
+        upgrade = merge_upgrade(root, scenes, asset, settings['Ui'])
+    except (ValueError, KeyError, OSError, TypeError) as error:
+        scenes, assets = baseline_scenes, baseline_assets
+        upgrade = {'status': 'invalid', 'reason': str(error), 'runs': [], 'audits': [], 'models': []}
+    if not scenes:
+        raise ValueError('No validated baseline or completed upgrade pair is available: ' + upgrade.get('reason', 'incomplete upgrade pair'))
     report_assets = {}
+    from .quality_provider import quality_results
+    try:
+        quality = quality_results(root, asset, settings['Ui'])
+    except (ValueError, KeyError, OSError, TypeError) as error:
+        quality = {'status': 'invalid', 'reason': str(error), 'experiments': []}
+    from .visual_research_provider import read_research
+    try:
+        visual_research = read_research(root, asset, settings['Ui'])
+    except (ValueError, KeyError, OSError, TypeError) as error:
+        visual_research = {'status': 'invalid', 'reason': str(error), 'q15': [], 'q2': None}
     report_dir = root / "reports/topic16-full"
     for path in report_dir.rglob("*"):
         if (
@@ -265,7 +301,10 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
     cases_path = report_dir / "review/case-selection.json"
     catalog = {
         "schema_version": 1,
-        "design_version": "1.1",
+        "design_version": "1.2-capture-intelligence",
+        "upgrade": upgrade,
+        "quality": quality,
+        "visual_research": visual_research,
         "created_at": utc_now(),
         "scenes": scenes,
         "ui": settings["Ui"],
@@ -275,7 +314,7 @@ def prepare(root: Path, settings: dict, extra_matrix: Path | None = None):
     }
     catalog["revision"] = hashlib.sha256(
         json.dumps(
-            {"scenes": scenes, "ui": ui_settings_hash(settings)}, sort_keys=True
+            {"scenes": scenes, "ui": ui_settings_hash(settings), "upgrade": upgrade, "quality": quality, "visual_research": visual_research}, sort_keys=True
         ).encode()
     ).hexdigest()
     payload = {"catalog": catalog, "assets": assets}
