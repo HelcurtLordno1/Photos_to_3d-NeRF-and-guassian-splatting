@@ -246,6 +246,16 @@ def execute(root,settings,study,resume=False):
                 safety=stages.guarded('component-preflight',[node,str(root/'scripts/qa/check-final-component.mjs'),str(job)],target/'console.log')
                 if read_json(target/'component-check.json')['status']!='passed':raise ValueError('Existing-artifact component integration failed')
                 stages.commit('component-preflight',[target/'component-check.json',target/'component.png',snapshot,job,archive,safety])
+            # Exercise the actual large-buffer renderer with already completed
+            # Tea weights before entrusting it to overnight scene publication.
+            # This is integration QA, never a new training/quality result.
+            if not stages.done('qa-existing-tea-profiles'):
+                existing_split=read_json(inside(root,base['split']))
+                existing=next(r for r in read_json(root/'reports'/spec['ReferenceStudy']/'report.json')['rows'] if r['method']=='improvedgs')
+                models=[baseline_record(root,'custom:tea_sets_2',existing_split),
+                    candidate_record(root,inside(root,existing['result']),existing_split)]
+                profiles=high_resolution(stages,'qa-existing-tea',models,existing_split)
+                stages.commit('qa-existing-tea-profiles',[resolve(root,profiles)])
             stages.save('tea-confirmation')
             from .confirmation import execute as confirm
             clock=time.monotonic()

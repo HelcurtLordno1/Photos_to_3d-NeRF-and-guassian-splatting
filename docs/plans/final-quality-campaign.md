@@ -113,3 +113,9 @@ or slower and never claimed pixel-identical/30FPS. Mean browser agreement<25dB
 or any view<20dB is a separate catastrophic-calibration guard and pauses the
 queue before publication. This does not change Tea's stricter P1/P3 selection
 targets. Real UI tests must still load both models and their actual images.
+
+Initial integration acceptance also exercises the final comparison component
+with actual preserved Tea baseline/v4 weights, then renders their4K/8K profiles
+before the overnight sequence. These are explicitly existing-model QA artifacts,
+not new capacity/campaign quality results. Native model round-trip checks and
+the large-buffer safety policy still apply. Failed test attempts remain local.
