@@ -189,3 +189,14 @@ skips completed Room work and continues the Gaussian checkpoint.
 A controller-only Resume repair prevents incremental publication from replacing
 a committed complete teacher report. The original declarations/trainer pins
 remain unchanged; archive the live controller separately on execution.
+
+
+## Explicit resume authorization — 2026-11-13
+
+The user requested continuing the run through completion. Resume authorization
+supersedes the overnight pause for `topic16-teacher-room-v1` only. The managed
+worker was resumed from Bonsai checkpoint25303; all completed Room A/B/C and
+their committed teacher report must remain unchanged. Continue the existing
+Bonsai -> Room -> Garden -> Poster queue and final report/UI gates without
+starting older sessions or adding experiments. Resource and integrity failures
+still pause safely; do not label a launch or intermediate progress as completion.
