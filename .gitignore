@@ -22,6 +22,13 @@ reports/ui/
 [Rr]eport/
 [Rr]eports/
 
+# Private working notes and research plans remain local.
+Report_computer_vision.md
+upgrade_to_baseline.md
+upgrade_plan.md
+deepseek_ideas.md
+Agent.md
+
 # Downloaded third-party source trees
 third_party/*
 !third_party/README.md
