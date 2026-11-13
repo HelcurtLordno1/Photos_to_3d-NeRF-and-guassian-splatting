@@ -200,3 +200,19 @@ their committed teacher report must remain unchanged. Continue the existing
 Bonsai -> Room -> Garden -> Poster queue and final report/UI gates without
 starting older sessions or adding experiments. Resource and integrity failures
 still pause safely; do not label a launch or intermediate progress as completion.
+
+
+## Completed delivery — 2026-11-13, 14:49 +07
+
+`topic16-teacher-room-v1` finished with status=succeeded and
+ui_catalog=all-scenes-browser-verified-and-refreshed. Teacher Room A/B/C are
+complete (C native PSNR30.2981dB). All five GS scene reports/exports and the
+production UI browser checks passed their declared delivery gates; final
+completion is `upgrade/reports/final-quality-v1/completion.json`. The transient
+UI restart/readiness timeouts recovered without any retraining. Preserve all
+committed reports, source pins and weights; there is no remaining training in
+this campaign and no authorization to start extra experiments automatically.
+Keep the measured limitations visible: Room/Poster have per-view browser
+parity misses against the stricter target; Garden browser p95 is about90.2ms.
+All five native comparisons improve mean PSNR/SSIM/LPIPS versus the retained
+Splatfacto references; this is experimental evidence, not SOTA certification.
