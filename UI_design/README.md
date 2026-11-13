@@ -9,6 +9,7 @@ registry; các artifact thí nghiệm gốc không bị sửa.
 ## Mở thành phẩm trên laptop
 
 Server đang được kiểm thử ở **http://127.0.0.1:7016**. Mở bằng trình duyệt.
+Sau bản cập nhật UI, nhấn **Ctrl+F5** để lấy frontend mới.
 Để chạy lại, từ root repo trong native Windows PowerShell:
 
 ```powershell
@@ -36,6 +37,48 @@ Port ưu tiên 7016, tự thử đến 7020 nếu bị chiếm. `-Port 7018` yê
 đó. Launcher chỉ reuse service cùng checkout, catalog revision và profile phù
 hợp; mở trình duyệt theo URL server thực sự công bố. Bookmarks thuộc browser
 origin, vì vậy đổi port nên backup JSON trước.
+
+## Kết quả hoàn chỉnh — cả năm scene
+
+Trong Workspace, **Collection → Completed results** là mặc định. Tea sets,
+Bonsai, Room, Garden và Poster đều có **Baseline / Upgrade / Compare** dùng
+chung giữa Images, 3D, Results và Benchmark. Baseline là Splatfacto đã lưu;
+Upgrade là Improved-GS được chọn sau nghiên cứu Tea. Không gán Gaussian vào
+Nerfacto. **Research history** giữ các thí nghiệm NeRF/GS và bookmark cũ.
+
+**Benchmark** trình bày PSNR/SSIM/LPIPS ở native resolution, chênh lệch từng
+camera (gồm cả view kém đi), số Gaussian, dung lượng PLY và bảng năm scene.
+Chọn cột trong biểu đồ để chọn camera xem trong Image comparison. Khi đổi chế
+độ, số lớn hiện baseline, upgrade hoặc delta tương ứng. Room có bảng riêng
+**Nerfacto configuration check · Room A/B/C**, lấy từ báo cáo chẩn đoán đã xác
+minh; phân biệt kết quả RGB8 chung và PSNR native float. Các giới hạn preview,
+Tea thay đổi training resolution và khác biệt lịch sử baseline vẫn hiện rõ.
+
+Images hỗ trợ wipe, song song, zoom và difference RGB giữa hai model ở kích
+thước hiển thị giới hạn; difference này không phải LPIPS hay error với GT.
+4K/8K là ảnh render đã lưu, chỉ Compare khi hai model có cùng camera/kích thước;
+không phải dữ liệu train 4K/8K hoặc metric GT ở độ phân giải đó.
+
+3D chỉ tải khi mở, chỉ giữ scene hiện tại. Cặp Gaussian được tải tuần tự,
+đồng bộ camera; rời scene giải phóng renderer. Ngưỡng cặp là tổng1.5M Gaussian
+và384MiB PLY, ngoài ngưỡng từng asset đã có. Garden vượt ngưỡng cặp nên dùng
+đổi từng model tại cùng camera; Compare ảnh vẫn đầy đủ. Preview dùng DPR1,
+drawing buffer tối đa1280×720 mỗi pane và chỉ vẽ khi có thay đổi. Không tải PLY
+hay WebGL khi chỉ xem ảnh/benchmark. Đây là giới hạn preview đã kiểm thử,
+không phải chứng nhận bộ nhớ cho mọi máy/trình duyệt.
+
+QA cho bản UI này (server artifacts đang chạy, Administrator PowerShell):
+
+```powershell
+.\UI_design\scripts\Test-Showcase.ps1
+```
+
+Kết quả chấp nhận hiện tại:
+`artifacts/ui/qa/showcase-v2-r2/acceptance.json`, kèm source archive, browser
+checks, ảnh desktop/mobile/dark và GPU safety. Cả5 scene đã pass;28 frontend
+tests và27 backend tests pass. Không sửa report, checkpoint hoặc kết quả khoa
+học cũ để cập nhật UI. Các QA/phép đo parity trước đây vẫn là bằng chứng của
+revision UI được lưu cùng chúng, không tự động chứng nhận viewport mới.
 
 ## Chuẩn bị / build
 
@@ -69,11 +112,12 @@ Build kiểm TypeScript và tạo `dist/`. Initial bundle bị giới hạn 180 
 renderer, gallery và Mermaid được load lazy. Spark có exception riêng 1.1 MiB
 gzip vì có WASM/worker decoder bên trong. Xem quyết định ở [SPIKE_DECISION.md](SPIKE_DECISION.md).
 
-## Thao tác
+## Thao tác khác và Research history
 
 - **Collection:** card và ảnh thật của Tea sets, Bonsai, Garden, Room, Poster;
-  tìm theo tên/ID. Role của từng scene hiện rõ; Poster là smoke, không aggregate.
-- **3D:** drag orbit, scroll zoom, right-drag pan. Chọn Song song / N / S;
+  tìm theo tên/ID. Role trong lịch sử là role của run gốc; Poster hoàn chỉnh
+  trong Completed results được đánh giá riêng, không gộp với smoke lịch sử.
+- **3D trong Research history:** drag orbit, scroll zoom, right-drag pan. Chọn Song song / N / S;
   camera sync mặc định bật, có thể tắt để khảo sát riêng. Đổi một↔hai pane giữ
   pose hiện tại. Reset, eval presets, tự xoay, fullscreen, point size, grid/axes,
   camera coverage, WASD walk và Cancel/Retry assets có sẵn.

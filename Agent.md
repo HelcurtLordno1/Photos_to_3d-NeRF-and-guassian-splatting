@@ -216,3 +216,28 @@ Keep the measured limitations visible: Room/Poster have per-view browser
 parity misses against the stricter target; Garden browser p95 is about90.2ms.
 All five native comparisons improve mean PSNR/SSIM/LPIPS versus the retained
 Splatfacto references; this is experimental evidence, not SOTA certification.
+
+## Completed-results UI acceptance — 2026-11-13
+
+The final results were initially accessible through a separate panel while the
+main Baseline/Upgrade/Compare selector still followed legacy paired studies.
+Never accept panel-only availability as integrated delivery. Check the actual
+top-level selector on every scene, with consistent model identity, native
+metrics and camera selection across Images, 3D, Results and Benchmark.
+
+The current workspace defaults to completed Splatfacto/Improved-GS results for
+all five scenes; original NeRF/GS studies remain under Research history. Room's
+teacher diagnosis is separate from Gaussian improvement claims. No retraining
+was needed. Guarded real-browser evidence is
+`artifacts/ui/qa/showcase-v2-r2/acceptance.json` (all5 passed, zero page errors,
+maximum2 viewer contexts and0 after cleanup), with archived UI source.
+Preserve old scientific acceptance and report hashes.
+
+Keep 3D explicit and lazy, decode paired PLYs sequentially, retire GPU resources
+before replacement, and retain demand-driven rendering. Current paired-preview
+limits are combined1.5M Gaussians/384MiB PLY plus the existing per-asset limits;
+Garden therefore uses camera-preserving single-model switching. Final drawing
+buffers are bounded at1280x720 per pane, DPR1. These are tested preview limits,
+not a guarantee against every browser/device failure. Benchmark/image browsing
+must not fetch PLY or allocate WebGL, and4K/8K renders must not change native
+quality metrics. New UI changes need their own acceptance evidence.

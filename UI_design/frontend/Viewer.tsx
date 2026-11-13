@@ -6,6 +6,15 @@ import type { Method, Camera, Catalog, Run } from './types';
 import s from './studio.module.css';
 import { download } from './api';
 import { setCalibratedProjection, extractIntrinsics, splatFilter } from './cameraProjection';
+type ViewerSlot = Method | 'baseline' | 'upgrade';
+// Dispose the old GPU buffers before constructing the next scene, including
+// rapid model/dataset changes while a streamed asset is still decoding.
+let rendererRetirement: Promise<unknown> = Promise.resolve();
+let activeContexts = 0;
+const contextCount = (change: number) => {
+  activeContexts += change;
+  document.documentElement.dataset.viewerContexts = String(activeContexts);
+};
 export type ViewerHandle = {
   camera: () => Camera;
   reset: () => void;
@@ -18,7 +27,7 @@ type Adapter = {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
-  dispose: () => void;
+  dispose: () => Promise<void>;
   tick?: () => void;
   grid: THREE.GridHelper;
   axes: THREE.AxesHelper;
@@ -58,14 +67,37 @@ function apply(camera: THREE.PerspectiveCamera, c: Camera) {
 export default forwardRef<
   ViewerHandle,
   {
-    dataset: { id: string; title: string; views: { camera: Camera }[]; methods: Partial<Record<Method, Run>> };
+    dataset: {
+      id: string;
+      title: string;
+      views: { camera: Camera }[];
+      methods: Partial<Record<Method, Run>>;
+    };
     mode: 'both' | Method;
     catalog: Catalog;
     onMove: () => void;
     initialCamera?: Camera;
     paused?: boolean;
+    comparison?: Record<'baseline' | 'upgrade', Run>;
+    cameraScope?: string;
+    pixelBudget?: number;
+    pixelRatio?: number;
   }
->(function Viewer({ dataset, mode, catalog, onMove, initialCamera, paused: renderPaused }, ref) {
+>(function Viewer(
+  {
+    dataset,
+    mode,
+    catalog,
+    onMove,
+    initialCamera,
+    paused: renderPaused,
+    comparison,
+    cameraScope,
+    pixelBudget,
+    pixelRatio,
+  },
+  ref,
+) {
   const hosts = useRef<Record<string, HTMLDivElement | null>>({});
   const adapters = useRef<Adapter[]>([]);
   const [states, setStates] = useState<Record<string, string>>({});
@@ -88,9 +120,10 @@ export default forwardRef<
   const fly = useRef(false);
   const [walking, setWalking] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const requestedCamera = useRef<Camera | undefined>(initialCamera);
   const getCamera = (): Camera => {
     const a = activeAdapter.current || adapters.current[0];
-    if (!a) return structuredClone(dataset.views[0].camera);
+    if (!a) return structuredClone(requestedCamera.current || dataset.views[0].camera);
     a.camera.updateMatrixWorld();
     const m = a.camera.matrixWorld.elements;
     const width = 640,
@@ -107,6 +140,7 @@ export default forwardRef<
     };
   };
   const preset = (c: Camera) => {
+    requestedCamera.current = c;
     for (const a of adapters.current) {
       apply(a.camera, c);
       // OrbitControls caches the up-frame; refresh it when restoring a camera
@@ -139,6 +173,7 @@ export default forwardRef<
     screenshot: () => {
       const canvas = document.createElement('canvas');
       const views = adapters.current;
+      if (!views.length) return;
       canvas.width = views.reduce((n, a) => n + a.renderer.domElement.width, 0);
       canvas.height = Math.max(...views.map((a) => a.renderer.domElement.height)) + 55;
       const ctx = canvas.getContext('2d')!;
@@ -152,13 +187,17 @@ export default forwardRef<
         ctx.fillText(
           dataset.title +
             ' · ' +
-            (mode === 'both'
+            (comparison
               ? i === 0
-                ? 'Nerfacto point proxy'
-                : 'Splatfacto Gaussian'
-              : mode === 'nerfacto'
-                ? 'Nerfacto point proxy'
-                : (dataset.methods.splatfacto?.display_label || 'Splatfacto Gaussian')),
+                ? comparison.baseline.display_label
+                : comparison.upgrade.display_label
+              : mode === 'both'
+                ? i === 0
+                  ? 'Nerfacto point proxy'
+                  : 'Splatfacto Gaussian'
+                : mode === 'nerfacto'
+                  ? 'Nerfacto point proxy'
+                  : dataset.methods.splatfacto?.display_label || 'Splatfacto Gaussian'),
           offset + 15,
           33,
         );
@@ -168,9 +207,9 @@ export default forwardRef<
         schema_version: 1,
         catalog_revision: catalog.revision,
         scene: dataset.id,
-        mode,
+        mode: comparison ? 'compare' : mode,
         camera: getCamera(),
-        runs: dataset.methods,
+        runs: comparison || dataset.methods,
         browser: navigator.userAgent,
         representation: 'browser proxy / Gaussian; not CUDA evaluation',
       });
@@ -192,270 +231,321 @@ export default forwardRef<
       raf = 0,
       frames = 0,
       last = performance.now();
-    const methods: Method[] = mode === 'both' ? ['nerfacto', 'splatfacto'] : [mode];
+    const methods: ViewerSlot[] = comparison
+      ? ['baseline', 'upgrade']
+      : mode === 'both'
+        ? ['nerfacto', 'splatfacto']
+        : [mode];
+    if (comparison) {
+      sync.current = true;
+      setSyncEnabled(true);
+    }
     setStates({});
     const instances: Adapter[] = [];
     adapters.current = instances;
-    const update = (m: Method, value: string) => {
-      if (!disposed) setStates((x) => ({ ...x, [m]: value }));
+    const update = (m: ViewerSlot, value: string) => {
+      if (!disposed) setStates((x) => (x[m] === value ? x : { ...x, [m]: value }));
     };
-    for (const method of methods) {
-      const host = hosts.current[method];
-      if (!host) continue;
-      let renderer: THREE.WebGLRenderer;
-      try {
-        renderer = new THREE.WebGLRenderer({
-          antialias: false,
-          powerPreference: 'high-performance',
-          preserveDrawingBuffer: true,
-        });
-      } catch (error) {
-        update(method, 'WebGL unavailable: ' + String(error));
-        continue;
-      }
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-      renderer.setClearColor('#141a1b');
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      host.appendChild(renderer.domElement);
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(55, 1, 0.01, 200);
-      apply(
-        camera,
-        retained.current?.scene === dataset.id
-          ? retained.current.camera
-          : initialCamera || dataset.views[0].camera,
-      );
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = false;
-      controls.dampingFactor = 0.1;
-      controls.minDistance = 0.02;
-      controls.maxDistance = 50;
-      apply(
-        camera,
-        retained.current?.scene === dataset.id
-          ? retained.current.camera
-          : initialCamera || dataset.views[0].camera,
-      );
-      controls.target.copy(
-        new THREE.Vector3(0, 0, -1)
-          .applyQuaternion(camera.quaternion)
-          .multiplyScalar(Math.max(0.3, camera.position.length()))
-          .add(camera.position),
-      );
-      controls.update();
-      const grid = new THREE.GridHelper(6, 30, 0x455456, 0x283336);
-      grid.rotation.x = Math.PI / 2;
-      grid.position.z = -0.8;
-      grid.visible = overlays;
-      scene.add(grid);
-      const axes = new THREE.AxesHelper(0.2);
-      axes.visible = overlays;
-      scene.add(axes);
-      const frustums = new THREE.Group();
-      frustums.visible = frustumsVisible;
-      dataset.views.forEach((v) => {
-        const c = new THREE.PerspectiveCamera(50, v.camera.width / v.camera.height, 0.02, 0.12);
-        apply(c, v.camera);
-        c.updateProjectionMatrix();
-        frustums.add(new THREE.CameraHelper(c));
-      });
-      scene.add(frustums);
-      let pending: Promise<void> | null = null;
-      const abort = new AbortController();
-      let load: Promise<void> | null = null;
-      let worker: Worker | undefined,
-        mesh: SplatMesh | undefined,
-        spark: SparkRenderer | undefined,
-        points: THREE.Points | undefined;
-      const observer = new ResizeObserver(() => {
-        const { width, height } = host.getBoundingClientRect();
-        renderer.setSize(Math.max(1, width), Math.max(1, height));
-        camera.aspect = width / Math.max(1, height);
-        setCalibratedProjection(camera);
-        instance.dirty = true;
-        instance.needsSort = true;
-      });
-      observer.observe(host);
-      const instance: Adapter = {
-        renderer,
-        scene,
-        camera,
-        controls,
-        grid,
-        axes,
-        frustums,
-        dirty: true,
-        needsSort: true,
-        cancelLoad: () => {
-          abort.abort();
-          worker?.terminate();
-          update(method, 'Cancelled · use Retry assets to reopen');
-        },
-        dispose: () => {
-          observer.disconnect();
-          frustums.children.forEach((f) => (f as THREE.CameraHelper).dispose());
-          worker?.terminate();
-          abort.abort();
-          controls.dispose();
-          void Promise.allSettled([pending, load]).then(() => {
-            mesh?.dispose();
-            spark?.dispose();
-            renderer.dispose();
-            renderer.forceContextLoss();
+    const initialise = async () => {
+      await rendererRetirement;
+      if (disposed) return;
+      let gaussianQueue: Promise<unknown> = Promise.resolve();
+      for (const method of methods) {
+        const host = hosts.current[method];
+        if (!host) continue;
+        let renderer: THREE.WebGLRenderer;
+        try {
+          renderer = new THREE.WebGLRenderer({
+            antialias: false,
+            powerPreference: 'high-performance',
+            preserveDrawingBuffer: true,
           });
-          points?.geometry.dispose();
-          if (points) (points.material as THREE.Material).dispose();
-          grid.geometry.dispose();
-          (grid.material as THREE.Material).dispose();
-          axes.geometry.dispose();
-          (axes.material as THREE.Material).dispose();
-          renderer.domElement.remove();
-        },
-      };
-      instances.push(instance);
-      let syncing = false;
-      controls.addEventListener('start', () => {
-        activeAdapter.current = instance;
-        instances.forEach((a) => (a.controls.autoRotate = false));
-      });
-      controls.addEventListener('change', () => {
-        instance.dirty = true;
-        instance.needsSort = true;
-        if (syncing) return;
-        activeAdapter.current = instance;
-        onMove();
-        if (!sync.current) return;
-        for (const other of instances) {
-          if (other === instance) continue;
-          syncing = true;
-          other.camera.position.copy(camera.position);
-          other.camera.quaternion.copy(camera.quaternion);
-          other.camera.fov = camera.fov;
-          other.camera.userData.calibration = camera.userData.calibration;
-          setCalibratedProjection(other.camera);
-          other.controls.target.copy(controls.target);
-          other.dirty = true;
-          other.needsSort = true;
-          syncing = false;
+        } catch (error) {
+          update(method, 'WebGL unavailable: ' + String(error));
+          continue;
         }
-      });
-      renderer.domElement.addEventListener('webglcontextlost', (event) => {
-        event.preventDefault();
-        update(method, 'Graphics context lost. Reopen this scene to retry.');
-      });
-      const run = dataset.methods[method];
-      if (!run?.asset) {
-        update(method, 'No verified 3D asset for this method');
-        continue;
-      }
-      if (run.background_rgb) {
-        renderer.setClearColor(new THREE.Color().setRGB(...run.background_rgb, THREE.SRGBColorSpace), 1);
-      }
-      update(method, 'Downloading · 0%');
-      if (run.bytes > catalog.ui.DecodeLimitBytes || (run.vertices ?? 0) > catalog.ui.MaxVertices) {
-        update(method, 'Asset exceeds decode budget');
-        continue;
-      }
-      if (method === 'splatfacto') {
-        spark = new SparkRenderer({
-          renderer,
-          ...splatFilter(run.rasterize_mode || run.architecture?.rasterize_mode),
-          accumExtSplats: run.splat_encoding === 'ext32-full' || run.splat_encoding === 'packed-ext',
-          autoUpdate: false,
-          minSortIntervalMs: 0,
-          enableLod: false,
-          onDirty: () => { instance.dirty = true; },
+        contextCount(1);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, pixelRatio ?? 1.5));
+        renderer.domElement.dataset.modelSlot = method;
+        renderer.setClearColor('#141a1b');
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        host.appendChild(renderer.domElement);
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(55, 1, 0.01, 200);
+        apply(
+          camera,
+          retained.current?.scene === (cameraScope || dataset.id)
+            ? retained.current.camera
+            : requestedCamera.current || initialCamera || dataset.views[0].camera,
+        );
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = false;
+        controls.dampingFactor = 0.1;
+        controls.minDistance = 0.02;
+        controls.maxDistance = 50;
+        apply(
+          camera,
+          retained.current?.scene === (cameraScope || dataset.id)
+            ? retained.current.camera
+            : requestedCamera.current || initialCamera || dataset.views[0].camera,
+        );
+        controls.target.copy(
+          new THREE.Vector3(0, 0, -1)
+            .applyQuaternion(camera.quaternion)
+            .multiplyScalar(Math.max(0.3, camera.position.length()))
+            .add(camera.position),
+        );
+        controls.update();
+        const grid = new THREE.GridHelper(6, 30, 0x455456, 0x283336);
+        grid.rotation.x = Math.PI / 2;
+        grid.position.z = -0.8;
+        grid.visible = overlays;
+        scene.add(grid);
+        const axes = new THREE.AxesHelper(0.2);
+        axes.visible = overlays;
+        scene.add(axes);
+        const frustums = new THREE.Group();
+        frustums.visible = frustumsVisible;
+        dataset.views.forEach((v) => {
+          const c = new THREE.PerspectiveCamera(50, v.camera.width / v.camera.height, 0.02, 0.12);
+          apply(c, v.camera);
+          c.updateProjectionMatrix();
+          frustums.add(new THREE.CameraHelper(c));
         });
-        scene.add(spark);
-        instance.tick = () => {
-          if (mesh?.isInitialized && !pending && instance.needsSort) {
-            instance.needsSort = false;
-            pending = spark!
-              .update({ scene, camera })
-              .catch((error) => {
-                if (!disposed) update(method, String(error));
-              })
-              .finally(() => {
-                pending = null;
-                instance.dirty = true;
-              });
-          }
-        };
-        load = fetch(run.asset, { signal: abort.signal })
-          .then(async (response) => {
-            if (!response.ok || !response.body) throw new Error('Gaussian download failed');
-            const reader = response.body.getReader();
-            const stream = new ReadableStream<Uint8Array>({
-              async pull(controller) {
-                try {
-                  const chunk = await reader.read();
-                  if (chunk.done) controller.close();
-                  else controller.enqueue(chunk.value);
-                } catch {
-                  controller.close();
-                }
-              },
-              cancel() {
-                abort.abort();
-                return reader.cancel().catch(() => {});
-              },
-            });
-            mesh = new SplatMesh({
-              stream,
-              streamLength: run.bytes,
-              fileName: 'splat.ply',
-              lod: false,
-              extSplats: run.splat_encoding === 'ext32-full',
-              onProgress: (e) =>
-                update(method, `Downloading · ${Math.round((e.loaded / run.bytes) * 100)}%`),
-            });
-            scene.add(mesh);
-            await mesh.initialized;
-            if (mesh.numSplats > catalog.ui.MaxVertices)
-              throw new Error('Gaussian vertex budget exceeded');
-          })
-          .then(() => {
-            if (disposed) return;
-            update(method, `${mesh!.numSplats.toLocaleString()} Gaussian · ready`);
-            instance.needsSort = true;
-            instance.dirty = true;
-            performance.mark('gaussian-ready');
-          })
-          .catch((error) => update(method, String(error)));
-      } else {
-        worker = new Worker(new URL('./point.worker.ts', import.meta.url), { type: 'module' });
-        worker.postMessage({
-          url: run.asset,
-          maxVertices: catalog.ui.MaxVertices,
-          maxBytes: catalog.ui.DecodeLimitBytes,
-        });
-        worker.onmessage = (e) => {
-          if (disposed) return;
-          if (e.data.error) {
-            update(method, e.data.error);
-            return;
-          }
-          const geometry = new THREE.BufferGeometry();
-          geometry.setAttribute('position', new THREE.BufferAttribute(e.data.position, 3));
-          geometry.setAttribute('color', new THREE.BufferAttribute(e.data.color, 3));
-          points = new THREE.Points(
-            geometry,
-            new THREE.PointsMaterial({
-              size: pointSize,
-              vertexColors: true,
-              sizeAttenuation: true,
-            }),
+        scene.add(frustums);
+        let pending: Promise<void> | null = null;
+        const abort = new AbortController();
+        let load: Promise<void> | null = null;
+        let worker: Worker | undefined,
+          mesh: SplatMesh | undefined,
+          spark: SparkRenderer | undefined,
+          points: THREE.Points | undefined;
+        const observer = new ResizeObserver(() => {
+          const { width, height } = host.getBoundingClientRect();
+          const ratio = renderer.getPixelRatio();
+          const scale = pixelBudget
+            ? Math.min(1, Math.sqrt(pixelBudget / Math.max(1, width * height * ratio * ratio)))
+            : 1;
+          renderer.setSize(
+            Math.max(1, Math.floor(width * scale)),
+            Math.max(1, Math.floor(height * scale)),
+            false,
           );
-          scene.add(points);
-          instance.points = points;
-          update(method, `${e.data.count.toLocaleString()} points · proxy ready`);
+          camera.aspect = width / Math.max(1, height);
+          setCalibratedProjection(camera);
           instance.dirty = true;
-          worker?.terminate();
-          performance.mark('point-ready');
+          instance.needsSort = true;
+        });
+        observer.observe(host);
+        const instance: Adapter = {
+          renderer,
+          scene,
+          camera,
+          controls,
+          grid,
+          axes,
+          frustums,
+          dirty: true,
+          needsSort: true,
+          cancelLoad: () => {
+            abort.abort();
+            worker?.terminate();
+            update(method, 'Cancelled · use Retry assets to reopen');
+          },
+          dispose: () => {
+            observer.disconnect();
+            frustums.children.forEach((f) => (f as THREE.CameraHelper).dispose());
+            worker?.terminate();
+            abort.abort();
+            controls.dispose();
+            const released = Promise.allSettled([pending, load]).then(() => {
+              try {
+                mesh?.dispose();
+              } finally {
+                try {
+                  spark?.dispose();
+                } finally {
+                  renderer.dispose();
+                  renderer.forceContextLoss();
+                  contextCount(-1);
+                }
+              }
+            });
+            points?.geometry.dispose();
+            if (points) (points.material as THREE.Material).dispose();
+            grid.geometry.dispose();
+            (grid.material as THREE.Material).dispose();
+            axes.geometry.dispose();
+            (axes.material as THREE.Material).dispose();
+            renderer.domElement.remove();
+            return released;
+          },
         };
-        worker.onerror = (e) => update(method, e.message);
+        instances.push(instance);
+        let syncing = false;
+        controls.addEventListener('start', () => {
+          activeAdapter.current = instance;
+          instances.forEach((a) => (a.controls.autoRotate = false));
+        });
+        controls.addEventListener('change', () => {
+          instance.dirty = true;
+          instance.needsSort = true;
+          if (syncing) return;
+          activeAdapter.current = instance;
+          onMove();
+          if (!sync.current) return;
+          for (const other of instances) {
+            if (other === instance) continue;
+            syncing = true;
+            other.camera.position.copy(camera.position);
+            other.camera.quaternion.copy(camera.quaternion);
+            other.camera.fov = camera.fov;
+            other.camera.userData.calibration = camera.userData.calibration;
+            setCalibratedProjection(other.camera);
+            other.controls.target.copy(controls.target);
+            other.dirty = true;
+            other.needsSort = true;
+            syncing = false;
+          }
+        });
+        renderer.domElement.addEventListener('webglcontextlost', (event) => {
+          event.preventDefault();
+          update(method, 'Graphics context lost. Reopen this scene to retry.');
+        });
+        const run =
+          comparison && (method === 'baseline' || method === 'upgrade')
+            ? comparison[method]
+            : dataset.methods[method as Method];
+        if (!run?.asset) {
+          update(method, 'No verified 3D asset for this method');
+          continue;
+        }
+        if (run.background_rgb) {
+          renderer.setClearColor(
+            new THREE.Color().setRGB(...run.background_rgb, THREE.SRGBColorSpace),
+            1,
+          );
+        }
+        update(method, 'Downloading · 0%');
+        if (
+          run.bytes > catalog.ui.DecodeLimitBytes ||
+          (run.vertices ?? 0) > catalog.ui.MaxVertices
+        ) {
+          update(method, 'Asset exceeds decode budget');
+          continue;
+        }
+        if (method !== 'nerfacto') {
+          spark = new SparkRenderer({
+            renderer,
+            ...splatFilter(run.rasterize_mode || run.architecture?.rasterize_mode),
+            accumExtSplats:
+              run.splat_encoding === 'ext32-full' || run.splat_encoding === 'packed-ext',
+            autoUpdate: false,
+            minSortIntervalMs: 0,
+            enableLod: false,
+            onDirty: () => {
+              instance.dirty = true;
+            },
+          });
+          scene.add(spark);
+          instance.tick = () => {
+            if (mesh?.isInitialized && !pending && instance.needsSort) {
+              instance.needsSort = false;
+              pending = spark!
+                .update({ scene, camera })
+                .catch((error) => {
+                  if (!disposed) update(method, String(error));
+                })
+                .finally(() => {
+                  pending = null;
+                  instance.dirty = true;
+                });
+            }
+          };
+          update(method, 'Waiting to load…');
+          load = gaussianQueue
+            .then(() => {
+              if (disposed || abort.signal.aborted)
+                throw new DOMException('Load cancelled', 'AbortError');
+              return fetch(run.asset!, { signal: abort.signal });
+            })
+            .then(async (response) => {
+              if (!response.ok || !response.body) throw new Error('Gaussian download failed');
+              const reader = response.body.getReader();
+              const stream = new ReadableStream<Uint8Array>({
+                async pull(controller) {
+                  try {
+                    const chunk = await reader.read();
+                    if (chunk.done) controller.close();
+                    else controller.enqueue(chunk.value);
+                  } catch {
+                    controller.close();
+                  }
+                },
+                cancel() {
+                  abort.abort();
+                  return reader.cancel().catch(() => {});
+                },
+              });
+              mesh = new SplatMesh({
+                stream,
+                streamLength: run.bytes,
+                fileName: 'splat.ply',
+                lod: false,
+                extSplats: run.splat_encoding === 'ext32-full',
+                onProgress: (e) =>
+                  update(method, `Downloading · ${Math.round((e.loaded / run.bytes) * 100)}%`),
+              });
+              scene.add(mesh);
+              await mesh.initialized;
+              if (mesh.numSplats > catalog.ui.MaxVertices)
+                throw new Error('Gaussian vertex budget exceeded');
+            })
+            .then(() => {
+              if (disposed) return;
+              update(method, `${mesh!.numSplats.toLocaleString()} Gaussian · ready`);
+              instance.needsSort = true;
+              instance.dirty = true;
+              performance.mark('gaussian-ready');
+            })
+            .catch((error) => update(method, String(error)));
+          gaussianQueue = load;
+        } else {
+          worker = new Worker(new URL('./point.worker.ts', import.meta.url), { type: 'module' });
+          worker.postMessage({
+            url: run.asset,
+            maxVertices: catalog.ui.MaxVertices,
+            maxBytes: catalog.ui.DecodeLimitBytes,
+          });
+          worker.onmessage = (e) => {
+            if (disposed) return;
+            if (e.data.error) {
+              update(method, e.data.error);
+              return;
+            }
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(e.data.position, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(e.data.color, 3));
+            points = new THREE.Points(
+              geometry,
+              new THREE.PointsMaterial({
+                size: pointSize,
+                vertexColors: true,
+                sizeAttenuation: true,
+              }),
+            );
+            scene.add(points);
+            instance.points = points;
+            update(method, `${e.data.count.toLocaleString()} points · proxy ready`);
+            instance.dirty = true;
+            worker?.terminate();
+            performance.mark('point-ready');
+          };
+          worker.onerror = (e) => update(method, e.message);
+        }
       }
-    }
+    };
+    void initialise().catch((error) => methods.forEach((method) => update(method, String(error))));
     const keys = new Set<string>();
     const down = (e: KeyboardEvent) => {
       if (
@@ -501,7 +591,12 @@ export default forwardRef<
         if (a.dirty || a.controls.autoRotate) {
           a.renderer.render(a.scene, a.camera);
           a.dirty = false;
-          a.renderer.domElement.dataset.renderCount = String(Number(a.renderer.domElement.dataset.renderCount || 0) + 1);
+          a.renderer.domElement.dataset.renderCount = String(
+            Number(a.renderer.domElement.dataset.renderCount || 0) + 1,
+          );
+          a.renderer.domElement.dataset.cameraPose = JSON.stringify(
+            a.camera.matrixWorld.elements.map((value) => Number(value.toFixed(6))),
+          );
           frames++;
         }
       }
@@ -514,16 +609,19 @@ export default forwardRef<
     };
     animate();
     return () => {
-      retained.current = { scene: dataset.id, camera: getCamera() };
+      retained.current = { scene: cameraScope || dataset.id, camera: getCamera() };
       activeAdapter.current = null;
       disposed = true;
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
-      instances.forEach((a) => a.dispose());
+      rendererRetirement = Promise.allSettled([
+        rendererRetirement,
+        ...instances.map((a) => a.dispose()),
+      ]);
       adapters.current = [];
     };
-  }, [dataset.id, mode, catalog.revision, retryKey]);
+  }, [dataset.id, mode, catalog.revision, retryKey, !!comparison]);
   return (
     <>
       <div className={s.structureTools}>
@@ -531,21 +629,23 @@ export default forwardRef<
           Cancel loading
         </button>
         <button onClick={() => setRetryKey((x) => x + 1)}>Retry assets</button>
-        <label>
-          <input
-            type="checkbox"
-            checked={syncEnabled}
-            onChange={(e) => {
-              setSyncEnabled(e.target.checked);
-              sync.current = e.target.checked;
-              if (e.target.checked) {
-                const c = getCamera();
-                preset(c);
-              }
-            }}
-          />{' '}
-          Sync cameras
-        </label>
+        {!comparison && mode === 'both' && (
+          <label>
+            <input
+              type="checkbox"
+              checked={syncEnabled}
+              onChange={(e) => {
+                setSyncEnabled(e.target.checked);
+                sync.current = e.target.checked;
+                if (e.target.checked) {
+                  const c = getCamera();
+                  preset(c);
+                }
+              }}
+            />{' '}
+            Sync cameras
+          </label>
+        )}
         <label>
           <input
             type="checkbox"
@@ -567,30 +667,35 @@ export default forwardRef<
             checked={frustumsVisible}
             onChange={(e) => {
               setFrustumsVisible(e.target.checked);
-              adapters.current.forEach((a) => { a.frustums.visible = e.target.checked; a.dirty = true; });
+              adapters.current.forEach((a) => {
+                a.frustums.visible = e.target.checked;
+                a.dirty = true;
+              });
             }}
           />{' '}
           Eval camera coverage
         </label>
-        <label>
-          Point size
-          <input
-            aria-label="Point size"
-            type="range"
-            min=".001"
-            max=".015"
-            step=".001"
-            value={pointSize}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-              setPointSize(value);
-              adapters.current.forEach((a) => {
-                if (a.points) (a.points.material as THREE.PointsMaterial).size = value;
-                a.dirty = true;
-              });
-            }}
-          />
-        </label>
+        {!comparison && mode !== 'splatfacto' && (
+          <label>
+            Point size
+            <input
+              aria-label="Point size"
+              type="range"
+              min=".001"
+              max=".015"
+              step=".001"
+              value={pointSize}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                setPointSize(value);
+                adapters.current.forEach((a) => {
+                  if (a.points) (a.points.material as THREE.PointsMaterial).size = value;
+                  a.dirty = true;
+                });
+              }}
+            />
+          </label>
+        )}
         <button onClick={() => root.current?.requestFullscreen().catch(() => {})}>
           Fullscreen
         </button>
@@ -606,12 +711,23 @@ export default forwardRef<
       </div>
       <div ref={root} className={s.viewports} data-testid="viewer">
         <div className={s.viewerHelp}>
-          Drag orbit · scroll zoom · right-drag pan <span>{fps ? `${fps} rendered frames/s` : 'Idle · render on demand'}</span>
+          Drag orbit · scroll zoom · right-drag pan{' '}
+          <span>{fps ? `${fps} rendered frames/s` : 'Idle · render on demand'}</span>
         </div>
-        {(mode === 'both' ? ['nerfacto', 'splatfacto'] : [mode]).map((m) => (
-          <section className={s.viewport} key={m} aria-label={m + ' 3D view'}>
+        {(comparison
+          ? ['baseline', 'upgrade']
+          : mode === 'both'
+            ? ['nerfacto', 'splatfacto']
+            : [mode]
+        ).map((m) => (
+          <section className={s.viewport} key={m} aria-label={m + ' 3D view'} data-model-slot={m}>
             <div className={s.viewportLabel}>
-              <b>{dataset.methods[m as Method]?.display_label || (m === 'nerfacto' ? 'N · Nerfacto' : 'S · Splatfacto')}</b>
+              <b>
+                {(comparison && (m === 'baseline' || m === 'upgrade')
+                  ? comparison[m].display_label
+                  : dataset.methods[m as Method]?.display_label) ||
+                  (m === 'nerfacto' ? 'N · Nerfacto' : 'S · Splatfacto')}
+              </b>
               <span>{m === 'nerfacto' ? 'Point cloud proxy' : 'Gaussian reconstruction'}</span>
             </div>
             <div

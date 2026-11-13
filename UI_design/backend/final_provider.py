@@ -2,6 +2,43 @@
 from topic16.contracts import read_json,sha256,inside,digest_json
 
 
+def read_teacher(root, asset):
+    """Publish the committed Room diagnosis separately from Gaussian results."""
+    import math
+    upgrade = root / 'upgrade'
+    state_path = upgrade / 'artifacts/jobs/teacher/teacher-room-v1/state.json'
+    if not state_path.exists(): return {'status': 'unavailable'}
+    references = {r['path']: r for r in read_json(state_path).get('stages', {}).get('teacher-report', [])}
+    def committed(name):
+        key = 'reports/teacher-room-v1/' + name
+        if key not in references: raise ValueError('Teacher diagnostic file is not committed: ' + name)
+        path = inside(upgrade, key); ref = references[key]
+        if sha256(path) != ref['sha256']: raise ValueError('Teacher diagnostic checksum differs')
+        return path, ref['sha256']
+    path, checksum = committed('report.json'); document = read_json(path)
+    if (document.get('schema_version') != 'teacher-room-supplement-1' or document.get('status') != 'complete'
+            or set(document.get('completed_arms', [])) != {'A', 'B', 'C'}):
+        raise ValueError('Teacher diagnostic matrix is incomplete')
+    selected = {r['id']: r for r in document['rows'] if r['id'] in ('historical-nerfacto', 'A', 'B', 'C')}
+    if len(selected) != 4: raise ValueError('Teacher diagnostic reference or arm is missing')
+    rows = []
+    for key in ('historical-nerfacto', 'A', 'B', 'C'):
+        row = selected[key]
+        expected = {'historical-nerfacto': ('SO3xR3', 'average'), 'A': ('off', 'average'),
+                    'B': ('SO3xR3', 'off'), 'C': ('off', 'off')}[key]
+        if (row['camera_optimizer'], row['appearance']) != expected:
+            raise ValueError('Teacher diagnostic configuration label differs')
+        if len(row['per_view']) != 39: raise ValueError('Teacher diagnostic lacks39 held-out results')
+        values = [row['metrics'][k] for k in ('psnr', 'ssim', 'lpips')] + [row['native_metrics']['psnr']]
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+            raise ValueError('Teacher diagnostic metrics are not finite')
+        rows.append({k: row[k] for k in ('id', 'camera_optimizer', 'appearance', 'metrics', 'scope')}
+                    | {'native_psnr': row['native_metrics']['psnr']})
+    csv_path, csv_hash = committed('results.csv')
+    return {'status': 'ready', 'rows': rows, 'report_url': asset(path, checksum), 'csv_url': asset(csv_path, csv_hash),
+        'scope': 'Fresh Room Nerfacto A/B/C, seed42,30k,272train/39test. Historical on/average reference retained; one seed, no full contemporaneous2x2 interaction claim.'}
+
+
 def read_final(root,asset,limits):
     upgrade=root/'upgrade';pointer=upgrade/'reports/final-index.json'
     if not pointer.exists():return {'status':'unavailable','scenes':[],'errors':[]}
@@ -78,5 +115,8 @@ def read_final(root,asset,limits):
         path=inside(upgrade,ref['path'])
         if sha256(path)!=ref['sha256']:raise ValueError('Final aggregate report changed')
         files[path.name]=asset(path,ref['sha256'])
+    try: teacher = read_teacher(root, asset)
+    except (ValueError, KeyError, OSError, TypeError) as error:
+        teacher = {'status': 'invalid', 'reason': str(error)}
     return {'status':'ready' if output else 'pending','study':index['study'],'phase':state['phase'],
-            'campaign_status':state['status'],'scenes':output,'errors':errors,'files':files}
+            'campaign_status':state['status'],'scenes':output,'errors':errors,'files':files,'teacher_room':teacher}

@@ -339,6 +339,7 @@
 }
 .workspaceBar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
@@ -354,6 +355,15 @@
   padding: 0;
   font-weight: 500;
   max-width: 330px;
+}
+.workspaceBar > .panelTools {
+  margin: 0;
+  padding: 9px 12px;
+  gap: 12px;
+}
+.workspaceBar > .panelTools select {
+  font-size: 12px;
+  max-width: 235px;
 }
 .tabs {
   display: flex;

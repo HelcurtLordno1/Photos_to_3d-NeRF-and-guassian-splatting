@@ -71,6 +71,7 @@ function App() {
     [selected, setSelected] = useState('custom:tea_sets_2'),
     [runSetId, setRunSetId] = useState('baseline'),
     [variantMode, setVariantMode] = useState<'baseline' | 'upgrade' | 'compare'>('baseline'),
+    [history, setHistory] = useState(false),
     [tab, setTab] = useState<'3d' | 'images' | 'research' | 'quality'>('3d'),
     [mode, setMode] = useState<'both' | Method>('both'),
     [query, setQuery] = useState(''),
@@ -129,6 +130,7 @@ function App() {
             .find((d) => d.id === (scene || selected))
             ?.run_sets?.find((r) => r.id === id && !diagnostic(r));
           if (target) {
+            setHistory(true);
             setRunSetId(id);
             setVariantMode(target.variant);
           } else
@@ -136,8 +138,11 @@ function App() {
               'Run được yêu cầu không có trong kết quả nghiên cứu hiện tại. Đang mở baseline.',
             );
         }
-        if (['images', 'research', 'quality'].includes(params.get('tab') || '')) {
-          setTab(params.get('tab') as 'images' | 'research' | 'quality');
+        if (params.get('collection') === 'history') setHistory(true);
+        else if (!id && c.final_delivery?.scenes.some((s) => s.scene === (scene || selected)))
+          setVariantMode('upgrade');
+        if (['3d', 'images', 'research', 'quality'].includes(params.get('tab') || '')) {
+          setTab(params.get('tab') as '3d' | 'images' | 'research' | 'quality');
           setRoute('workspace');
         }
       })
@@ -207,6 +212,10 @@ function App() {
       )
         return;
       if (e.code === 'Digit1') {
+        if (!history && catalog?.final_delivery?.scenes.some((s) => s.scene === selected)) {
+          setTab('3d');
+          return;
+        }
         const scene = catalog?.scenes.find((item) => item.id === selected);
         const target = resolveRunSet(
           scene?.run_sets || [],
@@ -225,7 +234,7 @@ function App() {
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [shortcuts, help, onboarding, catalog, selected, runSetId, variantMode]);
+  }, [shortcuts, help, onboarding, catalog, selected, runSetId, variantMode, history]);
   const move = () => {
     if (active.current?.status === 'succeeded') return;
     if (active.current) {
@@ -243,7 +252,7 @@ function App() {
       );
     }
   };
-  const choose = (d: Dataset) => {
+  const choose = (d: Dataset, keepView = false) => {
     setRestored(null);
     sequence.current++;
     if (active.current && catalog && token.current)
@@ -253,11 +262,26 @@ function App() {
     active.current = null;
     setSelected(d.id);
     setRunSetId(d.default_run_set || 'baseline');
-    setVariantMode(d.run_sets?.some((r) => r.variant === 'baseline') ? 'baseline' : 'upgrade');
+    const completed = !history && catalog?.final_delivery?.scenes.some((s) => s.scene === d.id);
+    setVariantMode(
+      completed
+        ? keepView
+          ? variantMode
+          : 'upgrade'
+        : d.run_sets?.some((r) => r.variant === 'baseline')
+          ? 'baseline'
+          : 'upgrade',
+    );
     setComplete(null);
     // Keep tracking a cancelled worker until it unwinds; drawing stays paused.
     setRoute('workspace');
-    setTab(catalog?.final_delivery?.scenes.some(s => s.scene === d.id) || (d.id === 'custom:tea_sets_2' && catalog?.visual_research?.q2) ? 'quality' : '3d');
+    setTab(
+      keepView
+        ? tab
+        : completed || (d.id === 'custom:tea_sets_2' && catalog?.visual_research?.q2)
+          ? 'quality'
+          : '3d',
+    );
     setRotating(false);
   };
   if (fatal)
@@ -276,6 +300,10 @@ function App() {
       </div>
     );
   const baseDataset = catalog.scenes.find((d) => d.id === selected) || catalog.scenes[0];
+  const completedScene = catalog.final_delivery?.scenes.find(
+    (scene) => scene.scene === baseDataset.id,
+  );
+  const finalScene = history ? undefined : completedScene;
   const runSets = (baseDataset.run_sets || []).filter((r) => !diagnostic(r));
   const activeSet =
     resolveRunSet(runSets, runSetId, variantMode === 'baseline' ? 'baseline' : 'upgrade') ||
@@ -592,7 +620,9 @@ function App() {
                 <select
                   aria-label="Dataset"
                   value={dataset.id}
-                  onChange={(e) => choose(catalog.scenes.find((d) => d.id === e.target.value)!)}
+                  onChange={(e) =>
+                    choose(catalog.scenes.find((d) => d.id === e.target.value)!, true)
+                  }
                 >
                   {catalog.scenes.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -602,13 +632,32 @@ function App() {
                   ))}
                 </select>
               </div>
-              <div className={s.panelTools} style={tab === 'quality' ? { display: 'none' } : undefined}>
+              <div className={s.panelTools}>
+                {completedScene && (
+                  <label>
+                    {t('Bộ kết quả', 'Collection')}
+                    <select
+                      aria-label="Result collection"
+                      value={history ? 'history' : 'final'}
+                      onChange={(e) => {
+                        move();
+                        setComplete(null);
+                        setHistory(e.target.value === 'history');
+                        setVariantMode(e.target.value === 'history' ? 'baseline' : 'upgrade');
+                        setTab(e.target.value === 'history' ? 'research' : 'quality');
+                      }}
+                    >
+                      <option value="final">{t('Kết quả hoàn chỉnh', 'Completed results')}</option>
+                      <option value="history">{t('Lịch sử nghiên cứu', 'Research history')}</option>
+                    </select>
+                  </label>
+                )}
                 <label>
-                  Bản hiển thị
+                  {t('Bản hiển thị', 'Display')}
                   <select
                     aria-label="Variant"
                     value={
-                      activeSet?.variant === 'upgrade' && variantMode === 'baseline'
+                      !finalScene && activeSet?.variant === 'upgrade' && variantMode === 'baseline'
                         ? 'upgrade'
                         : variantMode
                     }
@@ -616,6 +665,10 @@ function App() {
                       move();
                       setComplete(null);
                       const variant = e.target.value as typeof variantMode;
+                      if (finalScene) {
+                        setVariantMode(variant);
+                        return;
+                      }
                       const target = preferredRunSet(
                         runSets,
                         variant === 'baseline' ? 'baseline' : 'upgrade',
@@ -629,64 +682,73 @@ function App() {
                   >
                     <option
                       value="baseline"
-                      disabled={!runSets.some((r) => r.variant === 'baseline')}
+                      disabled={!finalScene && !runSets.some((r) => r.variant === 'baseline')}
                     >
                       Baseline
                     </option>
                     <option
                       value="upgrade"
-                      disabled={!runSets.some((r) => r.variant === 'upgrade')}
+                      disabled={!finalScene && !runSets.some((r) => r.variant === 'upgrade')}
                     >
                       Upgrade
                     </option>
                     <option
                       value="compare"
                       disabled={
-                        !runSets.some((r) => r.variant === 'baseline') ||
-                        !runSets.some((r) => r.variant === 'upgrade')
+                        !finalScene &&
+                        (!runSets.some((r) => r.variant === 'baseline') ||
+                          !runSets.some((r) => r.variant === 'upgrade'))
                       }
                     >
                       Compare
                     </option>
                   </select>
                 </label>
-                <label>
-                  Điều kiện nghiên cứu
-                  <select
-                    aria-label="Run set"
-                    value={activeSet?.id || ''}
-                    onChange={(e) => {
-                      move();
-                      setComplete(null);
-                      setRunSetId(e.target.value);
-                      const target = runSets.find((r) => r.id === e.target.value);
-                      if (target && !hasGeometry(target) && tab === '3d') setTab('images');
-                    }}
-                  >
-                    {runSets
-                      .filter(
-                        (r) =>
-                          r.variant === (variantMode === 'baseline' ? 'baseline' : 'upgrade') ||
-                          r.id === activeSet?.id,
-                      )
-                      .map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.tier === 'pilot' ? 'Pilot · ' : ''}
-                          {r.label}
-                        </option>
-                      ))}
-                  </select>
-                </label>
+                {!finalScene && (
+                  <label>
+                    Điều kiện nghiên cứu
+                    <select
+                      aria-label="Run set"
+                      value={activeSet?.id || ''}
+                      onChange={(e) => {
+                        move();
+                        setComplete(null);
+                        setRunSetId(e.target.value);
+                        const target = runSets.find((r) => r.id === e.target.value);
+                        if (target && !hasGeometry(target) && tab === '3d') setTab('images');
+                      }}
+                    >
+                      {runSets
+                        .filter(
+                          (r) =>
+                            r.variant === (variantMode === 'baseline' ? 'baseline' : 'upgrade') ||
+                            r.id === activeSet?.id,
+                        )
+                        .map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.tier === 'pilot' ? 'Pilot · ' : ''}
+                            {r.label}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                )}
               </div>
               <div className={s.tabs}>
                 {[
                   ['3d', Box, t('Khám phá 3D', 'Explore 3D')],
                   ['images', ImageIcon, t('So sánh ảnh', 'Image comparison')],
-                  ['quality', ChartNoAxesCombined, 'Visual quality'],
+                  [
+                    'quality',
+                    ChartNoAxesCombined,
+                    finalScene ? t('Kết quả', 'Results') : 'Visual quality',
+                  ],
                   [
                     'research',
                     ChartNoAxesCombined,
-                    t('Benchmark & kiến trúc', 'Benchmarks & architecture'),
+                    finalScene
+                      ? 'Benchmark'
+                      : t('Benchmark & kiến trúc', 'Benchmarks & architecture'),
                   ],
                 ].map(([value, Icon, label]) => {
                   const Glyph = Icon as typeof Box;
@@ -694,11 +756,12 @@ function App() {
                     <button
                       key={String(value)}
                       disabled={
+                        !finalScene &&
                         String(value) === '3d' &&
                         (!hasGeometry(dataset) || variantMode === 'compare')
                       }
                       title={
-                        String(value) === '3d' && !hasGeometry(dataset)
+                        !finalScene && String(value) === '3d' && !hasGeometry(dataset)
                           ? 'Điều kiện này hiện có ảnh và metrics; cặp full 3D được công bố sau nghiệm thu.'
                           : undefined
                       }
@@ -715,7 +778,41 @@ function App() {
                 Gallery ↗
               </button>
             </div>
-            {tab === '3d' ? (
+            {history && completedScene && (
+              <aside className={s.comparisonNote}>
+                <b>Research history · original configurations</b>
+                <p>
+                  These studies retain their original settings and scores. Completed results
+                  contains the selected Gaussian upgrades; Room’s separate Nerfacto A/B/C diagnostic
+                  is available in its completed benchmark.
+                </p>
+              </aside>
+            )}
+            {finalScene ? (
+              <Boundary key={finalScene.scene + ':completed'}>
+                <Suspense fallback={<div className={s.loading}>Opening completed results…</div>}>
+                  <FinalQuality
+                    key={finalScene.scene}
+                    catalog={catalog}
+                    data={finalScene}
+                    paused={readiness.state === 'busy'}
+                    mode={variantMode}
+                    onModeChange={setVariantMode}
+                    panel={tab}
+                    onPanelChange={setTab}
+                    onSceneChange={(scene) => {
+                      const target = catalog.scenes.find((d) => d.id === scene);
+                      if (target) choose(target, true);
+                    }}
+                    onHistory={() => {
+                      setHistory(true);
+                      setVariantMode('baseline');
+                      setTab('research');
+                    }}
+                  />
+                </Suspense>
+              </Boundary>
+            ) : tab === '3d' ? (
               <>
                 <div className={s.controls}>
                   <div className={s.segment}>
@@ -884,9 +981,11 @@ function App() {
                       />
                     )
                   ) : tab === 'quality' ? (
-                    catalog.final_delivery?.scenes.some(s => s.scene === dataset.id) ?
-                      <FinalQuality catalog={catalog} data={catalog.final_delivery.scenes.find(s => s.scene === dataset.id)!} paused={readiness.state === 'busy'} /> :
-                      <Quality catalog={catalog} scene={dataset.id} paused={readiness.state === 'busy'} />
+                    <Quality
+                      catalog={catalog}
+                      scene={dataset.id}
+                      paused={readiness.state === 'busy'}
+                    />
                   ) : (
                     <Research catalog={catalog} dataset={dataset} />
                   )}
@@ -972,6 +1071,8 @@ function App() {
                           const target = catalog.scenes.find((d) => d.id === b.scene);
                           if (target) {
                             choose(target);
+                            setHistory(true);
+                            setTab('3d');
                             setRestored(b);
                             setRunSetId(b.run_set_id || 'baseline');
                             setVariantMode(targetSet?.variant || 'baseline');
