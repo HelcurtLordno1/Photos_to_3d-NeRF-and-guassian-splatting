@@ -25,13 +25,11 @@ try {
   const downloads=new Map();page.on('request',r=>downloads.set(r.url(),(downloads.get(r.url())||0)+1));
   await page.goto('http://127.0.0.1:5179/qa/final-component.html');await page.getByLabel('Final model',{exact:true}).waitFor();
   assert.equal(await page.getByLabel('Final model',{exact:true}).inputValue(),'upgrade');
-  assert.equal(await page.locator('img[data-final-image]').count(),2);
+  assert.equal(await page.locator('img[data-final-image]').count(),3);
   await page.waitForFunction(()=>[...document.querySelectorAll('img[data-final-image]')].every(im=>im.complete&&im.naturalWidth===719));
   const results=[];
-  await page.getByRole('button',{name:'Explore selected 3D',exact:true}).click();
   for(const [model,count] of [['upgrade',300000],['baseline',payload.catalog.scenes.find(s=>s.id==='custom:tea_sets_2').methods.splatfacto.vertices]]) {
-    await page.getByLabel('Final model',{exact:true}).selectOption(model);
-    const open=page.getByRole('button',{name:'Open selected 3D',exact:true});if(await open.count())await open.click();
+    await page.getByLabel('Final model',{exact:true}).selectOption(model);await page.getByRole('button',{name:'Open selected 3D',exact:true}).click();
     await page.getByText(count.toLocaleString('en-US')+' Gaussian · ready',{exact:true}).waitFor({timeout:120000});
     const canvas=page.locator('[data-final-scene] canvas').last();await canvas.scrollIntoViewIfNeeded();await page.waitForTimeout(2000);
     const before=await canvas.getAttribute('data-render-count');await page.waitForTimeout(1200);assert.equal(await canvas.getAttribute('data-render-count'),before);

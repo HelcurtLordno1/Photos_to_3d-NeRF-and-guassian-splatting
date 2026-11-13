@@ -1,286 +1,67 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import type { Catalog, FinalScene } from './types';
 import type { ViewerHandle } from './Viewer';
-import {
-  availableViews,
-  comparisonBudget,
-  PREVIEW_PIXELS,
-  type DisplayMode,
-  type WorkspacePanel,
-} from './finalSelection';
-import FinalImages from './FinalImages';
-import FinalBenchmark from './FinalBenchmark';
-import s from './final.module.css';
+import s from './studio.module.css';
 const Viewer = lazy(() => import('./Viewer'));
 const TeaArchive = lazy(() => import('./Quality'));
 
-export default function FinalQuality({
-  catalog,
-  data,
-  paused,
-  mode: controlledMode,
-  onModeChange,
-  panel = 'quality',
-  onPanelChange,
-  onSceneChange,
-  onHistory,
-}: {
-  catalog: Catalog;
-  data: FinalScene;
-  paused: boolean;
-  mode?: DisplayMode;
-  onModeChange?: (mode: DisplayMode) => void;
-  panel?: WorkspacePanel;
-  onPanelChange?: (panel: WorkspacePanel) => void;
-  onSceneChange?: (scene: string) => void;
-  onHistory?: () => void;
-}) {
-  const [localMode, setLocalMode] = useState<DisplayMode>('upgrade');
-  const mode = controlledMode ?? localMode,
-    changeMode = onModeChange || setLocalMode;
-  const [edge, setEdge] = useState(0),
-    [view, setView] = useState(0);
-  const [show3d, setShow3d] = useState(false),
-    [archive, setArchive] = useState(false);
-  const [singleModel, setSingleModel] = useState<'baseline' | 'upgrade'>('upgrade');
+export default function FinalQuality({ catalog, data, paused }: { catalog: Catalog; data: FinalScene; paused: boolean }) {
+  const [selected, setSelected] = useState<'baseline' | 'upgrade'>('upgrade');
+  const [edge, setEdge] = useState(0), [view, setView] = useState(0);
+  const [show3d, setShow3d] = useState(false), [archive, setArchive] = useState(false);
   const viewer = useRef<ViewerHandle>(null);
-  const budget = comparisonBudget(data, catalog.ui),
-    pair = mode === 'compare' && budget.allowed;
-  const model = mode === 'compare' ? singleModel : mode;
-  const available = availableViews(data, edge, mode),
-    effectiveEdge = available.length ? edge : 0;
-  const views = available.length ? available : availableViews(data, 0, mode);
-  const index = views.includes(view) ? view : (views[0] ?? 0);
-  const changeView = (i: number) => {
-    setView(i);
-    viewer.current?.preset(data.cameras[i]);
-  };
-  const run = (id: 'baseline' | 'upgrade') => ({
-    ...data.models[id].run,
-    display_label: id === 'baseline' ? 'Baseline · Splatfacto' : 'Upgrade · Improved-GS',
-  });
-  const open3d = () => {
-    setShow3d(true);
-    onPanelChange?.('3d');
-  };
-  return (
-    <section
-      className={s.finalWorkspace}
-      data-final-scene={data.scene}
-      data-display-mode={mode}
-      data-workspace-panel={panel}
-    >
-      <div className={s.sceneHeading}>
-        <div>
-          <span className={s.kicker}>Completed reconstruction</span>
-          <h2>{catalog.scenes.find((d) => d.id === data.scene)?.title || data.scene}</h2>
-        </div>
-        <p>
-          {data.train_count} training photographs · {data.eval_count} held-out views
-          <br />
-          {mode === 'compare'
-            ? 'Baseline and upgrade · same cameras'
-            : mode === 'baseline'
-              ? 'Splatfacto · preserved baseline'
-              : 'Improved-GS · selected upgrade'}
-        </p>
-      </div>
-      <div className={s.resultTools}>
-        {!controlledMode && (
-          <label>
-            Display{' '}
-            <select
-              aria-label="Final model"
-              value={mode}
-              onChange={(e) => changeMode(e.target.value as DisplayMode)}
-            >
-              <option value="baseline">Baseline</option>
-              <option value="upgrade">Upgrade</option>
-              <option value="compare">Compare</option>
-            </select>
-          </label>
-        )}
-        {panel !== 'research' && (
-          <label>
-            Camera{' '}
-            <select
-              aria-label="Final view"
-              value={index}
-              onChange={(e) => changeView(Number(e.target.value))}
-            >
-              {views.map((i) => (
-                <option key={i} value={i}>
-                  View {String(i).padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {panel !== '3d' && panel !== 'research' && (
-          <label>
-            Saved output{' '}
-            <select
-              aria-label="Final output"
-              value={effectiveEdge}
-              onChange={(e) => {
-                setEdge(Number(e.target.value));
-                changeView(0);
-              }}
-            >
-              <option value={0}>Native · benchmark</option>
-              {[3840, 7680].map((value) => (
-                <option
-                  key={value}
-                  value={value}
-                  disabled={!availableViews(data, value, mode).length}
-                >
-                  {value === 3840 ? '4K' : '8K'} · render only
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {panel === 'research' && <span>Native evaluation · PSNR / SSIM / LPIPS</span>}
-        {(panel === 'images' || panel === 'quality') && (
-          <button onClick={open3d}>Explore selected 3D ↗</button>
-        )}
-      </div>
-      {panel === '3d' ? (
-        <section className={s.modelSection} aria-label="Final reconstruction viewer">
-          <div className={s.modelIntroduction}>
-            <div>
-              <span className={s.kicker}>Interactive reconstruction</span>
-              <h3>
-                {pair
-                  ? 'Synchronized reconstruction comparison'
-                  : mode === 'compare'
-                    ? 'Compare at the same camera'
-                    : data.models[model].label}
-              </h3>
-              <p>
-                {pair
-                  ? 'Orbit, pan and zoom are synchronized. Both Gaussian models use the same saved camera frame.'
-                  : 'The saved view and orbit position are retained when switching models.'}
-              </p>
-            </div>
-            <span>
-              {pair
-                ? budget.vertices.toLocaleString()
-                : data.models[model].gaussians.toLocaleString()}{' '}
-              Gaussians
-            </span>
-          </div>
-          {mode === 'compare' && !budget.allowed && (
-            <div className={s.memoryNote}>
-              <p>
-                This pair is large. To keep the viewer responsive, load one model at a time and
-                switch at the same camera. Matched image comparison remains available.
-              </p>
-              <div className={s.smallSegment} aria-label="Loaded comparison model">
-                {(['baseline', 'upgrade'] as const).map((id) => (
-                  <button
-                    key={id}
-                    aria-pressed={singleModel === id}
-                    onClick={() => setSingleModel(id)}
-                  >
-                    {id === 'baseline' ? 'Baseline' : 'Upgrade'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className={s.viewerActions}>
-            <button disabled={paused} onClick={() => setShow3d((v) => !v)}>
-              {show3d ? 'Close' : 'Open'} selected 3D
-            </button>
-            {show3d && (
-              <>
-                <button onClick={() => viewer.current?.preset(data.cameras[index])}>
-                  Restore saved camera
-                </button>
-                <button onClick={() => viewer.current?.screenshot()}>Save viewer screenshot</button>
-              </>
-            )}
-          </div>
-          {paused && <p>Compute is active; interactive rendering is paused.</p>}
-          {!show3d && (
-            <div className={s.viewerPlaceholder}>
-              <span>3D / {pair ? 'COMPARE' : model.toUpperCase()}</span>
-              <p>
-                Open this scene when you are ready to explore.
-                <br />
-                Other datasets stay unloaded.
-              </p>
-            </div>
-          )}
-          {show3d && !paused && (
-            <Suspense fallback={<div className={s.viewerPlaceholder}>Opening the renderer…</div>}>
-              <Viewer
-                ref={viewer}
-                catalog={catalog}
-                mode="splatfacto"
-                onMove={() => {}}
-                cameraScope={data.scene}
-                pixelRatio={1}
-                pixelBudget={PREVIEW_PIXELS}
-                initialCamera={data.cameras[index]}
-                comparison={
-                  pair ? { baseline: run('baseline'), upgrade: run('upgrade') } : undefined
-                }
-                dataset={{
-                  id: data.scene + ':' + (pair ? 'compare' : model),
-                  title: data.models[model].label,
-                  methods: { splatfacto: run(model) },
-                  views: data.cameras.map((camera) => ({ camera })),
-                }}
-              />
-            </Suspense>
-          )}
-          <p className={s.finePrint}>
-            Render on demand · capped preview resolution · model loads are sequential. Browser
-            appearance is approximate; the benchmark uses saved native images.
-          </p>
-        </section>
-      ) : panel === 'research' ? (
-        <FinalBenchmark
-          data={data}
-          catalog={catalog}
-          mode={mode}
-          onModeChange={changeMode}
-          view={index}
-          onViewChange={changeView}
-          expanded
-          onSceneChange={onSceneChange}
-        />
-      ) : (
-        <>
-          <FinalImages key={data.scene} data={data} mode={mode} edge={effectiveEdge} view={index} />
-          {panel === 'quality' && (
-            <FinalBenchmark
-              data={data}
-              catalog={catalog}
-              mode={mode}
-              onModeChange={changeMode}
-              view={index}
-              onViewChange={changeView}
-            />
-          )}
-        </>
-      )}
-      <div className={s.historyAccess}>
-        <span>NeRF comparisons and earlier experiments remain in research history.</span>
-        {onHistory && <button onClick={onHistory}>Open research history ↗</button>}
-        {data.scene === 'custom:tea_sets_2' && (
-          <button aria-expanded={archive} onClick={() => setArchive((v) => !v)}>
-            Tea research archive
-          </button>
-        )}
-      </div>
-      {archive && data.scene === 'custom:tea_sets_2' && (
-        <Suspense fallback={<p>Loading archived research…</p>}>
-          <TeaArchive catalog={catalog} scene={data.scene} paused={paused} />
-        </Suspense>
-      )}
-    </section>
-  );
+  const current = data.models[selected];
+  const available = edge ? [...new Set(data.high_resolution.filter(p => p.edge === edge).map(p => p.view))].sort((a, b) => a - b) : data.cameras.map((_, i) => i);
+  const index = available.includes(view) ? view : available[0] ?? 0;
+  const changeView = (i: number) => { setView(i); viewer.current?.preset(data.cameras[i]); };
+  const sources: { label: string; url?: string; model?: string }[] = edge ? (['baseline', 'upgrade'] as const).map(id => ({
+    model: id, label: data.models[id].label,
+    url: data.high_resolution.find(p => p.edge === edge && p.view === index && p.model === id)?.url,
+  })) : [
+    { label: 'Ground truth · native', url: data.models.upgrade.frames[index].gt },
+    ...(['baseline', 'upgrade'] as const).map(id => ({ model: id, label: data.models[id].label, url: data.models[id].frames[index].pred })),
+  ];
+  return <section className={s.research} data-final-scene={data.scene}>
+    <h2>Baseline and selected upgrade</h2>
+    <p>{data.train_count} training / {data.eval_count} held-out views · 30k schedule · seed 42. Historical baseline models remain available in the 3D gallery.</p>
+    <div className={s.panelTools}>
+      <label>Model <select aria-label="Final model" value={selected} onChange={e => setSelected(e.target.value as 'baseline' | 'upgrade')}>
+        <option value="baseline">{data.models.baseline.label}</option><option value="upgrade">{data.models.upgrade.label}</option>
+      </select></label>
+      <label>Saved output <select aria-label="Final output" value={edge} onChange={e => { setEdge(Number(e.target.value)); changeView(0); }}>
+        <option value={0}>Native · benchmark GT</option>
+        {[3840, 7680].map(value => <option key={value} value={value} disabled={!data.high_resolution.some(p => p.edge === value)}>{value === 3840 ? '4K' : '8K'} long edge · render only</option>)}
+      </select></label>
+      <label>Camera <select aria-label="Final view" value={index} onChange={e => changeView(Number(e.target.value))}>{available.map(i => <option key={i} value={i}>#{i}</option>)}</select></label>
+    </div>
+    <h3>{current.label} · selected</h3>
+    {edge > 0 && <p>High-resolution render from the same model, with scaled camera intrinsics. No GT benchmark or claim of additional captured detail at this output. Integer pixel dimensions retain the capture aspect ratio.</p>}
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${sources.length}, minmax(0, 1fr))`, gap: 12 }}>
+      {sources.map(item => <figure key={item.label} style={{ margin: 0, outline: item.model === selected ? '2px solid #56b8bd' : undefined }}>
+        <figcaption>{item.label} · #{index}{item.model === selected ? ' · selected' : ''}</figcaption>
+        {item.url ? <a href={item.url} target="_blank" rel="noreferrer"><img data-final-image src={item.url} alt={`${item.label} view ${index}`} style={{ width: '100%' }} /></a> : <p>Profile unavailable; native evidence is retained.</p>}
+      </figure>)}
+    </div>
+    <h3>Native held-out benchmark · all {data.eval_count} views</h3>
+    <p>One RGB8 evaluator and identical canonical GT/cameras. This table always describes native output, including when a 4K/8K render is selected.</p>
+    <table aria-label="Final benchmark"><thead><tr><th>Model</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>Gaussians</th><th>PLY MiB</th></tr></thead><tbody>
+      {(['baseline', 'upgrade'] as const).map(id => { const row = data.models[id]; return <tr key={id} aria-selected={id === selected}><th>{row.label}</th><td>{row.metrics.psnr.toFixed(4)}</td><td>{row.metrics.ssim.toFixed(5)}</td><td>{row.metrics.lpips.toFixed(5)}</td><td>{row.gaussians.toLocaleString()}</td><td>{(row.bytes / 2 ** 20).toFixed(1)}</td></tr>; })}
+    </tbody></table>
+    <p>Upgrade − baseline: PSNR {data.delta.psnr.toFixed(4)} dB · SSIM {data.delta.ssim.toFixed(5)} · LPIPS {data.delta.lpips.toFixed(5)}. {data.quality_dominates ? 'All three mean metrics are favourable.' : 'The upgrade does not improve every mean metric.'} Per-view losses remain in the report.</p>
+    {data.roi && <p>Locked Tea object ROI · {current.label}: PSNR {data.roi[selected].psnr.toFixed(4)}, SSIM {data.roi[selected].ssim.toFixed(5)}, LPIPS {data.roi[selected].lpips.toFixed(5)}.{selected === 'upgrade' ? ` Original upgrade ROI target: ${data.roi.original_target_met ? 'met' : 'not met'}.` : ''}</p>}
+    <button disabled={paused} onClick={() => setShow3d(!show3d)}>{show3d ? 'Close' : 'Open'} selected 3D</button>
+    <p>3D uses the selected checkpoint/camera and the browser viewport size. Saved output controls the images above.</p>
+    {paused && <p>Managed compute is active; interactive GPU rendering is paused.</p>}
+    {show3d && !paused && <Suspense fallback={<p>Loading selected model…</p>}><Viewer ref={viewer} key={data.scene + selected} catalog={catalog} mode="splatfacto" onMove={() => { }} initialCamera={data.cameras[index]}
+      dataset={{ id: data.scene + ':' + selected, title: current.label, methods: { splatfacto: current.run }, views: data.cameras.map(camera => ({ camera })) }} /></Suspense>}
+    <p>Browser candidate: mean parity {data.browser.mean_parity_db.toFixed(2)} dB, minimum {data.browser.minimum_parity_db.toFixed(2)} dB; p95 frame interval {data.browser.p95_frame_interval_ms.toFixed(2)} ms at 1280×720, DPR 1, SH3, LOD off. {data.browser.parity_met ? 'Measured parity target met.' : 'Approximate preview: parity target missed.'}</p>
+    <details><summary>Costs, limitations and full report</summary>
+      <p>{data.scope}</p><p>Historical baseline training: {(data.models.baseline.training_seconds / 60).toFixed(1)} min; current upgrade training: {(data.models.upgrade.training_seconds / 60).toFixed(1)} min. Setup/evaluation/checkpoint accounting and runtime differ; these are descriptive costs.</p>
+      <p>Views with lower upgrade PSNR: {data.per_view_delta.filter(r => r.psnr < 0).map(r => '#' + r.view).join(', ') || 'none'}. Lower LPIPS and higher SSIM must also be checked.</p>
+      {data.profile_notes.map((p, i) => <p key={i}>{p.model} · {p.edge} long edge: {p.reason}</p>)}
+      <p><a href={data.report_url} target="_blank" rel="noreferrer">Open full measured report</a></p>
+      {catalog.final_delivery?.files && <p>{Object.entries(catalog.final_delivery.files).map(([label, url]) => <a key={label} href={url} target="_blank" rel="noreferrer" style={{ marginRight: 16 }}>{label}</a>)}</p>}
+    </details>
+    {data.scene === 'custom:tea_sets_2' && <><button aria-expanded={archive} onClick={() => setArchive(!archive)}>Tea research archive</button>{archive && <Suspense fallback={<p>Loading archived research…</p>}><TeaArchive catalog={catalog} scene={data.scene} paused={paused} /></Suspense>}</>}
+  </section>;
 }

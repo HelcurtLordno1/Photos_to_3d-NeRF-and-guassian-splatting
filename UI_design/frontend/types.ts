@@ -111,105 +111,32 @@ export type UpgradeRow = {
   provenance: Record<string, unknown>;
 };
 export type Catalog = {
-  final_delivery?: {
-    status: string;
-    phase?: string;
-    campaign_status?: string;
-    errors?: { reason: string }[];
-    scenes: FinalScene[];
-    files?: Record<string, string>;
-    teacher_room?:
-      | { status: 'unavailable' | 'invalid'; reason?: string }
-      | {
-          status: 'ready';
-          scope: string;
-          report_url: string;
-          csv_url: string;
-          rows: {
-            id: string;
-            camera_optimizer: string;
-            appearance: string;
-            scope: string;
-            native_psnr: number;
-            metrics: { psnr: number; ssim: number; lpips: number };
-          }[];
-        };
-  };
+  final_delivery?: { status: string; phase?: string; campaign_status?: string; errors?: { reason: string }[]; scenes: FinalScene[]; files?: Record<string,string> };
   visual_research?: {
-    inspection?: {
-      status: string;
-      checks: Record<string, boolean>;
-      viewer_encoding: string;
-      browser: {
-        method: string;
-        mean_parity_db: number;
-        minimum_parity_db: number;
-        p95_frame_interval_ms: number;
-      }[];
-      cells: {
-        method: string;
-        resolution: string;
-        variant: string;
-        metrics: { psnr: number; ssim: number; lpips: number };
-        fps: number;
-        frames: { gt: string; pred: string }[];
-      }[];
-    };
-    confirmation?: {
-      study: string;
-      status: string;
-      phase: string;
-      jobs: { seed: number; status: string }[];
-      error?: string;
-    };
-    confirmation_report?: {
-      signal_gate_met: boolean;
-      statistics: Record<string, { mean: number; std: number; min: number; max: number }>;
-    };
-    status: string;
-    study?: string;
-    phase?: string;
-    reason?: string;
-    q15: {
-      tag: string;
-      metrics: { psnr: number; ssim: number; lpips: number };
-      fps: number;
-      peak_cuda_allocated_bytes: number;
-      frames: { gt: string; pred: string }[];
-    }[];
-    q2: null | {
-      scope: string;
-      comparison: string;
-      next_gate: string;
-      rows: {
-        method: string;
-        metrics: { psnr: number; ssim: number; lpips: number };
-        roi_metrics: { psnr: number; ssim: number; lpips: number };
-        gaussians: number;
-        optimizer_updates: number;
-        training_seconds: number;
-        offline_fps: number;
-        frames: { gt: string; pred: string }[];
-        model?: { id: string; label: string; cameras: Camera[]; run: Run };
-      }[];
-    };
+    inspection?: { status: string; checks: Record<string, boolean>; viewer_encoding: string;
+      browser: { method: string; mean_parity_db: number; minimum_parity_db: number; p95_frame_interval_ms: number }[]; cells: {
+      method: string; resolution: string; variant: string; metrics: { psnr: number; ssim: number; lpips: number };
+      fps: number; frames: { gt: string; pred: string }[];
+    }[] };
+    confirmation?: { study: string; status: string; phase: string; jobs: { seed: number; status: string }[]; error?: string };
+    confirmation_report?: { signal_gate_met: boolean; statistics: Record<string, { mean: number; std: number; min: number; max: number }> };
+    status: string; study?: string; phase?: string; reason?: string;
+    q15: { tag: string; metrics: { psnr: number; ssim: number; lpips: number }; fps: number;
+      peak_cuda_allocated_bytes: number; frames: { gt: string; pred: string }[] }[];
+    q2: null | { scope: string; comparison: string; next_gate: string;
+      rows: { method: string; metrics: { psnr: number; ssim: number; lpips: number };
+        roi_metrics: { psnr: number; ssim: number; lpips: number }; gaussians: number; optimizer_updates: number;
+        training_seconds: number; offline_fps: number; frames: { gt: string; pred: string }[];
+        model?: { id: string; label: string; cameras: Camera[]; run: Run } }[] };
   };
   quality?: {
-    status: string;
-    reason?: string;
+    status: string; reason?: string;
     experiments: {
-      id: string;
-      scene: string;
-      label: string;
-      scope: string;
-      numeric_target_met: boolean;
+      id: string; scene: string; label: string; scope: string; numeric_target_met: boolean;
       train_seconds: number;
-      rows: {
-        tag: string;
-        metrics: { psnr: number; ssim: number; lpips: number };
+      rows: { tag: string; metrics: { psnr: number; ssim: number; lpips: number };
         roi_metrics?: { psnr: number; ssim: number; lpips: number };
-        frames: { index: number; gt: string; pred: string; gt_sha256: string; size: number[] }[];
-      }[];
+        frames: { index: number; gt: string; pred: string; gt_sha256: string; size: number[] }[] }[];
       models: { id: string; label: string; cameras: Camera[]; run: Run }[];
     }[];
   };
@@ -278,53 +205,15 @@ export type Catalog = {
 };
 
 export type FinalScene = {
-  scene: string;
-  campaign: string;
-  cameras: Camera[];
-  train_count: number;
-  eval_count: number;
-  models: Record<
-    'baseline' | 'upgrade',
-    {
-      label: string;
-      frames: { gt: string; pred: string }[];
-      metrics: { psnr: number; ssim: number; lpips: number };
-      training_seconds: number;
-      gaussians: number;
-      bytes: number;
-      run: Run;
-    }
-  >;
-  delta: { psnr: number; ssim: number; lpips: number };
-  per_view_delta: { view: number; psnr: number; ssim: number; lpips: number }[];
-  quality_dominates: boolean;
-  preview_verdict: string;
-  scope: string;
-  report_url: string;
-  browser: {
-    mean_parity_db: number;
-    minimum_parity_db: number;
-    p95_frame_interval_ms: number;
-    parity_met: boolean;
-    timing_met: boolean;
-    scope: string;
-  };
-  high_resolution: {
-    model: string;
-    edge: number;
-    view: number;
-    width: number;
-    height: number;
-    url: string;
-    render_seconds: number;
-    peak_cuda_allocated_bytes: number;
-  }[];
+  scene: string; campaign: string; cameras: Camera[]; train_count: number; eval_count: number;
+  models: Record<'baseline' | 'upgrade', { label: string; frames: { gt: string; pred: string }[];
+    metrics: { psnr: number; ssim: number; lpips: number }; training_seconds: number; gaussians: number; bytes: number; run: Run }>;
+  delta: { psnr: number; ssim: number; lpips: number }; per_view_delta: { view: number; psnr: number; ssim: number; lpips: number }[];
+  quality_dominates: boolean; preview_verdict: string; scope: string; report_url: string;
+  browser: { mean_parity_db: number; minimum_parity_db: number; p95_frame_interval_ms: number; parity_met: boolean; timing_met: boolean; scope: string };
+  high_resolution: { model: string; edge: number; view: number; width: number; height: number; url: string; render_seconds: number; peak_cuda_allocated_bytes: number }[];
   profile_notes: { model: string; edge: number; reason: string }[];
-  roi?: null | {
-    baseline: { psnr: number; ssim: number; lpips: number };
-    upgrade: { psnr: number; ssim: number; lpips: number };
-    original_target_met: boolean;
-  };
+  roi?: null | { baseline: { psnr: number; ssim: number; lpips: number }; upgrade: { psnr: number; ssim: number; lpips: number }; original_target_met: boolean };
 };
 export type Job = {
   id: string;

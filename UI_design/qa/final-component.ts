@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import FinalQuality from '../frontend/FinalQuality';
 import type { Catalog, FinalScene } from '../frontend/types';
@@ -20,8 +20,4 @@ const data:FinalScene={scene:scene.id,campaign:'existing-artifact-component-qa',
   per_view_delta:[],quality_dominates:true,preview_verdict:'existing-v4-measurement',scope:'QA fixture assembled from actual preserved baseline and v4 native images; not a new experiment.',
   report_url:'#',browser:{...catalog.visual_research!.inspection!.browser.find(b=>b.method==='improvedgs')!,parity_met:true,timing_met:true,scope:'Existing v5 P1 audit'},
   high_resolution:[],profile_notes:[]};
-function Fixture() {
-  const [panel, setPanel] = useState<'3d' | 'images' | 'research' | 'quality'>('quality');
-  return React.createElement(FinalQuality, { catalog, data, paused: false, panel, onPanelChange: setPanel });
-}
-createRoot(document.getElementById('root')!).render(React.createElement(Fixture));
+createRoot(document.getElementById('root')!).render(React.createElement(FinalQuality,{catalog,data,paused:false}));
