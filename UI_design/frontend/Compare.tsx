@@ -6,13 +6,21 @@ export default function Compare({
   dataset,
   job,
   imageLabels,
+  initialLeft,
+  initialIndex = 0,
 }: {
   dataset: Dataset;
   job: Job | null;
   imageLabels?: Record<string, string>;
+  initialLeft?: 'gt' | 'nerfacto';
+  initialIndex?: number;
 }) {
-  const [index, setIndex] = useState(0),
-    [left, setLeft] = useState(imageLabels ? 'nerfacto' : 'gt'),
+  const [index, setIndex] = useState(
+      Number.isInteger(initialIndex)
+        ? Math.max(0, Math.min(dataset.views.length - 1, initialIndex))
+        : 0,
+    ),
+    [left, setLeft] = useState<string>(initialLeft || (imageLabels ? 'nerfacto' : 'gt')),
     [right, setRight] = useState('splatfacto'),
     [source, setSource] = useState<'saved' | 'live'>('saved'),
     [wipe, setWipe] = useState(50),

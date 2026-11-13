@@ -226,3 +226,20 @@ Passing functional/browser tests did not establish that the redesign met the
 user's visual or workflow requirements. Do not reapply the rejected workspace,
 benchmark redesign or removed controls. Future UI changes must stay narrowly
 within the user's requested scope; retain all scientific results and artifacts.
+
+The subsequent user instruction permits a narrow integration of final upgrades
+into the existing Display/condition selectors and existing 3D/image controls.
+Only Benchmark & architecture may receive readability/presentation improvements;
+retain the current Tea Visual quality design and every other layout. The plan is
+docs/plans/ui-existing-layout-integration.md. Do not substitute a new workspace
+or remove existing camera, bookmark, image, audit or architecture controls.
+
+Scoped implementation passed guarded browser acceptance for all five scenes in
+`artifacts/ui/qa/existing-layout-v1-r4/acceptance.json`. The original FinalQuality,
+Quality, Gallery and global/studio styles remain byte-identical to5a35d16.
+Completed Gaussian runs use `selected-final:<scene>` in the existing condition
+selector; original paired NeRF/GS conditions remain available. Benchmark styles
+are scoped to its tab. Keep native GT metrics separate from renderer parity,
+resolution tests and historical costs, and preserve negative precision/seed
+results. Functional acceptance is evidence of those tested interactions, not a
+substitute for the user's judgment of the design.

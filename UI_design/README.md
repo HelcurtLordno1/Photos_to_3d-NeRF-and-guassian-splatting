@@ -71,6 +71,44 @@ gzip vì có WASM/worker decoder bên trong. Xem quyết định ở [SPIKE_DECI
 
 ## Thao tác
 
+Bổ sung kết quả hoàn chỉnh (giữ layout và các tab hiện tại): trong **Khám phá
+3D / So sánh ảnh**, chọn **Bản hiển thị → Upgrade hoặc Compare**, rồi điều kiện
+**Improved-GS · selected final · 30,000 steps**. Cả năm scene dùng kết quả đã chạy,
+không training lại. Các điều kiện NeRF/Splatfacto trước đây vẫn nằm trong cùng
+selector. Baseline tiếp tục mở trải nghiệm N/S gốc; Compare của điều kiện final
+là **Splatfacto baseline / Improved-GS** ở cùng camera/GT native, không phải
+một Nerfacto mới. Wipe, zoom, ROI, RGB error ×4, camera, screenshot và bookmark
+dùng các controls cũ. **Visual quality của Tea giữ nguyên thiết kế.**
+
+Final 3D chỉ giữ scene đang mở; hai PLY được decode tuần tự và giải phóng trước
+khi thay scene. Cặp vượt tổng1.5M Gaussians hoặc384MiB dùng chuyển từng model
+tại cùng camera (Garden), còn so sánh ảnh vẫn đầy đủ. Ngưỡng từng asset hiện có
+vẫn áp dụng. Preview final giới hạn DPR1, tổng tối đa921.600 pixels mỗi pane
+(ngân sách1280×720), vẽ theo nhu
+cầu; đây không phải cam kết bộ nhớ cho mọi máy/trình duyệt.
+
+Trong **Benchmark & kiến trúc**, **Evidence group** chọn native final, các test
+Tea về resolution/inference, AbsGS/Improved-GS, repeated seeds, checkpoint replay
+hoặc Room Nerfacto A/B/C. Bảng mở rộng về renderer precision giữ cả4 cấu hình
+input/accumulator, gồm kết quả thất bại, tách parity khỏi PSNR với GT.
+Các điều kiện khác nhau được ghi nhãn riêng; regression
+và seed kém hơn vẫn hiện. Bảng historical, selector studies, capture audit,
+architecture và provenance gốc vẫn có bên dưới. Metric native không thay theo
+ảnh4K/8K; ảnh lớn là inference output. Typography lớn hơn chỉ áp dụng trong tab
+benchmark. Bảng/chart rộng scroll ngang trên màn hình nhỏ để giữ chữ dễ đọc.
+
+QA cho tích hợp này, với server artifacts đang chạy (Administrator PowerShell):
+
+```powershell
+.\UI_design\scripts\Test-ExistingLayout.ps1
+```
+
+Mỗi lần QA giữ source archive, browser evidence và GPU safety trong một thư mục
+mới dưới `artifacts/ui/qa`. Những QA/report cũ giữ nguyên revision và ý nghĩa.
+Nghiệm thu hiện tại: `artifacts/ui/qa/existing-layout-v1-r4/acceptance.json`;
+cả5 scene,28 frontend tests và28 backend tests pass. Sau cập nhật, dùng
+**Ctrl+F5** để nạp frontend/catalog mới.
+
 - **Collection:** card và ảnh thật của Tea sets, Bonsai, Garden, Room, Poster;
   tìm theo tên/ID. Role của từng scene hiện rõ; Poster là smoke, không aggregate.
 - **3D:** drag orbit, scroll zoom, right-drag pan. Chọn Song song / N / S;

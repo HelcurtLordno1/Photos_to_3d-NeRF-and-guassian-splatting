@@ -2,6 +2,41 @@
 from topic16.contracts import read_json,sha256,inside,digest_json
 
 
+def read_teacher(root, asset):
+    """Optional committed Room diagnosis, separate from Gaussian comparisons."""
+    import math
+    upgrade = root / 'upgrade'
+    state_path = upgrade / 'artifacts/jobs/teacher/teacher-room-v1/state.json'
+    if not state_path.exists(): return {'status': 'unavailable'}
+    references = {r['path']: r for r in read_json(state_path).get('stages', {}).get('teacher-report', [])}
+    def committed(name):
+        key = 'reports/teacher-room-v1/' + name
+        if key not in references: raise ValueError('Teacher diagnostic is not committed: ' + name)
+        path = inside(upgrade, key)
+        if sha256(path) != references[key]['sha256']: raise ValueError('Teacher diagnostic checksum differs')
+        return asset(path, references[key]['sha256']), path
+    report_url, path = committed('report.json'); document = read_json(path)
+    if (document.get('schema_version') != 'teacher-room-supplement-1' or document.get('status') != 'complete'
+            or set(document.get('completed_arms', [])) != {'A', 'B', 'C'}):
+        raise ValueError('Teacher diagnostic matrix is incomplete')
+    selected = {r['id']: r for r in document['rows'] if r['id'] in ('historical-nerfacto', 'A', 'B', 'C')}
+    if len(selected) != 4: raise ValueError('Teacher reference or arm is missing')
+    rows = []
+    for key, expected in [('historical-nerfacto', ('SO3xR3', 'average')), ('A', ('off', 'average')),
+                          ('B', ('SO3xR3', 'off')), ('C', ('off', 'off'))]:
+        row = selected[key]
+        if (row['camera_optimizer'], row['appearance']) != expected or len(row['per_view']) != 39:
+            raise ValueError('Teacher configuration or held-out coverage differs')
+        values = [row['metrics'][k] for k in ('psnr', 'ssim', 'lpips')] + [row['native_metrics']['psnr']]
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+            raise ValueError('Teacher metrics are not finite')
+        rows.append({k: row[k] for k in ('id', 'camera_optimizer', 'appearance', 'metrics', 'scope')}
+                    | {'native_psnr': row['native_metrics']['psnr']})
+    csv_url, _ = committed('results.csv')
+    return {'status': 'ready', 'rows': rows, 'report_url': report_url, 'csv_url': csv_url,
+        'scope': 'Fresh Room Nerfacto A/B/C, seed42,30k,272train/39test. Original on/average reference is historical; one seed, not a fresh four-arm interaction study.'}
+
+
 def read_final(root,asset,limits):
     upgrade=root/'upgrade';pointer=upgrade/'reports/final-index.json'
     if not pointer.exists():return {'status':'unavailable','scenes':[],'errors':[]}
@@ -22,6 +57,10 @@ def read_final(root,asset,limits):
             if report['schema_version']!='final-scene-1' or report['status']!='computed':raise ValueError('Final scene incomplete')
             cameras=report['cameras'];models={}
             if read_json(resolve(report['split']))['eval']!=cameras:raise ValueError('Final camera declaration differs')
+            baseline_frames=report['baseline']['frames'];candidate_frames=report['upgrade']['frames']
+            if (len(baseline_frames)!=len(cameras) or len(candidate_frames)!=len(cameras)
+                    or any(a['gt']['sha256']!=b['gt']['sha256'] for a,b in zip(baseline_frames,candidate_frames))):
+                raise ValueError('Final comparison GT pixels or coverage differ')
             for kind in ('baseline','upgrade'):
                 row=report[kind];common=read_json(resolve(row['common']))
                 if common['metrics']!=row['metrics'] or len(common['frames'])!=len(cameras):raise ValueError('Final metrics contradict saved common evidence')
@@ -35,7 +74,18 @@ def read_final(root,asset,limits):
                 from .catalog import ply_vertices
                 vertices=ply_vertices(ply)
                 if vertices>limits['MaxVertices'] or ply.stat().st_size>limits['DecodeLimitBytes']:raise ValueError('Final model exceeds UI decode limits')
-                frames=[{k:url(f[k]) for k in ('gt','pred')} for f in row['frames']]
+                frames=[]
+                for frame in row['frames']:
+                    output_frame={k:url(frame[k]) for k in ('gt','pred')}
+                    # Derived UI-only error images; original pixels/reports stay immutable.
+                    error=root/'artifacts/ui/images/final-errors'/ (digest_json(frame) + '.png')
+                    if not error.exists():
+                        from PIL import Image, ImageChops
+                        error.parent.mkdir(parents=True,exist_ok=True)
+                        with Image.open(resolve(frame['gt'])) as gt, Image.open(resolve(frame['pred'])) as pred:
+                            ImageChops.difference(gt.convert('RGB'),pred.convert('RGB')).point(lambda v:min(255,v*4)).save(error)
+                    output_frame['error']=asset(error)
+                    frames.append(output_frame)
                 if len(frames)!=len(cameras):raise ValueError('Final image coverage incomplete')
                 models[kind]={'label':row['label'],'frames':frames,'metrics':row['metrics'],
                     'training_seconds':row['training_seconds'],'gaussians':vertices,'bytes':ply.stat().st_size,
@@ -78,5 +128,7 @@ def read_final(root,asset,limits):
         path=inside(upgrade,ref['path'])
         if sha256(path)!=ref['sha256']:raise ValueError('Final aggregate report changed')
         files[path.name]=asset(path,ref['sha256'])
+    try: teacher=read_teacher(root,asset)
+    except (ValueError,KeyError,OSError,TypeError) as error: teacher={'status':'invalid','reason':str(error)}
     return {'status':'ready' if output else 'pending','study':index['study'],'phase':state['phase'],
-            'campaign_status':state['status'],'scenes':output,'errors':errors,'files':files}
+            'campaign_status':state['status'],'scenes':output,'errors':errors,'files':files,'teacher_room':teacher}

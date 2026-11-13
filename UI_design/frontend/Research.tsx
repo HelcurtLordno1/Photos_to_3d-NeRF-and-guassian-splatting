@@ -2,6 +2,7 @@ import CaptureIntelligence from './CaptureIntelligence';
 import { useState, useEffect, useRef } from 'react';
 import type { Catalog, Dataset, Method } from './types';
 import s from './studio.module.css';
+import b from './benchmark.module.css';
 const units: Record<string, string> = {
   psnr: 'dB ↑',
   ssim: '↑',
@@ -48,7 +49,7 @@ export default function Research({ catalog, dataset }: { catalog: Catalog; datas
   }, [diagram]);
   const scenes = [dataset];
   return (
-    <div className={s.research}>
+    <div className={`${s.research} ${b.benchmark}`}>
       <div className={s.sectionTitle}>
         <div>
           <span className={s.eyebrow}>Evidence, not estimates</span>

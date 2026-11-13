@@ -3,6 +3,8 @@ import type { Catalog, Dataset, Method, RunSet } from './types';
 import { diagnostic, preferredRunSet } from './runSelection';
 import { historicalComparison, signedDelta } from './historicalComparison';
 import s from './studio.module.css';
+import BenchmarkEvidence from './BenchmarkEvidence';
+import b from './benchmark.module.css';
 
 const methods: Method[] = ['nerfacto', 'splatfacto'];
 const number = (n: number | null | undefined, digits = 3) =>
@@ -17,12 +19,12 @@ export default function CaptureIntelligence({
   catalog: Catalog;
   dataset: Dataset;
 }) {
-  const [scope, setScope] = useState('selection');
-  const [metric, setMetric] = useState<'psnr' | 'lpips'>('psnr');
+  const [scope, setScope] = useState('studies');
+  const [metric, setMetric] = useState<'psnr' | 'ssim' | 'lpips'>('psnr');
   const [page, setPage] = useState(0);
   useEffect(() => {
     setPage(0);
-    setScope('selection');
+    setScope('studies');
   }, [dataset.id, dataset.active_run_set, dataset.view_mode]);
   const sets = (dataset.run_sets || []).filter((set) => !diagnostic(set));
   const active =
@@ -77,8 +79,15 @@ export default function CaptureIntelligence({
   const pages = Math.max(1, Math.ceil(previews.length / 12));
   return (
     <section aria-label="Measured research results">
+      <BenchmarkEvidence catalog={catalog} dataset={dataset} />
+      <h3>Historical NeRF / Splatfacto studies</h3>
+      <p>
+        Original configurations and selector experiments are retained below. These are separate from
+        the selected final Gaussian comparison above.
+      </p>
       <h3>{dataset.title} · kết quả đã đo</h3>
-      <section className={s.comparisonNote} aria-label="Historical baseline comparison">
+      <details className={s.comparisonNote} aria-label="Historical baseline comparison">
+        <summary>Historical selector assessment · original runs</summary>
         <h4>Upgrade có tốt hơn baseline?</h4>
         {assessment.status === 'available' ? (
           <>
@@ -123,7 +132,7 @@ export default function CaptureIntelligence({
             )}
           </>
         )}
-      </section>
+      </details>
       <div className={s.panelTools}>
         <label>
           Phạm vi kết quả{' '}
@@ -142,9 +151,10 @@ export default function CaptureIntelligence({
           <select
             aria-label="Quality axis"
             value={metric}
-            onChange={(event) => setMetric(event.target.value as 'psnr' | 'lpips')}
+            onChange={(event) => setMetric(event.target.value as 'psnr' | 'ssim' | 'lpips')}
           >
             <option value="psnr">PSNR (dB ↑)</option>
+            <option value="ssim">SSIM (↑)</option>
             <option value="lpips">LPIPS (↓)</option>
           </select>
         </label>
@@ -154,61 +164,63 @@ export default function CaptureIntelligence({
         · {active.eval_count} held-out views. So sánh selector chỉ có kiểm soát khi cùng số ảnh, số
         bước, split, nguồn mã và evaluator.
       </p>
-      <svg
-        viewBox="0 0 730 330"
-        role="img"
-        aria-label="Measured quality versus training minutes"
-        style={{ width: '100%', maxHeight: 360 }}
-      >
-        {[0, 1, 2, 3, 4].map((tick) => {
-          const xv = xmin + ((xmax - xmin) * tick) / 4,
-            yv = ymin + ((ymax - ymin) * tick) / 4;
-          return (
-            <g key={tick} fill="currentColor" fontSize="11">
-              <path d={`M${x(xv)},35V280 M65,${y(yv)}H680`} stroke="currentColor" opacity=".12" />
-              <text x={x(xv)} y="299" textAnchor="middle">
-                {number(xv, 1)}
-              </text>
-              <text x="57" y={y(yv) + 4} textAnchor="end">
-                {number(yv, metric === 'psnr' ? 1 : 3)}
-              </text>
-            </g>
-          );
-        })}
-        <text x="65" y="20" fill="currentColor" fontSize="12">
-          {metric === 'psnr' ? 'PSNR · dB ↑' : 'LPIPS ↓'}
-        </text>
-        <text x="370" y="324" fill="currentColor" textAnchor="middle" fontSize="12">
-          Thời gian train · phút (↓)
-        </text>
-        {rows.map(({ set, method, run, metrics }) => (
-          <a
-            key={`${set.id}:${method}`}
-            href={`/?scene=${encodeURIComponent(dataset.id)}&runSet=${encodeURIComponent(set.id)}&tab=images`}
-          >
-            <g
-              fill={set.variant === 'baseline' ? '#697b89' : '#c45f22'}
-              stroke="white"
-              strokeWidth="1.5"
+      <div className={b.chartScroll}>
+        <svg
+          viewBox="0 0 730 330"
+          role="img"
+          aria-label="Measured quality versus training minutes"
+          style={{ width: '100%', maxHeight: 440 }}
+        >
+          {[0, 1, 2, 3, 4].map((tick) => {
+            const xv = xmin + ((xmax - xmin) * tick) / 4,
+              yv = ymin + ((ymax - ymin) * tick) / 4;
+            return (
+              <g key={tick} fill="currentColor" fontSize="14">
+                <path d={`M${x(xv)},35V280 M65,${y(yv)}H680`} stroke="currentColor" opacity=".12" />
+                <text x={x(xv)} y="299" textAnchor="middle">
+                  {number(xv, 1)}
+                </text>
+                <text x="57" y={y(yv) + 4} textAnchor="end">
+                  {number(yv, metric === 'psnr' ? 1 : 3)}
+                </text>
+              </g>
+            );
+          })}
+          <text x="65" y="20" fill="currentColor" fontSize="14">
+            {metric === 'psnr' ? 'PSNR · dB ↑' : metric === 'ssim' ? 'SSIM ↑' : 'LPIPS ↓'}
+          </text>
+          <text x="370" y="324" fill="currentColor" textAnchor="middle" fontSize="14">
+            Thời gian train · phút (↓)
+          </text>
+          {rows.map(({ set, method, run, metrics }) => (
+            <a
+              key={`${set.id}:${method}`}
+              href={`/?scene=${encodeURIComponent(dataset.id)}&runSet=${encodeURIComponent(set.id)}&tab=images`}
             >
-              <title>
-                {label(set)} · {method} · {number(metrics[metric])} ·{' '}
-                {number(run.train_seconds / 60, 1)} phút
-              </title>
-              {method === 'nerfacto' ? (
-                <circle cx={x(run.train_seconds / 60)} cy={y(metrics[metric])} r="6" />
-              ) : (
-                <rect
-                  x={x(run.train_seconds / 60) - 6}
-                  y={y(metrics[metric]) - 6}
-                  width="12"
-                  height="12"
-                />
-              )}
-            </g>
-          </a>
-        ))}
-      </svg>
+              <g
+                fill={set.variant === 'baseline' ? 'var(--muted)' : 'var(--accent)'}
+                stroke="var(--surface)"
+                strokeWidth="1.5"
+              >
+                <title>
+                  {label(set)} · {method} · {number(metrics[metric])} ·{' '}
+                  {number(run.train_seconds / 60, 1)} phút
+                </title>
+                {method === 'nerfacto' ? (
+                  <circle cx={x(run.train_seconds / 60)} cy={y(metrics[metric])} r="6" />
+                ) : (
+                  <rect
+                    x={x(run.train_seconds / 60) - 6}
+                    y={y(metrics[metric]) - 6}
+                    width="12"
+                    height="12"
+                  />
+                )}
+              </g>
+            </a>
+          ))}
+        </svg>
+      </div>
       <p className={s.caption}>
         ● Nerfacto · ■ Splatfacto · xám: baseline lịch sử · cam: nghiên cứu mới. Đây là số đo thực
         tế; khác số ảnh hoặc số bước là đánh đổi chi phí/chất lượng.

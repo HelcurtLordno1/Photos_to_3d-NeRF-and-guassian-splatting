@@ -1,0 +1,136 @@
+/* Scoped exclusively to Benchmark & architecture; no workspace/gallery changes. */
+.benchmark {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.benchmark p {
+  font-size: 14px;
+  line-height: 1.75;
+}
+.benchmark h3 {
+  font-size: 23px;
+  margin: 26px 0 12px;
+}
+.benchmark h4 {
+  font-size: 18px;
+  margin: 18px 0 10px;
+}
+.benchmark label,
+.benchmark select,
+.benchmark button,
+.benchmark summary {
+  font-size: 14px;
+}
+.benchmark label {
+  min-width: 0;
+  max-width: 100%;
+}
+.benchmark select {
+  max-width: min(100%, 440px);
+}
+.benchmark table {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.benchmark thead th {
+  font-size: 13px;
+  font-weight: 600;
+}
+.benchmark td,
+.benchmark th {
+  padding: 16px 18px;
+}
+.benchmark tbody th {
+  font-weight: 500;
+  text-align: left;
+  white-space: normal;
+  min-width: 210px;
+}
+.benchmark th small {
+  font-size: 12px;
+  display: block;
+  max-width: 310px;
+  line-height: 1.6;
+  white-space: normal;
+}
+.benchmark details {
+  padding: 18px 20px;
+}
+.benchmark summary {
+  font-weight: 500;
+}
+.benchmark table small {
+  font-size: 12px;
+}
+.evidence {
+  margin: 24px 0 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.evidence > h3 {
+  margin-top: 0;
+}
+.scope {
+  color: var(--muted);
+}
+.delta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 30px;
+  align-items: baseline;
+}
+.delta strong {
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.perView {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 22px;
+}
+.chartScroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.chartScroll svg {
+  min-width: 700px;
+}
+.perView a:focus rect,
+.perView a:hover rect {
+  stroke: var(--ink);
+  stroke-width: 2px;
+}
+.reportLink {
+  display: inline-block;
+  margin-left: 18px;
+}
+@media (max-width: 650px) {
+  .benchmark h3 {
+    font-size: 21px;
+  }
+  .benchmark table {
+    font-size: 14px;
+  }
+  .benchmark th,
+  .benchmark td {
+    padding: 12px 14px;
+  }
+  .benchmark label {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .benchmark select {
+    width: 100%;
+  }
+  .benchmark tbody th {
+    min-width: 190px;
+  }
+  .reportLink {
+    margin: 8px 15px 0 0;
+  }
+  .delta {
+    gap: 8px 18px;
+  }
+}

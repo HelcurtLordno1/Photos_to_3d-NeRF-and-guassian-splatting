@@ -24,6 +24,13 @@ import type { ViewerHandle } from './Viewer';
 import { api, download, infer } from './api';
 import { importBookmarks } from './bookmarks';
 import { diagnostic, hasGeometry, preferredRunSet, resolveRunSet } from './runSelection';
+import {
+  finalResultId,
+  finalImages,
+  finalRun,
+  pairedPreview,
+  FINAL_PREVIEW_PIXELS,
+} from './finalResults';
 import s from './studio.module.css';
 import './global.css';
 const Viewer = lazy(() => import('./Viewer')),
@@ -73,6 +80,7 @@ function App() {
     [variantMode, setVariantMode] = useState<'baseline' | 'upgrade' | 'compare'>('baseline'),
     [tab, setTab] = useState<'3d' | 'images' | 'research' | 'quality'>('3d'),
     [mode, setMode] = useState<'both' | Method>('both'),
+    [finalMode, setFinalMode] = useState<'both' | 'baseline' | 'upgrade'>('both'),
     [query, setQuery] = useState(''),
     [help, setHelp] = useState(false),
     [onboarding, setOnboarding] = useState(() => !localStorage.getItem('topic16-onboarded')),
@@ -125,10 +133,14 @@ function App() {
         const params = new URLSearchParams(location.search),
           id = params.get('runSet');
         if (id) {
+          const final = c.final_delivery?.scenes.find((s) => s.scene === (scene || selected));
           const target = c.scenes
             .find((d) => d.id === (scene || selected))
             ?.run_sets?.find((r) => r.id === id && !diagnostic(r));
-          if (target) {
+          if (final && id === finalResultId(final.scene)) {
+            setRunSetId(id);
+            setVariantMode(params.get('variant') === 'compare' ? 'compare' : 'upgrade');
+          } else if (target) {
             setRunSetId(id);
             setVariantMode(target.variant);
           } else
@@ -136,8 +148,8 @@ function App() {
               'Run được yêu cầu không có trong kết quả nghiên cứu hiện tại. Đang mở baseline.',
             );
         }
-        if (['images', 'research', 'quality'].includes(params.get('tab') || '')) {
-          setTab(params.get('tab') as 'images' | 'research' | 'quality');
+        if (['3d', 'images', 'research', 'quality'].includes(params.get('tab') || '')) {
+          setTab(params.get('tab') as '3d' | 'images' | 'research' | 'quality');
           setRoute('workspace');
         }
       })
@@ -207,6 +219,10 @@ function App() {
       )
         return;
       if (e.code === 'Digit1') {
+        if (runSetId === finalResultId(selected) && variantMode !== 'baseline') {
+          setTab('3d');
+          return;
+        }
         const scene = catalog?.scenes.find((item) => item.id === selected);
         const target = resolveRunSet(
           scene?.run_sets || [],
@@ -243,7 +259,7 @@ function App() {
       );
     }
   };
-  const choose = (d: Dataset) => {
+  const choose = (d: Dataset, keepTab = false) => {
     setRestored(null);
     sequence.current++;
     if (active.current && catalog && token.current)
@@ -252,12 +268,24 @@ function App() {
       );
     active.current = null;
     setSelected(d.id);
-    setRunSetId(d.default_run_set || 'baseline');
-    setVariantMode(d.run_sets?.some((r) => r.variant === 'baseline') ? 'baseline' : 'upgrade');
+    const keepFinal =
+      keepTab &&
+      variantMode !== 'baseline' &&
+      runSetId === finalResultId(selected) &&
+      catalog?.final_delivery?.scenes.some((s) => s.scene === d.id);
+    setRunSetId(keepFinal ? finalResultId(d.id) : d.default_run_set || 'baseline');
+    if (!keepFinal)
+      setVariantMode(d.run_sets?.some((r) => r.variant === 'baseline') ? 'baseline' : 'upgrade');
     setComplete(null);
     // Keep tracking a cancelled worker until it unwinds; drawing stays paused.
     setRoute('workspace');
-    setTab(catalog?.final_delivery?.scenes.some(s => s.scene === d.id) || (d.id === 'custom:tea_sets_2' && catalog?.visual_research?.q2) ? 'quality' : '3d');
+    if (!keepTab)
+      setTab(
+        catalog?.final_delivery?.scenes.some((s) => s.scene === d.id) ||
+          (d.id === 'custom:tea_sets_2' && catalog?.visual_research?.q2)
+          ? 'quality'
+          : '3d',
+      );
     setRotating(false);
   };
   if (fatal)
@@ -276,11 +304,18 @@ function App() {
       </div>
     );
   const baseDataset = catalog.scenes.find((d) => d.id === selected) || catalog.scenes[0];
+  const finalScene = catalog.final_delivery?.scenes.find((s) => s.scene === baseDataset.id);
+  const selectedFinal =
+    !!finalScene && variantMode !== 'baseline' && runSetId === finalResultId(baseDataset.id);
+  const finalPairAllowed = !!finalScene && pairedPreview(finalScene, catalog.ui);
+  const finalPair =
+    selectedFinal && variantMode === 'compare' && finalMode === 'both' && finalPairAllowed;
+  const finalModel = variantMode === 'compare' && finalMode === 'baseline' ? 'baseline' : 'upgrade';
   const runSets = (baseDataset.run_sets || []).filter((r) => !diagnostic(r));
   const activeSet =
     resolveRunSet(runSets, runSetId, variantMode === 'baseline' ? 'baseline' : 'upgrade') ||
     runSets[0];
-  const dataset: Dataset = activeSet
+  const legacyDataset: Dataset = activeSet
     ? {
         ...baseDataset,
         ...activeSet,
@@ -290,6 +325,21 @@ function App() {
         view_mode: variantMode,
       }
     : baseDataset;
+  const dataset: Dataset =
+    selectedFinal && finalScene
+      ? {
+          ...finalImages(baseDataset, finalScene),
+          train_count: finalScene.train_count,
+          eval_count: finalScene.eval_count,
+          active_run_set: finalResultId(baseDataset.id),
+          run_sets: runSets,
+          view_mode: variantMode,
+          methods: { ...baseDataset.methods, splatfacto: finalRun(finalScene, finalModel) },
+          inference: false,
+          inference_reason:
+            'Selected Gaussian export; use saved native images for exact evaluation.',
+        }
+      : legacyDataset;
   const run = async () => {
     if (
       !dataset.inference ||
@@ -592,7 +642,9 @@ function App() {
                 <select
                   aria-label="Dataset"
                   value={dataset.id}
-                  onChange={(e) => choose(catalog.scenes.find((d) => d.id === e.target.value)!)}
+                  onChange={(e) =>
+                    choose(catalog.scenes.find((d) => d.id === e.target.value)!, true)
+                  }
                 >
                   {catalog.scenes.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -602,13 +654,18 @@ function App() {
                   ))}
                 </select>
               </div>
-              <div className={s.panelTools} style={tab === 'quality' ? { display: 'none' } : undefined}>
+              <div
+                className={s.panelTools}
+                style={tab === 'quality' ? { display: 'none' } : undefined}
+              >
                 <label>
                   Bản hiển thị
                   <select
                     aria-label="Variant"
                     value={
-                      activeSet?.variant === 'upgrade' && variantMode === 'baseline'
+                      !selectedFinal &&
+                      activeSet?.variant === 'upgrade' &&
+                      variantMode === 'baseline'
                         ? 'upgrade'
                         : variantMode
                     }
@@ -616,6 +673,13 @@ function App() {
                       move();
                       setComplete(null);
                       const variant = e.target.value as typeof variantMode;
+                      if (finalScene && variant !== 'baseline') {
+                        setVariantMode(variant);
+                        setRunSetId(finalResultId(dataset.id));
+                        setFinalMode('both');
+                        if (tab === '3d' || tab === 'images') setTab(tab);
+                        return;
+                      }
                       const target = preferredRunSet(
                         runSets,
                         variant === 'baseline' ? 'baseline' : 'upgrade',
@@ -635,15 +699,16 @@ function App() {
                     </option>
                     <option
                       value="upgrade"
-                      disabled={!runSets.some((r) => r.variant === 'upgrade')}
+                      disabled={!finalScene && !runSets.some((r) => r.variant === 'upgrade')}
                     >
                       Upgrade
                     </option>
                     <option
                       value="compare"
                       disabled={
-                        !runSets.some((r) => r.variant === 'baseline') ||
-                        !runSets.some((r) => r.variant === 'upgrade')
+                        !finalScene &&
+                        (!runSets.some((r) => r.variant === 'baseline') ||
+                          !runSets.some((r) => r.variant === 'upgrade'))
                       }
                     >
                       Compare
@@ -654,20 +719,26 @@ function App() {
                   Điều kiện nghiên cứu
                   <select
                     aria-label="Run set"
-                    value={activeSet?.id || ''}
+                    value={selectedFinal ? finalResultId(dataset.id) : activeSet?.id || ''}
                     onChange={(e) => {
                       move();
                       setComplete(null);
                       setRunSetId(e.target.value);
+                      if (finalScene && e.target.value === finalResultId(dataset.id)) return;
                       const target = runSets.find((r) => r.id === e.target.value);
                       if (target && !hasGeometry(target) && tab === '3d') setTab('images');
                     }}
                   >
+                    {finalScene && variantMode !== 'baseline' && (
+                      <option value={finalResultId(dataset.id)}>
+                        Improved-GS · selected final · 30,000 steps
+                      </option>
+                    )}
                     {runSets
                       .filter(
                         (r) =>
                           r.variant === (variantMode === 'baseline' ? 'baseline' : 'upgrade') ||
-                          r.id === activeSet?.id,
+                          (!selectedFinal && r.id === activeSet?.id),
                       )
                       .map((r) => (
                         <option key={r.id} value={r.id}>
@@ -695,6 +766,7 @@ function App() {
                       key={String(value)}
                       disabled={
                         String(value) === '3d' &&
+                        !selectedFinal &&
                         (!hasGeometry(dataset) || variantMode === 'compare')
                       }
                       title={
@@ -719,26 +791,66 @@ function App() {
               <>
                 <div className={s.controls}>
                   <div className={s.segment}>
-                    {(['both', 'nerfacto', 'splatfacto'] as const).map((m) => (
-                      <button
-                        key={m}
-                        aria-pressed={mode === m}
-                        onClick={() => {
-                          move();
-                          setMode(m);
-                        }}
-                      >
-                        {m === 'both' ? (
-                          <>
-                            <Columns2 size={16} /> {t('Song song', 'Side by side')}
-                          </>
-                        ) : m === 'nerfacto' ? (
-                          'N · Nerfacto'
-                        ) : (
-                          'S · Splatfacto'
-                        )}
-                      </button>
-                    ))}
+                    {selectedFinal ? (
+                      variantMode === 'compare' ? (
+                        (['both', 'baseline', 'upgrade'] as const).map((m) => (
+                          <button
+                            key={m}
+                            aria-pressed={
+                              (finalPairAllowed
+                                ? finalMode
+                                : finalMode === 'baseline'
+                                  ? 'baseline'
+                                  : 'upgrade') === m
+                            }
+                            disabled={m === 'both' && !finalPairAllowed}
+                            title={
+                              m === 'both' && !finalPairAllowed
+                                ? 'Large pair: switch one model at the same camera to limit memory.'
+                                : undefined
+                            }
+                            onClick={() => {
+                              move();
+                              setFinalMode(m);
+                            }}
+                          >
+                            {m === 'both' ? (
+                              <>
+                                <Columns2 size={16} />
+                                {t('Song song', 'Side by side')}
+                              </>
+                            ) : m === 'baseline' ? (
+                              'Baseline · Splatfacto'
+                            ) : (
+                              'Upgrade · Improved-GS'
+                            )}
+                          </button>
+                        ))
+                      ) : (
+                        <button aria-pressed="true">Upgrade · Improved-GS</button>
+                      )
+                    ) : (
+                      (['both', 'nerfacto', 'splatfacto'] as const).map((m) => (
+                        <button
+                          key={m}
+                          aria-pressed={mode === m}
+                          onClick={() => {
+                            move();
+                            setMode(m);
+                          }}
+                        >
+                          {m === 'both' ? (
+                            <>
+                              <Columns2 size={16} /> {t('Song song', 'Side by side')}
+                            </>
+                          ) : m === 'nerfacto' ? (
+                            'N · Nerfacto'
+                          ) : (
+                            'S · Splatfacto'
+                          )}
+                        </button>
+                      ))
+                    )}
                   </div>
                   <div className={s.controlsRight}>
                     <select
@@ -783,9 +895,47 @@ function App() {
                 </div>
                 <Boundary key={dataset.id + dataset.active_run_set}>
                   <Suspense fallback={<div className={s.loading}>Loading 3D renderer…</div>}>
-                    {dataset.methods.nerfacto.asset &&
-                    dataset.methods.splatfacto.asset &&
-                    variantMode !== 'compare' ? (
+                    {selectedFinal && finalScene ? (
+                      <>
+                        {variantMode === 'compare' && !finalPairAllowed && (
+                          <p className={s.caption}>
+                            Large comparison: switch Baseline / Upgrade at the same camera. Image
+                            comparison remains fully available.
+                          </p>
+                        )}
+                        <Viewer
+                          ref={viewer}
+                          catalog={catalog}
+                          mode="splatfacto"
+                          onMove={move}
+                          cameraScope={dataset.id + ':final'}
+                          pixelRatio={1}
+                          pixelBudget={FINAL_PREVIEW_PIXELS}
+                          comparison={
+                            finalPair
+                              ? {
+                                  baseline: finalRun(finalScene, 'baseline'),
+                                  upgrade: finalRun(finalScene, 'upgrade'),
+                                }
+                              : undefined
+                          }
+                          initialCamera={
+                            restored?.scene === dataset.id ? restored.camera : undefined
+                          }
+                          paused={
+                            readiness.state === 'busy' ||
+                            (!!job && ['queued', 'running'].includes(job.status))
+                          }
+                          dataset={{
+                            ...dataset,
+                            id: dataset.id + ':final:' + (finalPair ? 'pair' : finalModel),
+                            title: baseDataset.title,
+                          }}
+                        />
+                      </>
+                    ) : dataset.methods.nerfacto.asset &&
+                      dataset.methods.splatfacto.asset &&
+                      variantMode !== 'compare' ? (
                       <Viewer
                         ref={viewer}
                         dataset={dataset}
@@ -807,7 +957,10 @@ function App() {
                     )}
                   </Suspense>
                 </Boundary>
-                <div className={s.inferenceBar}>
+                <div
+                  className={s.inferenceBar}
+                  style={selectedFinal ? { display: 'none' } : undefined}
+                >
                   <div>
                     <b>
                       {t('Render góc nhìn này', 'Render this viewpoint')} · {readiness.state}
@@ -856,14 +1009,21 @@ function App() {
                     </button>
                   )}
                 </div>
-                <p className={s.caption}>
-                  Nerfacto:{' '}
-                  {t(
-                    'point cloud là proxy để di chuyển; ảnh model dùng checkpoint NeRF.',
-                    'the point cloud is a navigation proxy; model images use the NeRF checkpoint.',
-                  )}{' '}
-                  Splatfacto: Spark browser preview. {dataset.alignment}
-                </p>
+                {selectedFinal ? (
+                  <p className={s.caption}>
+                    Splatfacto / Improved-GS · Gaussian browser preview · saved native images
+                    provide exact held-out evidence. {finalScene?.scope}
+                  </p>
+                ) : (
+                  <p className={s.caption}>
+                    Nerfacto:{' '}
+                    {t(
+                      'point cloud là proxy để di chuyển; ảnh model dùng checkpoint NeRF.',
+                      'the point cloud is a navigation proxy; model images use the NeRF checkpoint.',
+                    )}{' '}
+                    Splatfacto: Spark browser preview. {dataset.alignment}
+                  </p>
+                )}
                 {job && (
                   <p className={s.jobStatus} role="status">
                     {job.status.toUpperCase()} · {job.phase || 'queued'} · #{job.id.slice(0, 8)}
@@ -874,7 +1034,20 @@ function App() {
               <Boundary key={tab + dataset.id + dataset.active_run_set + variantMode}>
                 <Suspense fallback={<div className={s.loading}>Loading panel…</div>}>
                   {tab === 'images' ? (
-                    variantMode === 'compare' ? (
+                    selectedFinal && finalScene ? (
+                      <Compare
+                        key={dataset.id + ':final:' + variantMode}
+                        dataset={finalImages(dataset, finalScene)}
+                        job={null}
+                        initialLeft={variantMode === 'compare' ? 'nerfacto' : 'gt'}
+                        initialIndex={Number(new URLSearchParams(location.search).get('view') || 0)}
+                        imageLabels={{
+                          gt: 'Ground truth',
+                          nerfacto: 'Baseline · Splatfacto',
+                          splatfacto: 'Upgrade · Improved-GS',
+                        }}
+                      />
+                    ) : variantMode === 'compare' ? (
                       <RunSetCompare dataset={dataset} />
                     ) : (
                       <Compare
@@ -884,11 +1057,21 @@ function App() {
                       />
                     )
                   ) : tab === 'quality' ? (
-                    catalog.final_delivery?.scenes.some(s => s.scene === dataset.id) ?
-                      <FinalQuality catalog={catalog} data={catalog.final_delivery.scenes.find(s => s.scene === dataset.id)!} paused={readiness.state === 'busy'} /> :
-                      <Quality catalog={catalog} scene={dataset.id} paused={readiness.state === 'busy'} />
+                    catalog.final_delivery?.scenes.some((s) => s.scene === dataset.id) ? (
+                      <FinalQuality
+                        catalog={catalog}
+                        data={catalog.final_delivery.scenes.find((s) => s.scene === dataset.id)!}
+                        paused={readiness.state === 'busy'}
+                      />
+                    ) : (
+                      <Quality
+                        catalog={catalog}
+                        scene={dataset.id}
+                        paused={readiness.state === 'busy'}
+                      />
+                    )
                   ) : (
-                    <Research catalog={catalog} dataset={dataset} />
+                    <Research catalog={catalog} dataset={legacyDataset} />
                   )}
                 </Suspense>
               </Boundary>
@@ -961,7 +1144,10 @@ function App() {
                         const targetSet = catalog.scenes
                           .find((d) => d.id === b.scene)
                           ?.run_sets?.find((r) => r.id === (b.run_set_id || 'baseline'));
-                        if (!targetSet && b.run_set_id) {
+                        const finalBookmark =
+                          b.run_set_id === finalResultId(b.scene) &&
+                          catalog.final_delivery?.scenes.some((s) => s.scene === b.scene);
+                        if (!targetSet && b.run_set_id && !finalBookmark) {
                           setNotice('Unresolved saved run set: ' + b.run_set_id);
                           return;
                         }
@@ -974,7 +1160,10 @@ function App() {
                             choose(target);
                             setRestored(b);
                             setRunSetId(b.run_set_id || 'baseline');
-                            setVariantMode(targetSet?.variant || 'baseline');
+                            setVariantMode(
+                              finalBookmark ? 'upgrade' : targetSet?.variant || 'baseline',
+                            );
+                            setTab('3d');
                           } else setNotice('Unresolved scene: ' + b.scene);
                         } else {
                           viewer.current?.preset(b.camera);

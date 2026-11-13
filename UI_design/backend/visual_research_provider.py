@@ -101,4 +101,9 @@ def read_research(root,asset,limits):
             proof=current['stages']['report'][0]
             if sha256(final)!=proof['sha256']:raise ValueError('Seed report changed')
             result['confirmation_report']=read_json(final)
+        from .inspection_history import read_inspection_history
+        try: result['inspection_history']=read_inspection_history(upgrade,current,asset)
+        except (ValueError,KeyError,OSError,TypeError) as error:
+            result['inspection_history']=[]
+            result['inspection_history_error']=str(error)
     return result
