@@ -216,3 +216,13 @@ Keep the measured limitations visible: Room/Poster have per-view browser
 parity misses against the stricter target; Garden browser p95 is about90.2ms.
 All five native comparisons improve mean PSNR/SSIM/LPIPS versus the retained
 Splatfacto references; this is experimental evidence, not SOTA certification.
+
+## UI restoration requested — 2026-11-13
+
+The user rejected the showcase redesign in3939fb7 and explicitly requested the
+original UI. That revision was reverted in full, restoring the interface from
+5a35d16. Preserve its layout, navigation and existing interactive controls.
+Passing functional/browser tests did not establish that the redesign met the
+user's visual or workflow requirements. Do not reapply the rejected workspace,
+benchmark redesign or removed controls. Future UI changes must stay narrowly
+within the user's requested scope; retain all scientific results and artifacts.
