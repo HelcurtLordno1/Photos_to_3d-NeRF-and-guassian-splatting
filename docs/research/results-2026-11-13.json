@@ -1,0 +1,421 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-13",
+  "scope": "Selected public README results and unchanged report figures; full reports, private working notes, weights and datasets remain local. This snapshot is not a complete replay package or research certification.",
+  "final_comparisons": {
+    "completion": "succeeded",
+    "evaluator": "Common saved RGB8; identical native GT and held-out cameras within each scene. Original native float metrics are separate.",
+    "training_scope": "30k schedules. Tea changes training resolution; training histories/backends differ. These gains do not isolate architecture or establish equal compute. Poster is operational transfer, not pooled primary evidence.",
+    "scenes": [
+      {
+        "scene": "custom:tea_sets_2",
+        "eval_count": 15,
+        "baseline_method": "Splatfacto",
+        "upgrade_method": "Improved-GS",
+        "baseline": {
+          "psnr": 28.681118612471533,
+          "ssim": 0.8859080751736959,
+          "lpips": 0.13865842819213867
+        },
+        "upgrade": {
+          "psnr": 31.734334582533048,
+          "ssim": 0.9350710988044739,
+          "lpips": 0.08728562245766322
+        },
+        "delta": {
+          "psnr": 3.0532159700615153,
+          "ssim": 0.04916302363077807,
+          "lpips": -0.051372805734475446
+        },
+        "source": {
+          "local_path": "upgrade/reports/final-quality-v1/scenes/custom-tea_sets_2/report.json",
+          "sha256": "3cbaa52807ff22b77a52b1ecd49f4f9c1d13bb551f219841f7e316c028b72575"
+        }
+      },
+      {
+        "scene": "bonsai",
+        "eval_count": 37,
+        "baseline_method": "Splatfacto",
+        "upgrade_method": "Improved-GS",
+        "baseline": {
+          "psnr": 31.49679879923509,
+          "ssim": 0.9368511212838663,
+          "lpips": 0.12805122882127762
+        },
+        "upgrade": {
+          "psnr": 32.45194190897066,
+          "ssim": 0.9446959157247801,
+          "lpips": 0.11973462998867035
+        },
+        "delta": {
+          "psnr": 0.9551431097355696,
+          "ssim": 0.007844794440913794,
+          "lpips": -0.00831659883260727
+        },
+        "source": {
+          "local_path": "upgrade/reports/final-quality-v1/scenes/bonsai/report.json",
+          "sha256": "4ef032d38d1fb97d8ab85649d091bd930ee8a7d1fe84e12158c11ff7a1ea8d17"
+        }
+      },
+      {
+        "scene": "room",
+        "eval_count": 39,
+        "baseline_method": "Splatfacto",
+        "upgrade_method": "Improved-GS",
+        "baseline": {
+          "psnr": 31.65590478897297,
+          "ssim": 0.9209951895933884,
+          "lpips": 0.15968023679959467
+        },
+        "upgrade": {
+          "psnr": 32.342056877207376,
+          "ssim": 0.9276776848695217,
+          "lpips": 0.14934057589524832
+        },
+        "delta": {
+          "psnr": 0.6861520882344081,
+          "ssim": 0.006682495276133293,
+          "lpips": -0.010339660904346348
+        },
+        "source": {
+          "local_path": "upgrade/reports/final-quality-v1/scenes/room/report.json",
+          "sha256": "74e3f033ca8f4621deac17bbf1a30c8488769ce41dbbd69c62b1c41769d368e5"
+        }
+      },
+      {
+        "scene": "garden",
+        "eval_count": 24,
+        "baseline_method": "Splatfacto",
+        "upgrade_method": "Improved-GS",
+        "baseline": {
+          "psnr": 26.23892094121071,
+          "ssim": 0.7920068924625715,
+          "lpips": 0.1843930215885242
+        },
+        "upgrade": {
+          "psnr": 26.645243596843954,
+          "ssim": 0.8022778232892355,
+          "lpips": 0.17953537839154401
+        },
+        "delta": {
+          "psnr": 0.4063226556332431,
+          "ssim": 0.010270930826663971,
+          "lpips": -0.004857643196980177
+        },
+        "source": {
+          "local_path": "upgrade/reports/final-quality-v1/scenes/garden/report.json",
+          "sha256": "a531950661b3c3f65eb8daefd710f422174889ade33344774fa8d15b2c32400d"
+        }
+      },
+      {
+        "scene": "poster",
+        "eval_count": 13,
+        "baseline_method": "Splatfacto",
+        "upgrade_method": "Improved-GS",
+        "baseline": {
+          "psnr": 32.559438592072595,
+          "ssim": 0.9462680083054763,
+          "lpips": 0.10832692166933647
+        },
+        "upgrade": {
+          "psnr": 33.73654807809805,
+          "ssim": 0.9541170138579148,
+          "lpips": 0.10522201428046593
+        },
+        "delta": {
+          "psnr": 1.1771094860254578,
+          "ssim": 0.007849005552438504,
+          "lpips": -0.003104907388870537
+        },
+        "source": {
+          "local_path": "upgrade/reports/final-quality-v1/scenes/poster/report.json",
+          "sha256": "46b6c37934074dba767cd0b5067281b711e2f24073ea1960a0be009bf92c4907"
+        }
+      }
+    ],
+    "browser_measurements": [
+      {
+        "scene": "custom:tea_sets_2",
+        "delta": {
+          "psnr": 3.0532159700615153,
+          "ssim": 0.04916302363077807,
+          "lpips": -0.051372805734475446
+        },
+        "quality_dominates": true,
+        "browser": {
+          "mean_parity_db": 36.384454984399476,
+          "minimum_parity_db": 30.470781926614563,
+          "p95_frame_interval_ms": 23.5,
+          "parity_met": true,
+          "timing_met": true,
+          "encoding": "packed-ext",
+          "scope": "Native parity against CUDA; timing at1280x720,DPR1,SH3,LODoff. Not display scanout FPS."
+        },
+        "gaussian_budget": 300000
+      },
+      {
+        "scene": "bonsai",
+        "delta": {
+          "psnr": 0.9551431097355696,
+          "ssim": 0.007844794440913794,
+          "lpips": -0.00831659883260727
+        },
+        "quality_dominates": true,
+        "browser": {
+          "mean_parity_db": 36.09778330363372,
+          "minimum_parity_db": 30.10516669017003,
+          "p95_frame_interval_ms": 28.399999999906868,
+          "parity_met": true,
+          "timing_met": true,
+          "encoding": "packed-ext",
+          "scope": "Native parity against CUDA; timing at1280x720,DPR1,SH3,LODoff. Not display scanout FPS."
+        },
+        "gaussian_budget": 1000000
+      },
+      {
+        "scene": "room",
+        "delta": {
+          "psnr": 0.6861520882344081,
+          "ssim": 0.006682495276133293,
+          "lpips": -0.010339660904346348
+        },
+        "quality_dominates": true,
+        "browser": {
+          "mean_parity_db": 35.42534298188663,
+          "minimum_parity_db": 22.90299081332339,
+          "p95_frame_interval_ms": 32.299999999813735,
+          "parity_met": false,
+          "timing_met": true,
+          "encoding": "packed-ext",
+          "scope": "Native parity against CUDA; timing at1280x720,DPR1,SH3,LODoff. Not display scanout FPS."
+        },
+        "gaussian_budget": 1000000
+      },
+      {
+        "scene": "garden",
+        "delta": {
+          "psnr": 0.4063226556332431,
+          "ssim": 0.010270930826663971,
+          "lpips": -0.004857643196980177
+        },
+        "quality_dominates": true,
+        "browser": {
+          "mean_parity_db": 35.72251868657738,
+          "minimum_parity_db": 32.5709181468951,
+          "p95_frame_interval_ms": 90.19999999925494,
+          "parity_met": true,
+          "timing_met": false,
+          "encoding": "packed-ext",
+          "scope": "Native parity against CUDA; timing at1280x720,DPR1,SH3,LODoff. Not display scanout FPS."
+        },
+        "gaussian_budget": 1200000
+      },
+      {
+        "scene": "poster",
+        "delta": {
+          "psnr": 1.1771094860254578,
+          "ssim": 0.007849005552438504,
+          "lpips": -0.003104907388870537
+        },
+        "quality_dominates": true,
+        "browser": {
+          "mean_parity_db": 30.48327476143846,
+          "minimum_parity_db": 23.84702476489529,
+          "p95_frame_interval_ms": 31.59999999962747,
+          "parity_met": false,
+          "timing_met": true,
+          "encoding": "packed-ext",
+          "scope": "Native parity against CUDA; timing at1280x720,DPR1,SH3,LODoff. Not display scanout FPS."
+        },
+        "gaussian_budget": 300000
+      }
+    ]
+  },
+  "room_diagnosis": {
+    "train_views": 272,
+    "eval_views": 39,
+    "fresh_arms": [
+      "A",
+      "B",
+      "C"
+    ],
+    "training_iterations": 30000,
+    "rows": [
+      {
+        "id": "historical-nerfacto",
+        "camera_optimizer": "SO3xR3",
+        "appearance": "average",
+        "common_rgb8": {
+          "psnr": 22.905607314619832,
+          "ssim": 0.7406687079331814,
+          "lpips": 0.2793683413511667
+        },
+        "native_float_psnr": 22.906782150268555,
+        "scope": "Historical reference, unchanged weights"
+      },
+      {
+        "id": "historical-splatfacto",
+        "camera_optimizer": "off",
+        "appearance": "not-applicable",
+        "common_rgb8": {
+          "psnr": 31.65590478897297,
+          "ssim": 0.9209951895933884,
+          "lpips": 0.1596802389010405
+        },
+        "native_float_psnr": 31.66524887084961,
+        "scope": "Historical reference, unchanged weights"
+      },
+      {
+        "id": "A",
+        "camera_optimizer": "off",
+        "appearance": "average",
+        "common_rgb8": {
+          "psnr": 27.554668648615333,
+          "ssim": 0.8707671333581973,
+          "lpips": 0.2127552609413098
+        },
+        "native_float_psnr": 27.558460235595703,
+        "scope": "Fresh30k current controlled arm"
+      },
+      {
+        "id": "B",
+        "camera_optimizer": "SO3xR3",
+        "appearance": "off",
+        "common_rgb8": {
+          "psnr": 24.99360058912834,
+          "ssim": 0.769361158212026,
+          "lpips": 0.27044517527788114
+        },
+        "native_float_psnr": 24.99570655822754,
+        "scope": "Fresh30k current controlled arm"
+      },
+      {
+        "id": "C",
+        "camera_optimizer": "off",
+        "appearance": "off",
+        "common_rgb8": {
+          "psnr": 30.291599272700516,
+          "ssim": 0.8741371937287159,
+          "lpips": 0.20893642516472402
+        },
+        "native_float_psnr": 30.298133850097656,
+        "scope": "Fresh30k current controlled arm"
+      }
+    ],
+    "conditional_effects": [
+      {
+        "comparison": "C-minus-B",
+        "intervention": "Camera optimizer off, with appearance already off",
+        "delta": {
+          "psnr": 5.297998683572175,
+          "ssim": 0.1047760355166899,
+          "lpips": -0.061508750113157123
+        },
+        "scope": "Current fresh controlled arms, one seed; no significance claim"
+      },
+      {
+        "comparison": "C-minus-A",
+        "intervention": "Appearance off, with camera optimizer already off",
+        "delta": {
+          "psnr": 2.7369306240851827,
+          "ssim": 0.0033700603705185683,
+          "lpips": -0.0038188357765857883
+        },
+        "scope": "Current fresh controlled arms, one seed; no significance claim"
+      }
+    ],
+    "limitations": [
+      "Historical on/average cell is not a new contemporaneous control; do not infer a full2x2 interaction.",
+      "A–C are single-seed fresh runs; no statistical significance or all-scene generalization.",
+      "Teacher29–31dB is an expected range, not a score target or execution gate.",
+      "Common metrics use saved RGB8. Original float/native metrics are separate and may differ.",
+      "No appearance fitting on test pixels, no color correction, no test-driven parameter search.",
+      "Literature scores require matched implementation/split/resolution/budget; Room name alone is insufficient.",
+      "Original submitted DOCX and NeRF-vs-GS ranking remain historical/provisional; GS improvements do not repair the Nerfacto diagnosis."
+    ],
+    "source": {
+      "local_path": "upgrade/reports/teacher-room-v1/report.json",
+      "sha256": "063175498462ceeef3afb2464857284a0e3c5aaf7b2ab2d6df258e563a2f9bdd"
+    }
+  },
+  "images": [
+    {
+      "path": "docs/assets/research/studio-comparison.png",
+      "sha256": "84db98a315b4086ea25b0e4bbddbcb1d333f1915dfafc3f590db9b8c6541fb41",
+      "caption": "Current Spatial Studio image-comparison workflow, using the original design. Native GT, baseline and selected-upgrade identity are linked to Tea held-out camera10; wipe, ROI and zoom remain available. This report-only screenshot displays saved images, without model inference or a UI redesign.",
+      "derivation": {},
+      "local_source_artifacts": [
+        "reports/revised_research_20261113/ui-capture-images.png"
+      ]
+    },
+    {
+      "path": "docs/assets/research/studio-benchmark.png",
+      "sha256": "c89d1b2f2dbb75556040567ba56d6e9d372e2c3a0c0d04c06a356944a3bfa582",
+      "caption": "Current benchmark evidence panel in the preserved interface theme. Groups expose resolution tests, the same-backend comparison, repeated seeds and replay checks; Room separately exposes A/B/C. The screenshot records the delivered interface, while the report tables provide the numerical values at print-readable size.",
+      "derivation": {},
+      "local_source_artifacts": [
+        "reports/revised_research_20261113/ui-capture-benchmark.png"
+      ]
+    },
+    {
+      "path": "docs/assets/research/tea-comparison.png",
+      "sha256": "0852478976123fae7f42b857d2df15b96e8c23398016576884e1fcf5afa4b1ca",
+      "caption": "Tea sets, held-out view10. Context and identically located source-pixel regions compare the retained Splatfacto with the selected Improved-GS result. Tea ROIs are mapped by normalized coordinates from the earlier half-grid GT annotations; the native benchmark includes a training-resolution change.",
+      "derivation": {
+        "regions": {
+          "A": [
+            300,
+            370,
+            681,
+            651
+          ],
+          "B": [
+            224,
+            811,
+            561,
+            1061
+          ]
+        },
+        "original_size": [
+          719,
+          1279
+        ],
+        "error_range": null,
+        "interpolation": "same Lanczos for RGB; no tone adjustment or sharpening"
+      },
+      "local_source_artifacts": [
+        "upgrade/data/processed/canonical/tea_sets_2-native-v2/images/frame_eval_00010.png",
+        "upgrade/reports/tea-quality-v2/evaluation/historical-native/pred_0010.png",
+        "upgrade/artifacts/research/tea-research-v4/runs/improvedgs/pred_0010.png"
+      ]
+    },
+    {
+      "path": "docs/assets/research/native-quality.png",
+      "sha256": "aedd502776167aceb0f98d020d6c184d4da7903dfd539736419e00f5704dfa2c",
+      "caption": "Native held-out mean agreement by scene, with one common RGB8 evaluator. Tea includes a training-resolution intervention; Poster remains an operational transfer case. Scene scores are not pooled.",
+      "derivation": {},
+      "local_source_artifacts": [
+        "upgrade/reports/final-quality-v1/report.json"
+      ]
+    },
+    {
+      "path": "docs/assets/research/room-ablation.png",
+      "sha256": "7a5f0f531f9d23cd28545f903fc3976b763e8358e117a955b5e9f2e8b4e840de",
+      "caption": "Room configuration diagnosis: original native float PSNR and three fresh 30k arms. The shaded interval is the instructor’s prior expectation for C, not a tuning objective or an execution gate. The historical cell is not a fresh fourth arm.",
+      "derivation": {},
+      "local_source_artifacts": [
+        "upgrade/reports/teacher-room-v1/report.json"
+      ]
+    }
+  ],
+  "acceptance": {
+    "local_path": "artifacts/ui/qa/existing-layout-v1-r4/acceptance.json",
+    "sha256": "14dba01516e292dc429bf2ea5185615288807b54186d2b26f893c881b2e568db",
+    "status": "passed",
+    "scope": "Existing-layout integration with all five real scene pairs; no new training."
+  },
+  "completion_source": {
+    "local_path": "upgrade/reports/final-quality-v1/completion.json",
+    "sha256": "1fea3b66794a4219f5f5ce8fc7024d79cca278ad7aaa08059e98601b9f0ad0c0"
+  }
+}

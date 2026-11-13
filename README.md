@@ -2,10 +2,11 @@
   <img src="docs/assets/topic16-hero.svg" alt="Photos to 3D — Nerfacto × Splatfacto và Spatial Studio" width="100%" />
 </p>
 
-<h1 align="center">Photos to 3D · Nerfacto × Splatfacto</h1>
+<h1 align="center">Photos to 3D · Spatial Studio</h1>
 
 <p align="center">
   <strong>Chụp quanh vật thể. Dựng lại không gian. Khám phá từng góc nhìn.</strong><br/>
+  Nerfacto · Splatfacto · Improved-GS<br/>
   Topic 16 · Computer Vision · Reconstruction, benchmark và gallery 3D tương tác
 </p>
 
@@ -13,15 +14,17 @@
   <img alt="Native Windows" src="https://img.shields.io/badge/Runtime-Native_Windows-244b65?style=flat-square" />
   <img alt="Nerfstudio v1.1.5" src="https://img.shields.io/badge/Nerfstudio-v1.1.5-6478bf?style=flat-square" />
   <img alt="Nerfacto và Splatfacto" src="https://img.shields.io/badge/Methods-Nerfacto_%C3%97_Splatfacto-b36d65?style=flat-square" />
+  <img alt="Selected Gaussian upgrade: Improved-GS" src="https://img.shields.io/badge/Selected_upgrade-Improved--GS-2f7b78?style=flat-square" />
   <img alt="Spatial Studio interactive 3D" src="https://img.shields.io/badge/Spatial_Studio-Interactive_3D-987545?style=flat-square" />
+  <img alt="Five completed scene comparisons" src="https://img.shields.io/badge/Final_comparisons-5_scenes-2f7b78?style=flat-square" />
 </p>
 
 <p align="center">
   <a href="#1-setup-và-chạy-đầy-đủ-trên-máy-mới">Bắt đầu</a> ·
   <a href="#2-mở-ui-khi-đã-có-kết-quả">Mở Spatial Studio</a> ·
   <a href="#6-cấu-trúc-project-và-điểm-vào-code">Đọc code</a> ·
-  <a href="Report_computer_vision.md">Báo cáo khoa học</a> ·
-  <a href="reports/topic16-full/results.md">Kết quả đo</a> ·
+  <a href="#latest-results">Kết quả mới nhất</a> ·
+  <a href="#room-diagnosis">Room A/B/C</a> ·
   <a href="setup_full_command.md">Runbook</a>
 </p>
 
@@ -29,13 +32,87 @@
 
 ## Từ ảnh chụp đến một không gian có thể khám phá
 
-Một bộ ảnh nhiều góc nhìn có thể trở thành cảnh 3D cho phép di chuyển camera và tạo góc nhìn mới. Project đặt **Nerfacto** và **Splatfacto** trên cùng dữ liệu để so sánh chất lượng ảnh, thời gian huấn luyện, bộ nhớ và tốc độ render; kết quả được đưa vào **Spatial Studio** để khám phá và kiểm tra trực quan.
+Một bộ ảnh nhiều góc nhìn có thể trở thành cảnh 3D cho phép di chuyển camera và tạo góc nhìn mới. Project bắt đầu với **Nerfacto** và **Splatfacto**, sau đó chẩn đoán cấu hình Nerfacto trên Room và nghiên cứu **Improved-GS** trên Tea. Phương án Gaussian được chọn đã chạy trên cả năm scene; **Spatial Studio** kết nối model 3D, ảnh đối chiếu và benchmark trong cùng một giao diện.
 
 | Capture | Reconstruct | Compare | Explore |
 |:---:|:---:|:---:|:---:|
-| Video bộ trà từ iPhone 14 Pro + datasets official | Neural radiance field và 3D Gaussians | Cùng held-out views, metrics và provenance | Gallery, dual-view 3D, camera sync và exact-model render |
+| Video bộ trà từ iPhone 14 Pro + datasets official | Neural radiance field và 3D Gaussians | Held-out views cố định, evaluator chung và provenance | Gallery, baseline/upgrade, camera sync, wipe và ROI |
 
-**Bạn nhận được:** pipeline native Windows có pins/checksums và checkpoint resume; **5 scenes / 10 primary runs** đã có train, evaluation, timed render và exports; UI có chọn dataset bằng ảnh, xem một hoặc hai phương pháp, so sánh GT/prediction và đọc architecture/benchmark. Banner phía trên là minh họa thiết kế; ảnh và số đo nghiên cứu được lấy từ artifacts thật.
+**Đã hoàn thành, cập nhật 13/11/2026:** baseline **5 scenes / 10 runs**, ba lượt Room A/B/C huấn luyện mới, nghiên cứu Tea và **5/5 cặp Splatfacto baseline → Improved-GS** có ảnh held-out, metrics, export 3D và kiểm thử UI. Pipeline dùng native Windows, nguồn mã/runtime được pin, artifact checksums và managed checkpoint resume. Banner phía trên là minh họa; các hình nghiên cứu bên dưới lấy từ ảnh đã lưu và số đo thực tế.
+
+![Spatial Studio: so sánh Splatfacto baseline và Improved-GS trên cùng camera Tea](docs/assets/research/studio-comparison.png)
+
+*Một camera, hai model: ảnh baseline và upgrade dùng cùng held-out view. Slider, zoom và ROI giúp kiểm tra chi tiết thay vì chỉ dựa vào điểm trung bình.*
+
+<a id="latest-results"></a>
+
+## Kết quả mới nhất · từ Tea đến cả năm scene
+
+Mục tiêu là tái dựng **nét hơn, sạch hơn và vận hành trong giới hạn phần cứng**. Các thử nghiệm resolution, inference, AbsGS/Improved-GS, repeated seeds và capacity được tập trung trên Tea. Sau khi chọn phương án, mỗi scene còn lại chỉ chạy một bản upgrade; baseline đã có được giữ nguyên để đối chiếu.
+
+### Chất lượng ảnh tại các camera chưa dùng để train
+
+| Scene | Held-out views | PSNR baseline → upgrade · dB ↑ | ΔPSNR · dB ↑ | SSIM baseline → upgrade ↑ | LPIPS baseline → upgrade ↓ |
+|---|---:|---:|---:|---:|---:|
+| **Tea sets** | 15 | 28.6811 → **31.7343** | **+3.0532** | 0.88591 → **0.93507** | 0.13866 → **0.08729** |
+| **Bonsai** | 37 | 31.4968 → **32.4519** | **+0.9551** | 0.93685 → **0.94470** | 0.12805 → **0.11973** |
+| **Room** | 39 | 31.6559 → **32.3421** | **+0.6862** | 0.92100 → **0.92768** | 0.15968 → **0.14934** |
+| **Garden** | 24 | 26.2389 → **26.6452** | **+0.4063** | 0.79201 → **0.80228** | 0.18439 → **0.17954** |
+| **Poster** | 13 | 32.5594 → **33.7365** | **+1.1771** | 0.94627 → **0.95412** | 0.10833 → **0.10522** |
+
+![PSNR và LPIPS trên năm scene: baseline màu xám, Improved-GS màu xanh teal](docs/assets/research/native-quality.png)
+
+**Cách đọc đúng:** đây là mean theo held-out camera của từng scene, dùng **cùng GT/cameras native và evaluator RGB8**. Baseline là checkpoint Splatfacto đã lưu; upgrade là Improved-GS được chọn, mỗi model có lịch train 30.000 bước. Tea còn thay đổi độ phân giải training, các backend và training histories khác nhau; mức tăng này không cô lập riêng hiệu ứng kiến trúc hay chứng minh cùng compute. Poster là ca kiểm tra vận hành/chuyển giao, không gộp vào primary benchmark. Điểm scene không được gộp thành một số tổng.
+
+<details>
+<summary><strong>Xem Tea ở cùng vị trí ảnh · GT, baseline và upgrade</strong></summary>
+
+![Tea held-out view 10: GT, Splatfacto và Improved-GS, cùng hai vùng chi tiết](docs/assets/research/tea-comparison.png)
+
+Held-out view 10, cùng vùng A/B trên ảnh nguồn; không chỉnh màu hoặc sharpen để làm đẹp kết quả. Đây là một view minh họa, còn bảng phía trên dùng toàn bộ 15 view Tea. Các vùng trong suốt, phản xạ và góc chưa được chụp vẫn có thể tái dựng chưa đúng.
+
+</details>
+
+### Những thay đổi có bằng chứng
+
+| Hướng làm | Đã thực hiện và điều rút ra |
+|---|---|
+| **Độ phân giải và inference** | Tách native training khỏi đổi resolution lúc render. Ảnh long-edge 3840/7680 là output inference, không phải dữ liệu chụp 4K/8K hay bằng chứng phục hồi thêm chi tiết nguồn. |
+| **Phương pháp Gaussian** | So AbsGS và Improved-GS trong cùng backend, sau đó kiểm tra ba seed Tea. Giữ các seed/view giảm chất lượng; cùng số bước không có nghĩa cùng số optimizer updates hoặc chi phí. |
+| **Capacity có giới hạn** | Thử 300k/450k trên validation chỉ tách từ TRAIN; quyết định giữ **300k** cho Tea. Không dùng 15 held-out test views để chọn capacity. |
+| **Độ chính xác renderer** | Chẩn đoán riêng input decoding và intermediate accumulation; profile browser được chọn là packed input + extended accumulator. Renderer parity với CUDA được báo riêng với chất lượng so GT. |
+| **Quản lý bộ nhớ** | RGB uint8 trên CPU, lookup normalization chính xác và cache CUDA giới hạn hai camera; kiểm exact inputs/edge maps và replay trước khi chuyển sang scene lớn. |
+| **Chuyển giao sang scene khác** | Một model được chọn cho mỗi scene, thực thi tuần tự, giữ baseline, per-view results, PLY và nguồn gốc của từng artifact. Garden có budget tài nguyên được khai báo riêng. |
+
+<a id="room-diagnosis"></a>
+
+### Room A/B/C · kiểm tra lại cấu hình Nerfacto
+
+Kết quả Nerfacto ban đầu thấp nên nhóm kiểm tra riêng **camera optimizer** và **appearance embedding** trước khi tiếp tục chiến dịch Gaussian. Ba arm A/B/C đều train mới đủ 30.000 bước, không khởi tạo từ baseline hay partial checkpoint, dùng 272 ảnh train và cùng 39 held-out views.
+
+| Nerfacto trên Room | Camera optimizer | Appearance | Native float PSNR · dB ↑ |
+|---|---|---|---:|
+| Historical reference | on | average khi eval | 22.9068 |
+| **A · fresh** | off | average khi eval | 27.5585 |
+| **B · fresh** | on | off từ training | 24.9957 |
+| **C · fresh** | off | off từ training | **30.2981** |
+
+<details>
+<summary><strong>Xem kết quả Room và phạm vi kết luận</strong></summary>
+
+![Room Nerfacto: historical reference và ba cấu hình A, B, C huấn luyện mới](docs/assets/research/room-ablation.png)
+
+C nằm trong khoảng kỳ vọng 29–31 dB được nêu trước thí nghiệm. Khoảng đó không được dùng làm mục tiêu tuning. Theo evaluator RGB8 chung, **C − B = +5.2980 dB** khi tắt camera optimizer với appearance đã off; **C − A = +2.7369 dB** khi tắt appearance với camera optimizer đã off. Các số RGB8 này khác nhẹ với native float trong biểu đồ.
+
+Historical on/average không được train lại cùng thời điểm nên đây không phải ma trận fresh 2×2 đầy đủ. A–C mới có một seed; chưa suy rộng sang mọi scene hoặc khẳng định thống kê. Không fit appearance trên test pixels. Kết quả này giải quyết trực tiếp chẩn đoán Room; nâng cấp Gaussian là nhánh nghiên cứu riêng. So sánh Nerfacto–Splatfacto cũ cần được đọc trong bối cảnh cấu hình đó.
+
+</details>
+
+### Giới hạn vẫn được công bố
+
+Cả năm scene cải thiện mean PSNR/SSIM/LPIPS; điều đó không có nghĩa mọi camera đều tốt hơn hoặc 3D đã hoàn hảo ở mọi góc. Room và Poster còn view browser chưa đạt ngưỡng parity 30 dB. Garden có p95 frame interval khoảng **90.2 ms** tại profile đo 1280×720, DPR1, SH3, LOD off, chưa đạt mục tiêu 33.3 ms. Đây là timing của browser preview, tách biệt với offline render FPS và native quality. Nghiên cứu chưa được chứng nhận SOTA hoặc G-Core release.
+
+**Dữ liệu công khai của trang này:** [snapshot số đo và nguồn hình](docs/research/results-2026-11-13.json). Full reports, DOCX/PDF, checkpoints, dữ liệu nguồn và private working notes được giữ local; clone Git không tự có các artifacts cần để mở đủ reconstruction. Hình chọn lọc trong `docs/assets/research/` được đưa vào Git riêng cho README.
 
 <details>
 <summary><strong>Xem Spatial Studio thực tế · workspace và art gallery</strong></summary>
@@ -57,13 +134,15 @@ Một bộ ảnh nhiều góc nhìn có thể trở thành cảnh 3D cho phép d
 | **Hồ Đức Mạnh** | Member 3 | Evaluation, render/export, benchmark và phân tích |
 | **Đinh Nam Khánh** | **Member 4 · Tech Lead** | Capture bằng iPhone 14 Pro, tích hợp hệ thống, QA và nghiệm thu trên GPU |
 
-Phân công và phạm vi thực nghiệm được trình bày trong [báo cáo Topic 16](Report_computer_vision.md). Tác giả báo cáo là bốn thành viên trên; vai trò được trình bày theo phân công, không thay chữ ký nghiệm thu hoặc bằng chứng commit.
+Tác giả báo cáo là bốn thành viên trên; vai trò được trình bày theo phân công, không thay chữ ký nghiệm thu hoặc bằng chứng commit.
 
 > **Chọn đúng điểm bắt đầu:** máy mới → [setup và chạy đầy đủ](#1-setup-và-chạy-đầy-đủ-trên-máy-mới); máy đã có kết quả → [mở UI](#2-mở-ui-khi-đã-có-kết-quả). Clone Git chỉ lấy code và tài liệu, không lấy dataset, video custom, Conda environment hoặc checkpoint.
 
-[Hướng dẫn Spatial Studio](UI_design/README.md) · [Kiến trúc project](#4-kiến-trúc-từ-input-đến-kết-quả-có-bằng-chứng) · [Báo cáo Topic 16](Report_computer_vision.md) · [Research review HTML](reports/topic16-full/review/research_review.html)
+[Hướng dẫn Spatial Studio](UI_design/README.md) · [Kết quả mới nhất](#latest-results) · [Kiến trúc project](#4-kiến-trúc-từ-input-đến-kết-quả-có-bằng-chứng) · [Nền tảng nghiên cứu](docs/research/foundations.md)
 
 ## 1. Setup và chạy đầy đủ trên máy mới
+
+Mục này tái lập **baseline Nerfacto/Splatfacto**. Nhánh nghiên cứu và runtime Improved-GS có setup riêng dưới `upgrade/`; xem [entrypoints của upgrade](#upgrade-entrypoints). Trên workspace đã hoàn tất, dùng mục 2 để mở UI; không cần chạy lại training.
 
 ### 1.1. Điều kiện trước khi bắt đầu
 
@@ -216,6 +295,8 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 Lệnh tương đương `UI_design\scripts\Start-UI.ps1`: reuse server cùng checkout/catalog nếu phù hợp; `auto` bật inference khi đang chạy elevated, nếu không dùng artifacts. Nếu mở từ shell không có Conda trong PATH, xem [cách chỉ rõ Conda](setup_full_command.md#2-máy-đã-setup-mở-ui-trước).
 
+Với dữ liệu đã hoàn tất, chọn scene rồi **Bản hiển thị → Compare** và điều kiện **Improved-GS · selected final · 30,000 steps**. Final comparison là **Splatfacto baseline / Improved-GS**, dùng chung camera và GT; các điều kiện Nerfacto/Splatfacto cũ vẫn có trong cùng selector. Dùng **Ctrl+F5** nếu trình duyệt còn giữ bundle/catalog cũ.
+
 Chỉ khi UI chưa setup/build hoặc artifacts/catalog vừa thay đổi:
 
 ```powershell
@@ -236,6 +317,22 @@ Chỉ khi UI chưa setup/build hoặc artifacts/catalog vừa thay đổi:
 | **Lưu và chia sẻ** | Bookmarks + backup JSON, screenshot PNG + metadata, print/save PDF, giao diện VI/EN và light/dark |
 
 **Đọc đúng hình 3D:** Nerfacto trong viewport là **point-cloud proxy** giúp điều hướng; Splatfacto dùng **Gaussian export đầy đủ** qua Spark. Proxy không phải ảnh neural render của Nerfacto. Ảnh evaluation hoặc nút Render ảnh model mới lấy kết quả từ checkpoint thật. Cả hai viewport dùng cùng hệ tọa độ camera đã freeze, không căn chỉnh riêng để làm đẹp.
+
+### Baseline, upgrade và benchmark trong cùng thiết kế
+
+- **Khám phá 3D:** các controls camera, presets, bookmark và gallery được giữ lại. Final comparison chỉ giữ scene đang mở, decode PLY tuần tự và giải phóng scene cũ. Cặp quá lớn như Garden dùng chuyển từng model tại cùng camera để hạn chế bộ nhớ; ảnh 2D vẫn so sánh đầy đủ.
+- **So sánh ảnh:** chọn đúng held-out view và GT/baseline/upgrade; wipe, zoom, ROI và RGB error ×4 dùng ảnh đã lưu. Không cần inference lại để xem kết quả.
+- **Visual quality:** giữ các thí nghiệm Tea và thiết kế hiện có.
+- **Benchmark & kiến trúc:** chọn evidence group cho native final, resolution/inference, AbsGS/Improved-GS, repeated seeds, replay hoặc Room A/B/C. Bảng giữ cả kết quả giảm chất lượng và các cấu hình precision không đạt.
+
+<details>
+<summary><strong>Xem benchmark trong Spatial Studio</strong></summary>
+
+![Benchmark Tea: native scores, chi phí có nhãn và phân bố chênh lệch theo view](docs/assets/research/studio-benchmark.png)
+
+Native quality, renderer parity, high-resolution outputs và historical costs có phạm vi đo riêng. Dấu — là chưa có số đo cho test đó; không thay bằng ước lượng. Ảnh UI đọc saved artifacts, không chạy benchmark trong browser.
+
+</details>
 
 ## 3. Project giải quyết bài toán gì?
 
@@ -258,7 +355,7 @@ Mô tả phương pháp tham khảo tài liệu chính thức [Nerfacto](https:/
 
 ## 4. Kiến trúc: từ input đến kết quả có bằng chứng
 
-### Pipeline nghiên cứu
+### Pipeline baseline
 
 ```mermaid
 flowchart TB
@@ -293,6 +390,12 @@ flowchart TB
 ```
 
 Safety đi cùng mọi CUDA stage: một GPU operation tại một thời điểm, reapply clock cap, watchdog và log. Analysis không load model; UI đọc artifacts đã được kiểm chứng. Hai model dùng chung data/cameras nhưng giữ defaults của từng phương pháp.
+
+### Nhánh nghiên cứu tiếp theo
+
+Nhánh `upgrade/` giữ nguyên baseline và thêm ba lớp: chẩn đoán Room A/B/C, nghiên cứu có kiểm soát trên Tea, rồi chuyển phương án Gaussian được chọn sang các scene còn lại. Nguồn mã, runtime, protocol và checkpoints được freeze theo từng lượt. Catalog chung nối các kết quả đã xác thực vào UI; không lấy một run mới nhất theo timestamp làm đại diện. Các bước publication có thể retry mà không train lại model đã hoàn tất.
+
+CPU-backed adapter giới hạn dữ liệu nằm trên CUDA; HTTP server và browser không sở hữu trainer. UI dùng current-scene loading, giới hạn preview resolution và vẽ theo nhu cầu. Các biện pháp này giảm áp lực tài nguyên nhưng không bảo đảm mọi scene chạy 30 FPS trên mọi thiết bị.
 
 ### Kiến trúc Spatial Studio
 
@@ -338,12 +441,12 @@ HTTP process không import Torch; CUDA chỉ load trong worker riêng. Inference
 
 Official archive/source revisions, checksums và counts được khóa trong registry. Poster raw metadata có 226 entries nhưng chỉ 100 ảnh khớp được giữ trong processed input. Custom video lấy frame theo timestamp, giữ provenance rồi dùng một connected COLMAP model đủ registration. Một video cung cấp các góc liên quan theo thời gian: held-out eval ở đây đo interpolation, không thay thế independent capture.
 
-**Primary:** 30.000 iterations, seed 42, downscale 2, official eval interval 8; các GPU jobs tuần tự. **Diagnostic** là smoke ít bước, không nhập bảng primary. **Repeat** dùng protocol/seeds riêng, không trộn vào primary. Bằng nhau về iterations không có nghĩa bằng FLOPs hoặc batch size.
+**Baseline primary:** 30.000 iterations, seed 42, downscale 2, official eval interval 8; các GPU jobs tuần tự. **Diagnostic** là smoke ít bước, không nhập bảng primary. **Repeat** dùng protocol/seeds riêng, không trộn vào primary. Bằng nhau về iterations không có nghĩa bằng FLOPs hoặc batch size. Bảng [final native](#latest-results) dùng protocol/evaluator đã nêu riêng; Tea native training là can thiệp resolution được khai báo, không đổi ngầm baseline.
 
 | Chỉ số | Cách đọc | Lưu ý |
 |---|---|---|
-| PSNR ↑ | Sai số pixel thấp hơn thường cho PSNR cao hơn; đơn vị dB | Dùng implementation upstream và cùng GT |
-| SSIM ↑ | Mức tương đồng cấu trúc ảnh | Hai model giữ backend SSIM upstream khác nhau; xem caveat trong report và đối chiếu PSNR/LPIPS |
+| PSNR ↑ | Sai số pixel thấp hơn thường cho PSNR cao hơn; đơn vị dB | Final dùng RGB8 evaluator chung; native float lịch sử được giữ riêng |
+| SSIM ↑ | Mức tương đồng cấu trúc ảnh | Final dùng evaluator chung; baseline native lịch sử giữ backend upstream, không trộn hai loại số |
 | LPIPS ↓ | Khoảng cách cảm nhận giữa hai ảnh | Nhỏ hơn tốt hơn trên cùng evaluator |
 | Train seconds ↓ | Thời gian train ghi cho run | Phụ thuộc protocol, GPU và safety policy |
 | Peak sampled VRAM ↓ | Bộ nhớ GPU lớn nhất trong các mẫu; MiB | Sampling 10 s có thể bỏ lỡ spike |
@@ -352,7 +455,7 @@ Official archive/source revisions, checksums và counts được khóa trong reg
 
 **Browser FPS** là tốc độ viewport; **render latency** là thời gian một request camera mới; hai số này không thay thế offline benchmark FPS.
 
-**Trạng thái evidence ngày 2026-10-02:** session `topic16-full` đã hoàn tất **10/10 train + eval và toàn bộ timed render/export**, có reports và UI local. Research session là `awaiting-evidence`; **G-Core chưa PASS** vì còn approvals nghiên cứu/independent replay. Trạng thái này không yêu cầu laptop hiện tại train lại để dùng UI. Kết quả tại [results.md](reports/topic16-full/results.md), [CSV](reports/topic16-full/results.csv), [research review](reports/topic16-full/review/research_review.md); số đo chỉ áp dụng cho cấu hình/protocol đã ghi.
+**Trạng thái ngày 13/11/2026:** baseline `topic16-full` giữ đủ **10/10 train + eval, timed render và export**. Chiến dịch teacher-first đã hoàn thành Room A/B/C và cả năm final Gaussian comparisons; UI đã kiểm thử với models/ảnh thực của năm scene. Các acceptance này có phạm vi riêng, không thay thế G-Core approvals/independent replay; **chưa công bố G-Core PASS**. Các báo cáo đầy đủ nằm local tại `reports/topic16-full/`, `upgrade/reports/teacher-room-v1/` và `upgrade/reports/final-quality-v1/`. Bản tóm tắt công khai nằm ở [kết quả mới nhất](#latest-results) và [snapshot số đo](docs/research/results-2026-11-13.json).
 
 ## 6. Cấu trúc project và điểm vào code
 
@@ -360,12 +463,12 @@ Official archive/source revisions, checksums và counts được khóa trong reg
 
 | Bạn muốn làm gì? | Bắt đầu ở đâu? |
 |---|---|
-| Hiểu bài toán, hai model và kết quả nghiên cứu | [Khái niệm ở mục 3](#3-project-giải-quyết-bài-toán-gì), [kiến trúc ở mục 4](#4-kiến-trúc-từ-input-đến-kết-quả-có-bằng-chứng), [báo cáo đầy đủ](Report_computer_vision.md) |
+| Hiểu bài toán, các model và kết quả nghiên cứu | [Khái niệm ở mục 3](#3-project-giải-quyết-bài-toán-gì), [kiến trúc ở mục 4](#4-kiến-trúc-từ-input-đến-kết-quả-có-bằng-chứng), [kết quả mới nhất](#latest-results) |
 | Cài máy mới, chạy lại pipeline, xử lý lỗi hoặc resume | [Setup ở mục 1](#1-setup-và-chạy-đầy-đủ-trên-máy-mới), [runbook đầy đủ](setup_full_command.md) |
 | Mở UI, điều khiển camera, so sánh ảnh hoặc thêm scene | [UI ở mục 2](#2-mở-ui-khi-đã-có-kết-quả), [UI_design/README.md](UI_design/README.md) |
-| Tìm số benchmark và ảnh so sánh đã đo | [results.md](reports/topic16-full/results.md), [results.json](reports/topic16-full/results.json), [research review](reports/topic16-full/review/research_review.md), [case gallery](reports/topic16-full/review/case-gallery.html) |
+| Tìm số benchmark và ảnh so sánh đã đo | [Final native](#latest-results), [Room A/B/C](#room-diagnosis), [snapshot công khai](docs/research/results-2026-11-13.json); reports đầy đủ nằm local |
 | Hiểu hash, manifest, paired-run validation và GPU guard | [contracts.py](src/topic16/contracts.py), [run manifest protocol](docs/protocols/run_manifest.md), [GPU safety protocol](docs/protocols/gpu_safety.md) |
-| Xem phần nào đã hoàn thành và giới hạn kiểm thử | [implementation status](docs/implementation_status.md), [UI acceptance](UI_design/ACCEPTANCE.md), [g-core.json](reports/topic16-full/g-core.json) |
+| Xem phần nào đã hoàn thành và giới hạn kiểm thử | [Trạng thái hiện tại](#latest-results), [UI integration](UI_design/README.md), [lịch sử core](docs/implementation_status.md) và [acceptance gốc](UI_design/ACCEPTANCE.md) |
 
 ### 6.2. Bản đồ thư mục hiện tại
 
@@ -373,7 +476,6 @@ Official archive/source revisions, checksums và counts được khóa trong reg
 Topic_16_CV/
 ├── README.md                     Tổng quan, setup nhanh, kiến trúc và bản đồ code
 ├── setup_full_command.md          Commands đầy đủ, stop/resume và troubleshooting
-├── Report_computer_vision.md      Báo cáo khoa học của nhóm
 ├── Invoke-Topic16.ps1             Dispatcher: help / research / qa / ui / ...
 ├── configs/
 │   ├── project.psd1               Pins, datasets, protocol, GPU policy, UI settings
@@ -389,6 +491,11 @@ Topic_16_CV/
 │   ├── training_worker.py        Controlled trainer loop và checkpoint state
 │   └── analysis.py demo.py       Reports/gates và selected-model demo/release
 ├── tests/                        Core contracts và các trường hợp sai đầu vào
+├── upgrade/                      Nhánh nghiên cứu, giữ nguyên baseline
+│   ├── Invoke-Upgrade.ps1        Entrypoints quality/research/final/teacher
+│   ├── configs/                  Protocols và giới hạn cho từng study
+│   ├── src/topic16_upgrade/     Room diagnosis, GS, bounded loading và reports
+│   └── artifacts/, reports/     Evidence/checkpoints local; không có trong Git
 ├── UI_design/                    Toàn bộ mã và tài liệu của Spatial Studio
 │   ├── index.html                HTML mount point cho frontend
 │   ├── frontend/                 React/TypeScript, 3D, gallery, ảnh, research
@@ -450,7 +557,28 @@ Các installer/host tools và session orchestration có logic PowerShell riêng;
 
 Hai module cần hiểu trước khi sửa pipeline: [contracts.py](src/topic16/contracts.py) kiểm paths/hashes, run lifecycle, frozen splits, exports và `validate_pair`; [settings.py](src/topic16/settings.py) tách registry UI khỏi experiment identity nhưng vẫn chặn thay đổi protocol/runtime/data/safety. [safety.py](src/topic16/safety.py) cung cấp `GpuGuard`; GPU operations dùng chung lock/guard trong runtime và worker.
 
-**Model code nằm ở đâu?** `src/topic16/` là phần điều phối, kiểm chứng và đo lường của project. Kiến trúc/loss/trainer của Nerfacto và Splatfacto nằm trong source Nerfstudio tải vào `third_party/nerfstudio/nerfstudio/`, đặc biệt `models/nerfacto.py`, `models/splatfacto.py` và `configs/method_configs.py`. gsplat/tiny-cuda-nn là dependencies của runtime. Xem [report](Report_computer_vision.md) và [paper notes](docs/research/paper_notes.md) để nối implementation với lý thuyết; thay upstream cần pin revision và chạy lại protocol phù hợp.
+**Model code nằm ở đâu?** `src/topic16/` là phần điều phối, kiểm chứng và đo lường của baseline. Kiến trúc/loss/trainer Nerfacto và Splatfacto nằm trong source Nerfstudio tải vào `third_party/nerfstudio/nerfstudio/`, đặc biệt `models/nerfacto.py`, `models/splatfacto.py` và `configs/method_configs.py`. Nhánh `upgrade/src/topic16_upgrade/` điều phối nghiên cứu và pinned Improved-GS backend riêng. Xem [nền tảng](docs/research/foundations.md) và [paper notes](docs/research/paper_notes.md); thay upstream cần pin revision và chạy lại protocol phù hợp.
+
+<a id="upgrade-entrypoints"></a>
+
+### Entrypoints của nhánh nghiên cứu
+
+| Bạn cần đọc gì? | Source được version control |
+|---|---|
+| Protocol và khai báo Room A/B/C | [teacher-room.psd1](upgrade/configs/teacher-room.psd1), [teacher.py](upgrade/src/topic16_upgrade/teacher.py), [teacher_worker.py](upgrade/src/topic16_upgrade/teacher_worker.py) |
+| Protocol final và giới hạn mỗi scene | [final-quality.psd1](upgrade/configs/final-quality.psd1), [final_campaign.py](upgrade/src/topic16_upgrade/final_campaign.py) |
+| Same-backend Gaussian và bounded adapter | [improved_worker.py](upgrade/src/topic16_upgrade/improved_worker.py), [bounded_adapter.py](upgrade/src/topic16_upgrade/bounded_adapter.py) |
+| Tạo report và kiểm UI final | [final_report.py](upgrade/src/topic16_upgrade/final_report.py), [final_ui.py](upgrade/src/topic16_upgrade/final_ui.py) |
+| Setup môi trường riêng | [Setup-Upgrade.ps1](upgrade/scripts/Setup-Upgrade.ps1), [Setup-ImprovedGS.ps1](upgrade/scripts/Setup-ImprovedGS.ps1) |
+| Chọn task và quản lý phiên | [Invoke-Upgrade.ps1](upgrade/Invoke-Upgrade.ps1), [Manage-Session.ps1](upgrade/scripts/Manage-Session.ps1) |
+
+Các protocols được lưu theo phiên bản; một số tài liệu cũ mô tả lượt từng chạy hoặc đã pause, không phải yêu cầu chạy lại. Trạng thái hiện tại: chiến dịch đã xong. Để kiểm tra owner cuối trên workspace đã có evidence, dùng lệnh chỉ đọc:
+
+```powershell
+.\upgrade\scripts\Manage-Session.ps1 -Action Status -Name topic16-teacher-room-v1
+```
+
+Source mới clone chưa có session/checkpoints của máy nghiên cứu. Phải setup và tạo evidence mới hoặc chuyển đầy đủ artifact graph đã được xác thực; không coi ảnh README là artifacts đủ cho UI.
 
 ### 6.4. Điểm vào UI và nơi sửa từng tính năng
 
@@ -465,6 +593,7 @@ Luồng mở app: [Start-UI.ps1](UI_design/scripts/Start-UI.ps1) → backend `cl
 | Gallery, tốc độ đi, tour/map/teleport, chọn tranh | [Gallery.tsx](UI_design/frontend/Gallery.tsx) | Gallery geometry, movement và scene selection |
 | GT/N/S, wipe, zoom/ROI và ảnh checkpoint mới | [Compare.tsx](UI_design/frontend/Compare.tsx) | Saved và live image groups; giữ đúng camera/group identity |
 | Charts, bảng metrics, diagrams, figures và provenance | [Research.tsx](UI_design/frontend/Research.tsx) | Hiển thị số đã đo; không recompute benchmark trên browser |
+| Final baseline/upgrade, Tea studies và evidence groups | [FinalQuality.tsx](UI_design/frontend/FinalQuality.tsx), [Quality.tsx](UI_design/frontend/Quality.tsx), [BenchmarkEvidence.tsx](UI_design/frontend/BenchmarkEvidence.tsx) | Tách protocol và model identities, hiển thị cả regression/giới hạn; giữ layout hiện có |
 | Bookmarks và JSON backup/import | [bookmarks.ts](UI_design/frontend/bookmarks.ts) | Validate schema, camera, giới hạn entries/file size |
 | Theme, responsive, accessibility, print styles | [global.css](UI_design/frontend/global.css), [studio.module.css](UI_design/frontend/studio.module.css) | Global tokens và component styling |
 | Scene descriptors và asset catalog | [catalog.py](UI_design/backend/catalog.py) | `LABELS`, exact pair validation, hash/allowlist và atomic publication |
@@ -484,7 +613,7 @@ Khi người dùng bấm render: `main.tsx`/`api.ts` → `server.py` → `Jobs` 
 | Managed session, stage state và resume history | `artifacts/logs/sessions/`; session directory truyền vào runbook | Xem stage/stop state và executions; không suy trạng thái từ ảnh UI |
 | Exact configs của từng pair | `artifacts/logs/matrices/` | Matrix là đầu vào analysis/catalog, không phải CSV benchmark |
 | Evaluation, render, PLY và video | `artifacts/metrics/`, `artifacts/renders/`, `artifacts/exports/`, `artifacts/videos/` | Artifacts gắn với checkpoint và camera identities |
-| Benchmark đã xuất để đọc/chia sẻ | [reports/topic16-full/](reports/topic16-full/results.md) | `results.{md,json,csv}`, figures, `g-core.json` và `review/` |
+| Benchmark đã xuất để đọc/chia sẻ | `reports/topic16-full/`, `upgrade/reports/teacher-room-v1/`, `upgrade/reports/final-quality-v1/` | Full reports local; [snapshot công khai](docs/research/results-2026-11-13.json) và hình README là phần chọn lọc |
 | URL/profile UI, catalog và inference job state | `artifacts/ui/server.json`, `catalog.json`, `jobs/` | Đọc URL thực của launcher; catalog revision và job metadata giúp kiểm tra kết quả |
 | Kết quả QA và bằng chứng nghiệm thu | `artifacts/logs/validation/`, `artifacts/ui/qa/`; [UI acceptance](UI_design/ACCEPTANCE.md) | Tách unit/fixture/browser evidence khỏi measured GPU benchmark |
 
@@ -498,7 +627,7 @@ Các paths runtime phụ thuộc scene/run/session được chọn. `contracts.p
 4. Xem tests tương ứng trong [tests/](tests/README.md), [UI_design/tests/](UI_design/tests/) và [workflow QA](.github/workflows/qa.yml). Các `.mjs` kiểm browser/API/inference có scope khác fixture E2E; xem UI README trước khi chạy.
 5. Kiểm core bằng `Test-Project.ps1`, UI bằng `Test-UI.ps1` và `Build-UI.ps1`. Nếu thay data/model/protocol, tạo artifact/run mới theo contracts và kiểm paired evidence; typecheck/CPU tests không thay phép đo GPU.
 
-Git chứa source code, package lock, tài liệu và research evidence được track. Dữ liệu lớn, video custom, Conda environment, upstream clones, `node_modules`/`dist`, runtime caches và phần lớn artifacts được bỏ qua theo [.gitignore](.gitignore). Một checkout mới cần setup và chạy pipeline hoặc nhận đủ artifact graph có checksums để dùng UI với reconstruction thật.
+Git chứa source code, package lock, tài liệu công khai và các hình/số đo chọn lọc cho README. Full report folders, private working notes, dữ liệu lớn, video custom, Conda environment, upstream clones, `node_modules`/`dist`, runtime caches và phần lớn artifacts được bỏ qua theo [.gitignore](.gitignore). Một checkout mới cần setup và chạy pipeline hoặc nhận đủ artifact graph có checksums để dùng UI với reconstruction thật.
 
 ## 7. Kiểm tra và tài liệu tiếp theo
 
@@ -518,4 +647,4 @@ Browser QA cần server đang chạy và trình duyệt Windows đã cài; xem U
 - [Setup snapshot 2026-09-23](docs/setup_status_2026-09-23.md) — lịch sử môi trường, không phải training status hiện tại
 - [GPU safety protocol](docs/protocols/gpu_safety.md)
 - [Nền tảng toán](docs/research/foundations.md) và [paper/source notes](docs/research/paper_notes.md)
-- [Independent reproduction runbook](reports/topic16-full/review/replay_runbook.md) — dành cho review/tái lập trên máy khác khi cần nghiệm thu
+- Independent reproduction runbook: `reports/topic16-full/review/replay_runbook.md` trong bộ evidence local; dành cho review/tái lập trên máy khác khi cần nghiệm thu
