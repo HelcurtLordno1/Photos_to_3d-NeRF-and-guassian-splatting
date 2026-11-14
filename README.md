@@ -215,4 +215,4 @@ Mọi lệnh phía trên chạy tại root này. `upgrade/data/`, `upgrade/artif
 | Thao tác UI, profiles và QA | [UI_design/README.md](UI_design/README.md) — hướng dẫn UI và các lệnh tương ứng |
 | Số đo và nguồn hình nghiên cứu | [Results snapshot](docs/research/results-2026-11-13.json) — dữ liệu JSON để đọc, không phải script |
 
-**Nhóm thực hiện:** **Đinh Nam Khánh — Tech Lead** · Khổng Gia Minh · Nguyễn Phú Nam · Hồ Đức Mạnh.
+**Nhóm thực hiện:** Đinh Nam Khánh — Tech Lead · Khổng Gia Minh · Nguyễn Phú Nam · Hồ Đức Mạnh.
