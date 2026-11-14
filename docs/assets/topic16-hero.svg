@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
-<title id="title">Photos to 3D — Nerfacto × Splatfacto · Spatial Studio</title>
+<title id="title">Photos to 3D — Nerfacto · Splatfacto · Improved-GS · Spatial Studio</title>
 <desc id="desc">Project banner with a conceptual neural wireframe and colored Gaussian primitives. Illustration, not a measured reconstruction.</desc>
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101b2b"/><stop offset="1" stop-color="#09111c"/></linearGradient>
@@ -14,12 +14,12 @@
 <rect x="58" y="44" width="217" height="27" rx="13.5" fill="#d4b892" fill-opacity=".11" stroke="#d4b892" stroke-opacity=".35"/>
 <text x="76" y="62" font-family="Arial,sans-serif" font-size="11" letter-spacing="2" fill="#e6cda8">COMPUTER VISION · TOPIC 16</text>
 <text x="56" y="139" font-family="Arial,sans-serif" font-weight="700" font-size="56" letter-spacing="-2" fill="url(#text)">PHOTOS TO 3D</text>
-<text x="60" y="178" font-family="Arial,sans-serif" font-size="19" fill="#b9c4cf">Nerfacto × Splatfacto</text>
+<text x="60" y="178" font-family="Arial,sans-serif" font-size="18" fill="#b9c4cf">Nerfacto · Splatfacto · Improved-GS</text>
 <text x="60" y="224" font-family="Arial,sans-serif" font-size="14" fill="#91a3b5">Capture a scene. Reconstruct its radiance.</text>
 <text x="60" y="246" font-family="Arial,sans-serif" font-size="14" fill="#91a3b5">Compare the evidence. Explore every viewpoint.</text>
 <rect x="59" y="279" width="196" height="38" rx="8" fill="#d7ba95"/>
 <text x="79" y="303" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1" fill="#16202d">SPATIAL STUDIO</text>
-<text x="280" y="303" font-family="Arial,sans-serif" font-size="12" fill="#abbdcb">5 scenes · 2 methods · 1 studio</text>
+<text x="280" y="303" font-family="Arial,sans-serif" font-size="12" fill="#abbdcb">5 scenes · 3 methods · 1 studio</text>
 <text x="60" y="358" font-family="Arial,sans-serif" font-size="10" fill="#7f94a6" letter-spacing="1">NATIVE WINDOWS  /  REPRODUCIBLE PIPELINE  /  INTERACTIVE 3D</text>
 <ellipse cx="885" cy="226" rx="220" ry="73" transform="rotate(-18 885 226)" fill="none" stroke="#617888" stroke-opacity=".35"/>
 <ellipse cx="900" cy="213" rx="198" ry="96" transform="rotate(16 900 213)" fill="none" stroke="#d7ba95" stroke-opacity=".26" stroke-dasharray="5 7"/>
