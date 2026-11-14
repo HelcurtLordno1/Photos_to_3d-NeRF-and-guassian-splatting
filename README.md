@@ -11,9 +11,11 @@
 
 <p align="center">
   <a href="#bo-suu-tap">5 datasets</a> ·
+  <a href="#kien-truc">Kiến trúc</a> ·
   <a href="#ket-qua">Kết quả</a> ·
   <a href="#chay-ui">Chạy UI</a> ·
   <a href="#cai-dat">Cài đặt</a> ·
+  <a href="#repository-map">Thư mục</a> ·
   <a href="setup_full_command.md">Runbook</a>
 </p>
 
@@ -39,6 +41,33 @@ Project Computer Vision so sánh **neural radiance field** và **3D Gaussian Spl
 ![Art gallery với các scene của project](docs/assets/spatial-studio-gallery.png)
 
 Nerfacto trong viewport là point-cloud proxy để điều hướng; ảnh neural chính xác lấy từ checkpoint. Các screenshots này minh họa workspace baseline và gallery.
+
+</details>
+
+<a id="kien-truc"></a>
+
+## Kiến trúc · từ dữ liệu đến trải nghiệm 3D
+
+```mermaid
+flowchart LR
+    A["Ảnh / video + poses"] --> B["Canonical input<br/>RGB · camera · split"]
+    B --> C["Training tuần tự<br/>Nerfacto / Splatfacto / Improved-GS"]
+    C --> D["Exact checkpoint<br/>Held-out evaluation + exports"]
+    D --> E["Validated catalog<br/>Spatial Studio"]
+```
+
+**Frontend React/Three.js/Spark** xem ảnh đã lưu và Gaussian/point-cloud exports. **HTTP backend** phục vụ catalog và artifacts, không import Torch; render checkpoint tại camera mới chạy trong **GPU worker riêng**, dùng chung khóa GPU. Chọn scene hoặc mở UI không train lại model.
+
+<details>
+<summary><strong>Ba phương pháp và phần nghiên cứu</strong></summary>
+
+| Phương pháp | Biểu diễn và cách tạo ảnh | Source điều phối từ root |
+|---|---|---|
+| **Nerfacto** | Hash-grid + MLP, volume rendering; Room A/B/C kiểm tra camera optimizer và appearance conditioning | [src/topic16/](src/topic16/), [teacher.py](upgrade/src/topic16_upgrade/teacher.py) |
+| **Splatfacto** | Gaussian 3D, màu theo hướng nhìn, chiếu và alpha blending; baseline trong Nerfstudio | [runtime.py](src/topic16/runtime.py) |
+| **Improved-GS** | Pinned Gaussian backend riêng; nghiên cứu trên Tea rồi chuyển phương án đã chọn sang các scene còn lại | [improved_worker.py](upgrade/src/topic16_upgrade/improved_worker.py), [bounded_adapter.py](upgrade/src/topic16_upgrade/bounded_adapter.py) |
+
+Model code Nerfacto/Splatfacto nằm trong Nerfstudio tải về `third_party/nerfstudio/`; `src/topic16/` quản lý data, train/eval và artifact contracts. Protocols/pins baseline ở [configs/project.psd1](configs/project.psd1), các study mới ở [upgrade/configs/](upgrade/configs/).
 
 </details>
 
@@ -96,40 +125,94 @@ Dừng server từ terminal khác:
 
 ## Cài đặt và chạy trên máy mới
 
-**Windows PowerShell Administrator**, NVIDIA GPU và Git. Cấu hình đã kiểm chứng: **RTX A4500 Laptop 16 GB**. Dataset, checkpoints và full reports được giữ local; clone Git chỉ lấy source và tài liệu công khai.
+**Windows PowerShell 5.1 Administrator**, Git, `winget` và NVIDIA driver có `nvidia-smi`. Cấu hình đã kiểm chứng: **RTX A4500 Laptop 16 GB, compute capability 8.6**; GPU khác cần kiểm tra build tương thích. Installer cài Miniconda/MSVC, không cài driver. Dataset, checkpoints và full reports được giữ local; clone Git chưa có reconstruction để xem.
 
 <details>
 <summary><strong>Clone, cài môi trường và chạy baseline</strong></summary>
 
+**1. Clone và cài host tools.** Ví dụ dùng cùng đường dẫn với runbook; nếu đổi, thay ở cả hai block:
+
 ```powershell
-git clone https://github.com/HelcurtLordno1/Photos_to_3d-NeRF-and-guassian-splatting.git
-Set-Location Photos_to_3d-NeRF-and-guassian-splatting
 Set-ExecutionPolicy -Scope Process Bypass
+$ErrorActionPreference = 'Stop'
+$checkoutRoot = 'C:\CVProjects\Topic_16_CV'
+if (Test-Path -LiteralPath $checkoutRoot) { throw 'Checkout exists; use it instead of cloning over it.' }
+New-Item -ItemType Directory -Path (Split-Path $checkoutRoot) -Force | Out-Null
+git clone https://github.com/HelcurtLordno1/Photos_to_3d-NeRF-and-guassian-splatting.git $checkoutRoot
+if ($LASTEXITCODE -ne 0) { throw 'Clone failed.' }
+Set-Location -LiteralPath $checkoutRoot
 .\scripts\Install-HostTools.ps1 -InstallBuildTools
 ```
 
-Mở lại PowerShell Administrator tại repo:
+**2. Mở lại PowerShell Administrator**, cài runtime, official datasets và UI dependencies:
 
 ```powershell
+Set-Location -LiteralPath 'C:\CVProjects\Topic_16_CV'
 Set-ExecutionPolicy -Scope Process Bypass
+$ErrorActionPreference = 'Stop'
 .\Invoke-Topic16.ps1 setup-all
+.\scripts\Test-Project.ps1 -RequireRuntime
+.\scripts\Test-Datasets.ps1 -Mode all -WriteManifest
 .\Invoke-Topic16.ps1 ui-setup
 ```
 
-Sau khi chuẩn bị và duyệt video Tea theo [runbook](setup_full_command.md), chạy baseline:
+**3. Chuẩn bị Tea.** Lấy video gốc `tea_sets_2.mp4` từ nhóm; làm [capture và review](setup_full_command.md#tea-capture) đến hết bước approval. Video không được tải tự động. Thiếu video thì chưa tái lập đủ bộ năm scene; không chạy bước 4 với dữ liệu custom khác tên/identity.
+
+**4. Chạy baseline mới** sau khi các kiểm tra và capture approval đã pass. Đây là lượt training dài gồm 10 runs, không phải lệnh mở UI:
 
 ```powershell
 .\scripts\Run-Research.ps1 -SessionDirectory '.\artifacts\logs\research\topic16-full' -CustomScene tea_sets_2
 ```
 
-Hoàn tất training rồi chạy `ui-prepare`, `ui-build`, `ui`. Nhánh Improved-GS có runtime/protocol riêng dưới `upgrade/`; dùng đầy đủ artifacts đã xác thực hoặc tạo evidence mới để xem bản upgrade.
+Nếu session đã tồn tại nhưng chưa xong, dùng [Resume cùng session](setup_full_command.md#baseline-resume), không chạy lại như lượt mới.
+
+**5. Khi training/evaluation/export hoàn tất**, tạo catalog rồi mở UI:
+
+```powershell
+.\Invoke-Topic16.ps1 ui-prepare
+.\Invoke-Topic16.ps1 ui-build
+.\Invoke-Topic16.ps1 ui
+```
+
+Các lệnh trên tái lập **baseline Nerfacto/Splatfacto**. Compare của Improved-GS chỉ có khi workspace chứa đủ artifacts upgrade đã xác thực; runtime/protocol nghiên cứu nằm riêng dưới `upgrade/`.
 
 </details>
 
+<a id="repository-map"></a>
+
+## Bản đồ repository · đường dẫn từ root
+
+```text
+Topic_16_CV/
+├── Invoke-Topic16.ps1           Lệnh nhanh: setup, QA, UI
+├── configs/project.psd1        Pins, datasets và protocol baseline
+├── scripts/                    Entrypoints Windows PowerShell
+├── src/topic16/                Data, training, evaluation, contracts
+├── upgrade/                    Nhánh nghiên cứu tách khỏi baseline
+│   ├── Invoke-Upgrade.ps1       Dispatcher cho các study
+│   ├── configs/                Protocols Room, Tea và final campaign
+│   ├── scripts/                Setup runtime và managed sessions riêng
+│   └── src/topic16_upgrade/    Gaussian backend, bounded loading, reports
+├── UI_design/
+│   ├── frontend/               React, Three.js, comparison, benchmark
+│   ├── backend/                Catalog, HTTP API, inference worker
+│   ├── scripts/                Setup, prepare, build, start/stop UI
+│   └── README.md               Hướng dẫn UI
+├── docs/                       Assets, protocols và tài liệu nghiên cứu
+├── tests/                      Core contract tests
+├── setup_full_command.md       Runbook từng bước
+├── third_party/                Upstream source tải theo pins, local
+├── data/                       Dataset local, không có trong clone
+├── artifacts/                  Checkpoints, renders, exports và UI catalog
+└── reports/                    Báo cáo local
+```
+
+Mọi lệnh phía trên chạy tại root này. `upgrade/data/`, `upgrade/artifacts/` và `upgrade/reports/` chứa dữ liệu/evidence riêng của nhánh nghiên cứu, cũng được tạo hoặc chuyển vào local.
+
 | Cần tìm gì? | Tài liệu |
 |---|---|
-| Setup dữ liệu, lệnh đầy đủ, stop/resume | [Runbook](setup_full_command.md) |
-| Thao tác UI, profiles và QA | [Spatial Studio](UI_design/README.md) |
-| Số đo và nguồn hình nghiên cứu | [Results snapshot](docs/research/results-2026-11-13.json) |
+| Setup dữ liệu, lệnh đầy đủ, stop/resume | [setup_full_command.md](setup_full_command.md) — đọc và chạy từng block PowerShell |
+| Thao tác UI, profiles và QA | [UI_design/README.md](UI_design/README.md) — hướng dẫn UI và các lệnh tương ứng |
+| Số đo và nguồn hình nghiên cứu | [Results snapshot](docs/research/results-2026-11-13.json) — dữ liệu JSON để đọc, không phải script |
 
-**Nhóm thực hiện:** Khổng Gia Minh · Nguyễn Phú Nam · Hồ Đức Mạnh · Đinh Nam Khánh.
+**Nhóm thực hiện:** **Đinh Nam Khánh — Tech Lead** · Khổng Gia Minh · Nguyễn Phú Nam · Hồ Đức Mạnh.

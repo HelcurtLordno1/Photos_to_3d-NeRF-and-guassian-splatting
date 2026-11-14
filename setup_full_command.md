@@ -1,8 +1,8 @@
 # Setup và vận hành đầy đủ · Native Windows PowerShell
 
-Runbook này đối chiếu với scripts hiện tại, [session operations](docs/session_operations.md), [setup snapshot](docs/setup_status_2026-09-23.md), [kiến trúc project](README.md#4-kiến-trúc-từ-input-đến-kết-quả-có-bằng-chứng), [bản đồ code](README.md#6-cấu-trúc-project-và-điểm-vào-code) và [Spatial Studio](UI_design/README.md). Dùng để cài máy mới, chạy pipeline nghiên cứu và mở UI; không xem các lệnh sửa lỗi/pause/release là một chuỗi phải chạy hết.
+Runbook này đối chiếu với scripts hiện tại, [session operations](docs/session_operations.md), [setup snapshot](docs/setup_status_2026-09-23.md), [kiến trúc project](README.md#kien-truc), [bản đồ code](README.md#repository-map) và [Spatial Studio](UI_design/README.md). Dùng để cài máy mới, chạy baseline và mở UI; không xem các lệnh sửa lỗi/pause/release là một chuỗi phải chạy hết. Các file `.md` là hướng dẫn: chạy từng block PowerShell bên trong, không thực thi file Markdown.
 
-**Máy đã hoàn tất experiments: bắt đầu ở [mục 2](#2-máy-đã-setup-mở-ui-trước), không training lại. Máy mới: mục 1 → 3 → 4 → 5.** Mục 6–10 là lựa chọn vận hành/QA/nghiệm thu khi cần. Tài liệu setup ngày 2026-09-23 là snapshot lịch sử; trạng thái hiện tại 2026-10-02 là đủ 10/10 train/eval và toàn bộ render/export, research session `awaiting-evidence`.
+**Máy đã có experiments: bắt đầu ở [mục 2](#2-máy-đã-setup-mở-ui-trước), không training lại. Máy mới: mục 1 → 3 → 4 → 5.** Mục 6–10 là lựa chọn vận hành/QA/nghiệm thu khi cần. Đến 13/11/2026, workspace nghiên cứu đã xong baseline 10/10 runs, Room A/B/C và cả năm final Gaussian comparisons. Lệnh train trong runbook này tái lập baseline; không tự tạo Improved-GS. Full reports/checkpoints không có trong clone Git. Trạng thái G-Core/release vẫn tách biệt với việc chạy UI; snapshot setup 2026-09-23 là lịch sử.
 
 ## Quy ước trước khi copy lệnh
 
@@ -188,6 +188,8 @@ Train tự prepare canonical; có thể làm trước để tách data time kh�
 
 Canonical dùng chung undistort/crop/intrinsics, sparse points, LANCZOS downscale và explicit train/val/test lists. Source raw không sửa. Preparation/hash mismatch không được chữa bằng sửa hash thủ công. Open3D Windows dùng ASCII junction trong TEMP trỏ vào repo, không copy một dataset khác.
 
+<a id="tea-capture"></a>
+
 ### 3.2. Custom `tea_sets_2`: nguồn → frames → COLMAP → figures
 
 Để tái lập đúng cảnh đã công bố, lấy video gốc từ chủ dự án. SHA-256 nằm trong block; file này không có URL downloader và không nằm trong Git. Thiếu nguồn thì dừng nhánh custom, không lấy video khác làm cùng identity.
@@ -285,6 +287,8 @@ Tổng 10 train/eval runs; primary 30k / seed 42 / downscale 2. Poster bị lo�
 Một lượt tái lập tạo run IDs, timings và evidence riêng; cùng seed/recipe không bảo đảm output giống từng byte trên phần cứng/runtime khác. `Run-Research` dựng lại bảng/figures/gate từ selected matrices, nhưng các HTML/cases/source bundles đã track ở `reports/topic16-full/review/` là snapshot của nghiên cứu gốc; không dùng chúng hoặc endorsement cũ để ký runs mới.
 
 **Tại sao session name quan trọng?** `Run-Research` lấy basename của `SessionDirectory` làm prefix matrices/report. UI builder hiện đọc **cố định** bốn `topic16-full-*.json` và `reports/topic16-full`. Chỉ đổi `Ui.Selection` trong registry chưa đổi selection của builder hiện tại. `Run-Research` không tham số sẽ tạo UTC-name, không tạo đúng baseline UI. Adapter `Invoke-Topic16.ps1 research` cũng không truyền custom option; dùng script direct như block này.
+
+<a id="baseline-resume"></a>
 
 ### 4.3. Tiếp tục đúng direct session
 
@@ -507,13 +511,14 @@ Không dùng `-UpdateLock` cho mỗi lượt mở app. Native scripts và mọi 
 
 ## 9. Nghiệm thu nghiên cứu và certified demo/release (tùy chọn riêng)
 
-Để **xem Spatial Studio**, không cần phần này. Để ký G-Core/release, cần actual independent replay và research review endorse đúng run keys/settings/evidence, ngoài các artifacts contracts đã hoàn tất. Xem [review checklist](reports/topic16-full/review/review_checklist.md) và [reproduction runbook](reports/topic16-full/review/replay_runbook.md) cho reviewer/máy khác; không yêu cầu laptop đã xong replay để mở UI.
+Để **xem Spatial Studio**, không cần phần này. Để ký G-Core/release, cần actual independent replay và research review endorse đúng run keys/settings/evidence, ngoài các artifacts contracts đã hoàn tất. Review checklist và reproduction runbook nằm local tại `reports/topic16-full/review/review_checklist.md` và `reports/topic16-full/review/replay_runbook.md`; cần nhận bộ evidence để dùng các tài liệu này, chúng không có trong clone. Không yêu cầu laptop đã xong replay để mở UI.
 
 Tạo bản endorsement để reviewer chỉnh, không tự ghi đè review có sẵn:
 
 ```powershell
 $reviewPath = '.\reports\review.json'
 if (-not (Test-Path -LiteralPath $reviewPath)) {
+    New-Item -ItemType Directory -Path (Split-Path $reviewPath) -Force | Out-Null
     Copy-Item -LiteralPath '.\docs\protocols\review.example.json' -Destination $reviewPath
 }
 notepad.exe $reviewPath
